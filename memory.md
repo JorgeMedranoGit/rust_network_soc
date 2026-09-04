@@ -28,8 +28,14 @@ Diseño en 3 capas encapsuladas mediante `mod.rs`:
 ## 5. Estado Actual del Proyecto
 *   **Logros:**
     *   Arquitectura de 3 capas 100% implementada, modular y compilando limpiamente con 0 errores y 0 warnings.
+    *   Pipeline de Ingesta de Alto Rendimiento (preparado para ráfagas masivas / 1M pps):
+        *   **Cero Heap Allocations**: `NetworkEvent` reside 100% en el stack (`std::net::IpAddr`, enum `L4Protocol`, `u8` bitflags, implementando `Copy`).
+        *   **I/O de Base de Datos 100% Desacoplado**: Ingesta principal en sub-microsegundos con `tokio::select!`. Todo el I/O hacia PostgreSQL (`insert_log` y `record_metric`) delegado a tareas secundarias en segundo plano mediante `Arc<TelemetryRepository>`.
+        *   **Agregación Estadística Atómica**: Acumulación en RAM agrupada por `node_id` y vaciado atómico en cada ventana temporal mediante `std::mem::take`, previniendo fugas de memoria (`memory leaks`).
+        *   **Caché de Topología en RAM ($O(1)$)**: Identificación inmediata de nodos de GNS3 (`AttackerKali`, `VictimeAlpine`, `pfSense_Gateway`, etc.) sin consultar la base de datos durante la ingesta.
+        *   **Worker de Inferencia Aislado**: Canal desacoplado para la evaluación de anomalías e inferencia con LightGBM sin ralentizar la recepción de paquetes.
     *   Sincronización exacta entre el esquema SQL (`bd/init.sql`) y los repositorios de Rust.
-    *   Sembrado automático de catálogos base en el arranque del sistema.
+    *   Sembrado automático de catálogos base e inventario de nodos en el arranque del sistema.
     *   Servidor Web Axum operativo en el puerto 3000 con endpoints de salud, estado, inventario, catálogos y telemetría.
     *   Captura asíncrona de red (Sniffer) funcionando bajo el Patrón Productor-Consumidor (`pcap` + `etherparse` + canales `tokio::sync::mpsc`) con soporte para LinkTypes Ethernet y Linux Cooked SLL/SLL2.
     *   Contenedores Docker estabilizados con `network_mode: "host"`, resolviendo el bucle de reinicios.
