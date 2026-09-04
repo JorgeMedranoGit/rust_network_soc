@@ -11,15 +11,11 @@ impl ThreatDetector {
         }
     }
 
+    /// Evalúa el evento con soporte de inferencia rápida en CPU.
+    #[inline]
     pub fn evaluate_event(&self, event: &NetworkEvent) -> bool {
         if let Some(score) = event.anomaly_score {
-            if score >= self.anomaly_threshold {
-                println!(
-                    "[DOMAIN ALERT] Amenaza detectada! IP Origen: {} -> IP Destino: {} con puntaje: {:.4}",
-                    event.source_ip, event.destination_ip, score
-                );
-                return true;
-            }
+            return score >= self.anomaly_threshold;
         }
         false
     }

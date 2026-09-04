@@ -188,16 +188,65 @@ pub struct SystemAuditLog {
 }
 
 // =========================================================================
-// 5. DOMAIN EVENTS (Para Sniffer y Threat Detection)
+// 5. DOMAIN EVENTS (Para Sniffer y Threat Detection - Cero Heap Allocations)
 // =========================================================================
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
+use std::net::IpAddr;
+
+pub const TCP_FLAG_FIN: u8 = 0b0000_0001;
+pub const TCP_FLAG_SYN: u8 = 0b0000_0010;
+pub const TCP_FLAG_RST: u8 = 0b0000_0100;
+pub const TCP_FLAG_PSH: u8 = 0b0000_1000;
+pub const TCP_FLAG_ACK: u8 = 0b0001_0000;
+pub const TCP_FLAG_URG: u8 = 0b0010_0000;
+
+#[derive(Serialize, Deserialize, Debug, Clone, Copy, PartialEq, Eq)]
+#[repr(u8)]
+pub enum L4Protocol {
+    TCP = 6,
+    UDP = 17,
+    ICMP = 1,
+    Other = 0,
+}
+
+impl L4Protocol {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            L4Protocol::TCP => "TCP",
+            L4Protocol::UDP => "UDP",
+            L4Protocol::ICMP => "ICMP",
+            L4Protocol::Other => "OTHER",
+        }
+    }
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone, Copy)]
 pub struct NetworkEvent {
-    pub source_ip: String,
-    pub destination_ip: String,
-    pub protocol: String,
-    pub packet_size: i32,
-    pub flags: Option<String>,
+    pub source_ip: IpAddr,
+    pub destination_ip: IpAddr,
+    pub protocol: L4Protocol,
+    pub packet_size: u16,
+    pub flags: u8,
     pub anomaly_score: Option<f32>,
     pub timestamp: DateTime<Utc>,
+}
+
+impl NetworkEvent {
+    pub fn flags_to_string(&self) -> Option<String> {
+        if self.flags == 0 {
+            return None;
+        }
+        let mut list = Vec::with_capacity(4);
+        if (self.flags & TCP_FLAG_SYN) != 0 { list.push("SYN"); }
+        if (self.flags & TCP_FLAG_ACK) != 0 { list.push("ACK"); }
+        if (self.flags & TCP_FLAG_FIN) != 0 { list.push("FIN"); }
+        if (self.flags & TCP_FLAG_RST) != 0 { list.push("RST"); }
+        if (self.flags & TCP_FLAG_PSH) != 0 { list.push("PSH"); }
+        if (self.flags & TCP_FLAG_URG) != 0 { list.push("URG"); }
+        if list.is_empty() {
+            None
+        } else {
+            Some(list.join("|"))
+        }
+    }
 }

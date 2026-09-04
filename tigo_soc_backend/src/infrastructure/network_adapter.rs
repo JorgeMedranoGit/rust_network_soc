@@ -1,9 +1,13 @@
+use std::net::IpAddr;
+use std::thread;
 use chrono::Utc;
 use etherparse::{NetSlice, SlicedPacket, TransportSlice};
 use pcap::{Capture, Linktype};
-use std::thread;
 use tokio::sync::mpsc;
-use crate::domain::models::NetworkEvent;
+use crate::domain::models::{
+    L4Protocol, NetworkEvent, TCP_FLAG_ACK, TCP_FLAG_FIN, TCP_FLAG_PSH, TCP_FLAG_RST, TCP_FLAG_SYN,
+    TCP_FLAG_URG,
+};
 
 pub struct NetworkAdapter {
     pub interface_name: String,
@@ -116,25 +120,31 @@ fn parse_raw_packet(datalink: Linktype, data: &[u8], packet_len: i32) -> Option<
 }
 
 fn extract_event(sliced: &SlicedPacket, packet_len: i32) -> Option<NetworkEvent> {
-    let (src_ip, dst_ip, proto_name) = match &sliced.net {
+    let (src_ip, dst_ip, proto) = match &sliced.net {
         Some(NetSlice::Ipv4(ipv4)) => {
-            let proto = match ipv4.header().protocol() {
-                etherparse::IpNumber::TCP => "TCP",
-                etherparse::IpNumber::UDP => "UDP",
-                etherparse::IpNumber::ICMP => "ICMP",
-                _ => "IPv4-OTHER",
+            let p = match ipv4.header().protocol() {
+                etherparse::IpNumber::TCP => L4Protocol::TCP,
+                etherparse::IpNumber::UDP => L4Protocol::UDP,
+                etherparse::IpNumber::ICMP => L4Protocol::ICMP,
+                _ => L4Protocol::Other,
             };
             (
-                ipv4.header().source_addr().to_string(),
-                ipv4.header().destination_addr().to_string(),
-                proto.to_string(),
+                IpAddr::V4(ipv4.header().source_addr()),
+                IpAddr::V4(ipv4.header().destination_addr()),
+                p,
             )
         }
         Some(NetSlice::Ipv6(ipv6)) => {
+            let p = match ipv6.header().next_header() {
+                etherparse::IpNumber::TCP => L4Protocol::TCP,
+                etherparse::IpNumber::UDP => L4Protocol::UDP,
+                etherparse::IpNumber::ICMP => L4Protocol::ICMP,
+                _ => L4Protocol::Other,
+            };
             (
-                ipv6.header().source_addr().to_string(),
-                ipv6.header().destination_addr().to_string(),
-                "IPv6".to_string(),
+                IpAddr::V6(ipv6.header().source_addr()),
+                IpAddr::V6(ipv6.header().destination_addr()),
+                p,
             )
         }
         _ => return None,
@@ -142,25 +152,23 @@ fn extract_event(sliced: &SlicedPacket, packet_len: i32) -> Option<NetworkEvent>
 
     let flags = match &sliced.transport {
         Some(TransportSlice::Tcp(tcp)) => {
-            let mut flag_list = Vec::new();
-            if tcp.syn() { flag_list.push("SYN"); }
-            if tcp.ack() { flag_list.push("ACK"); }
-            if tcp.fin() { flag_list.push("FIN"); }
-            if tcp.rst() { flag_list.push("RST"); }
-            if tcp.psh() { flag_list.push("PSH"); }
-            if tcp.urg() { flag_list.push("URG"); }
-            Some(flag_list.join("|"))
+            let mut f = 0u8;
+            if tcp.syn() { f |= TCP_FLAG_SYN; }
+            if tcp.ack() { f |= TCP_FLAG_ACK; }
+            if tcp.fin() { f |= TCP_FLAG_FIN; }
+            if tcp.rst() { f |= TCP_FLAG_RST; }
+            if tcp.psh() { f |= TCP_FLAG_PSH; }
+            if tcp.urg() { f |= TCP_FLAG_URG; }
+            f
         }
-        Some(TransportSlice::Udp(_)) => Some("UDP".to_string()),
-        Some(TransportSlice::Icmpv4(_)) => Some("ICMPv4".to_string()),
-        _ => None,
+        _ => 0u8,
     };
 
     Some(NetworkEvent {
         source_ip: src_ip,
         destination_ip: dst_ip,
-        protocol: proto_name,
-        packet_size: packet_len,
+        protocol: proto,
+        packet_size: packet_len.clamp(0, u16::MAX as i32) as u16,
         flags,
         anomaly_score: None,
         timestamp: Utc::now(),
