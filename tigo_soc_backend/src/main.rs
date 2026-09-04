@@ -268,11 +268,11 @@ async fn seed_initial_inventory(
     let get_pid = |name: &str| protocols.iter().find(|p| p.protocol_name == name).and_then(|p| p.protocol_id);
 
     let nodes = [
-        ("AttackerKali", "192.168.0.100", get_tid("ATTACKER_KALI"), get_pid("SSH")),
-        ("VictimeAlpine1", "192.168.0.101", get_tid("WORKSTATION_VICTIM"), get_pid("SSH")),
-        ("VictimeAlpine2", "192.168.0.102", get_tid("WORKSTATION_VICTIM"), get_pid("SSH")),
-        ("pfSense_Gateway", "192.168.0.1", get_tid("FIREWALL_PERIMETER"), get_pid("SSH")),
-        ("Router_Core_L3", "192.168.0.254", get_tid("ROUTER_CORE_L3"), get_pid("SSH")),
+        ("AttackerKali", "192.168.1.50", get_tid("ATTACKER_KALI"), get_pid("SSH")),
+        ("VictimeAlpine1", "192.168.1.10", get_tid("WORKSTATION_VICTIM"), get_pid("SSH")),
+        ("VictimeAlpine2", "192.168.1.20", get_tid("WORKSTATION_VICTIM"), get_pid("SSH")),
+        ("pfSense_Gateway", "192.168.1.1", get_tid("FIREWALL_PERIMETER"), get_pid("SSH")),
+        ("Router_Core_L3", "192.168.1.254", get_tid("ROUTER_CORE_L3"), get_pid("SSH")),
     ];
 
     for (hostname, ip, type_id, proto_id) in nodes {
