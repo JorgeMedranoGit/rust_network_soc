@@ -1,0 +1,34 @@
+services:
+  postgres_soc:
+    image: postgres:15-alpine
+    container_name: tigo_postgres_db
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: tigo_soc
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./bd/data:/var/lib/postgresql/data
+      - ./bd/init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d tigo_soc"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  backend_rust:
+    build: 
+      context: ./tigo_soc_backend
+      dockerfile: Dockerfile
+    container_name: tigo_rust_backend
+    restart: always
+    environment:
+      # Fíjate que en lugar de 'localhost', ahora apunta al nombre del contenedor 'postgres_soc'
+      DATABASE_URL: postgres://postgres:postgres@postgres_soc:5432/tigo_soc
+    depends_on:
+      postgres_soc:
+        condition: service_healthy
+    volumes:
+      - ./tigo_soc_backend/src:/app/src
