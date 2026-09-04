@@ -39,3 +39,15 @@ Diseño en 3 capas encapsuladas mediante `mod.rs`:
 
 ## 6. Instrucción para el Asistente AI
 Asume el rol de Arquitecto de Software Senior y experto en Rust/Ciberseguridad. Responde con código limpio, modular y técnicamente riguroso, manteniendo un enfoque apto para una tesis universitaria de ingeniería.
+
+## 7. Flujo de Trabajo Git y Gestión de Versiones (Obligatorio)
+Para fines de auditoría, trazabilidad y documentación técnica de la tesis:
+1. **Política de Ramas (Branching)**: NUNCA realizar `push` directo a la rama `main`.
+2. **Ciclo de Desarrollo**:
+   - Crear una rama secundaria con nomenclatura clara para cada cambio o sprint (ej. `feature/nombre-funcionalidad`, `fix/descripcion-arreglo`, `docs/tema`).
+   - Desarrollar e implementar los cambios dentro de dicha rama.
+   - Ejecutar verificaciones estrictas (`cargo check`, compilación en Docker, pruebas de endpoints/red).
+   - Subir la rama secundaria a GitHub: `git push -u origin <nombre-rama>`.
+3. **Fusión (Merge)**:
+   - Solo cuando todas las pruebas pasen satisfactoriamente, integrar los cambios a `main` mediante `git merge <nombre-rama>`.
+   - Subir la rama `main` actualizada al remoto: `git push origin main`.
