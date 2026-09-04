@@ -1,18 +1,23 @@
-/// * * * MODULO PARA VISUALIZAR LOS EVENTOS DE RED * * *
+#![allow(dead_code)]
+use tokio::sync::broadcast;
+use crate::domain::models::NetworkEvent;
+
+#[derive(Clone)]
 pub struct TelemetryStreamHandler {
-    pub active_stream: bool,
+    sender: broadcast::Sender<NetworkEvent>,
 }
 
 impl TelemetryStreamHandler {
-    pub fn new() -> Self {
-        Self {
-            active_stream: true,
-        }
+    pub fn new(capacity: usize) -> Self {
+        let (sender, _) = broadcast::channel(capacity);
+        Self { sender }
     }
 
-    pub fn notify_event(&self, message: &str) {
-        if self.active_stream {
-            println!("Evento de red canalizado: {}", message);
-        }
+    pub fn broadcast_event(&self, event: NetworkEvent) {
+        let _ = self.sender.send(event);
+    }
+
+    pub fn subscribe(&self) -> broadcast::Receiver<NetworkEvent> {
+        self.sender.subscribe()
     }
 }

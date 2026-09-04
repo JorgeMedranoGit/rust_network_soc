@@ -24,11 +24,15 @@ services:
       dockerfile: Dockerfile
     container_name: tigo_rust_backend
     restart: always
+    network_mode: "host"
     environment:
-      # Fíjate que en lugar de 'localhost', ahora apunta al nombre del contenedor 'postgres_soc'
-      DATABASE_URL: postgres://postgres:postgres@postgres_soc:5432/tigo_soc
+      # Con network_mode: host, se conecta a Postgres en localhost/127.0.0.1
+      DATABASE_URL: postgres://postgres:postgres@127.0.0.1:5432/tigo_soc
+      PORT: "3000"
+      CAPTURE_INTERFACE: "any"
     depends_on:
       postgres_soc:
         condition: service_healthy
     volumes:
       - ./tigo_soc_backend/src:/app/src
+      - ./tigo_soc_backend/Cargo.toml:/app/Cargo.toml
