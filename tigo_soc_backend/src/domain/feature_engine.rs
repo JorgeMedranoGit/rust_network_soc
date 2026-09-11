@@ -12,9 +12,7 @@ use crate::domain::models::{
 pub struct PolarsFeatureEngine;
 
 impl PolarsFeatureEngine {
-    /// Extrae el vector de 23 características a partir de una ventana o lote de eventos
-    /// utilizando operaciones columnares optimizadas en memoria con Polars.
-    /// Retorna (ExtractedFeatures, tiempo_en_microsegundos).
+    // * * * EXTRACCIÓN DE 23 CARACTERÍSTICAS MEDIANTE PROCESAMIENTO COLUMNAR EN POLARS * * *
     pub fn extract_features_columnar(events: &[NetworkEvent]) -> Result<(ExtractedFeatures, f64)> {
         let start_time = Instant::now();
 
@@ -65,7 +63,7 @@ impl PolarsFeatureEngine {
             is_icmp.push(if ev.protocol == L4Protocol::ICMP { 1.0f32 } else { 0.0f32 });
         }
 
-        // 1. Construir DataFrame columnar en Polars
+        // * * * 1. CONSTRUIR DATAFRAME COLUMNAR EN POLARS * * *
         let df = df!(
             "packet_size" => &packet_sizes,
             "header_len" => &header_lens,
@@ -84,17 +82,17 @@ impl PolarsFeatureEngine {
             "icmp" => &is_icmp,
         )?;
 
-        // Calcular delta de tiempo (IAT)
+        // * * * CALCULAR DELTA TEMPORAL (IAT) Y VENTANA DE TASA * * *
         let first_ts = timestamps.first().copied().unwrap_or(0.0);
         let last_ts = timestamps.last().copied().unwrap_or(first_ts);
         let raw_duration = (last_ts - first_ts).abs();
         let duration_secs = if raw_duration >= 0.05 {
             raw_duration
         } else {
-            1.0 // Normalizar ráfagas sub-50ms a ventana base de 1s para prevenir tasas artificiales
+            1.0 // * * * NORMALIZAR RÁFAGAS SUB-50MS A BASE DE 1 SEGUNDO * * *
         };
 
-        // 2. Ejecutar agregaciones columnares mediante Polars LazyFrame
+        // * * * 2. EJECUTAR AGREGACIONES COLUMNAR MEDIANTE POLARS LAZYFRAME * * *
         let aggregated = df
             .lazy()
             .with_column(
@@ -103,32 +101,32 @@ impl PolarsFeatureEngine {
                     .alias("iat_raw"),
             )
             .select([
-                // Number: Cantidad de paquetes
+                // * * * CANTIDAD TOTAL DE PAQUETES * * *
                 col("packet_size").count().cast(DataType::Float32).alias("Number"),
-                // Tot sum: Suma total de bytes de paquetes
+                // * * * SUMA TOTAL DE BYTES TRANSFERIDOS * * *
                 col("packet_size").sum().cast(DataType::Float32).alias("Tot sum"),
-                // Min: Tamaño mínimo
+                // * * * TAMAÑO MÍNIMO DE PAQUETE * * *
                 col("packet_size").min().cast(DataType::Float32).alias("Min"),
-                // Max: Tamaño máximo
+                // * * * TAMAÑO MÁXIMO DE PAQUETE * * *
                 col("packet_size").max().cast(DataType::Float32).alias("Max"),
-                // AVG: Promedio
+                // * * * TAMAÑO PROMEDIO DE PAQUETES * * *
                 col("packet_size").mean().cast(DataType::Float32).alias("AVG"),
-                // Std: Desviación estándar muestral
+                // * * * DESVIACIÓN ESTÁNDAR MUESTRAL * * *
                 col("packet_size").std(1).fill_null(lit(0.0)).cast(DataType::Float32).alias("Std"),
-                // Variance: Varianza
+                // * * * VARIANZA ESTADÍSTICA DEL TAMAÑO * * *
                 col("packet_size").var(1).fill_null(lit(0.0)).cast(DataType::Float32).alias("Variance"),
-                // IAT: Mean Inter-Arrival Time
+                // * * * TIEMPO INTER-LLEGADA PROMEDIO (IAT) * * *
                 col("iat_raw").mean().fill_null(lit(0.0)).cast(DataType::Float32).alias("IAT"),
-                // Header_Length promedio
+                // * * * LONGITUD PROMEDIO DEL ENCABEZADO * * *
                 col("header_len").mean().cast(DataType::Float32).alias("Header_Length"),
-                // Time_To_Live promedio
+                // * * * TIME TO LIVE PROMEDIO * * *
                 col("ttl").mean().cast(DataType::Float32).alias("Time_To_Live"),
-                // Conteos de Flags
+                // * * * CONTEO DE BANDERAS TCP * * *
                 col("ack").sum().cast(DataType::Float32).alias("ack_count"),
                 col("syn").sum().cast(DataType::Float32).alias("syn_count"),
                 col("fin").sum().cast(DataType::Float32).alias("fin_count"),
                 col("rst").sum().cast(DataType::Float32).alias("rst_count"),
-                // Indicadores de protocolos
+                // * * * INDICADORES DE PROTOCOLOS DE APLICACIÓN Y TRANSPORTE * * *
                 col("http").max().cast(DataType::Float32).alias("HTTP"),
                 col("https").max().cast(DataType::Float32).alias("HTTPS"),
                 col("dns").max().cast(DataType::Float32).alias("DNS"),
@@ -139,7 +137,7 @@ impl PolarsFeatureEngine {
             ])
             .collect()?;
 
-        // Extraer valores escalares de las columnas computadas por Polars
+        // * * * EXTRAER VALORES ESCALARES DE LAS COLUMNAS COMPUTADAS EN POLARS * * *
         let get_scalar = |col_name: &str| -> f32 {
             aggregated
                 .column(col_name)
@@ -203,7 +201,7 @@ impl PolarsFeatureEngine {
         Ok((features, elapsed_us))
     }
 
-    /// Extrae características para un evento individual contextualizado con métricas instantáneas
+    // * * * EXTRACCIÓN DE CARACTERÍSTICAS PARA EVENTO INDIVIDUAL * * *
     #[allow(dead_code)]
     pub fn extract_single_event(event: &NetworkEvent) -> Result<(ExtractedFeatures, f64)> {
         Self::extract_features_columnar(&[*event])

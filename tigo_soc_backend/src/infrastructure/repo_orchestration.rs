@@ -1,3 +1,4 @@
+// * * * REPOSITORIO DE ORQUESTACIÓN, ALERTAS Y MITIGACIÓN * * *
 #![allow(dead_code)]
 use serde_json::Value;
 use sqlx::{Error, PgPool, Row};
@@ -13,9 +14,7 @@ impl OrchestrationRepository {
         Self { pool }
     }
 
-    // =========================================================================
-    // 1. ALERTAS DE SEGURIDAD
-    // =========================================================================
+    // * * * 1. ALERTAS DE SEGURIDAD * * *
 
     pub async fn create_alert(
         &self,
@@ -65,9 +64,7 @@ impl OrchestrationRepository {
         .await
     }
 
-    // =========================================================================
-    // 2. ACCIONES DE MITIGACIÓN
-    // =========================================================================
+    // * * * 2. ACCIONES DE MITIGACIÓN * * *
 
     pub async fn create_mitigation_action(
         &self,
@@ -102,9 +99,7 @@ impl OrchestrationRepository {
         .await
     }
 
-    // =========================================================================
-    // 3. COLA DE EJECUCIÓN (ORQUESTACIÓN)
-    // =========================================================================
+    // * * * 3. COLA DE EJECUCIÓN (ORQUESTACIÓN) * * *
 
     pub async fn queue_task(
         &self,
@@ -143,9 +138,7 @@ impl OrchestrationRepository {
         Ok(())
     }
 
-    // =========================================================================
-    // 4. ROLLBACK SNAPSHOTS
-    // =========================================================================
+    // * * * 4. INSTANTÁNEAS DE RESTAURACIÓN (ROLLBACK SNAPSHOTS) * * *
 
     pub async fn create_rollback_snapshot(
         &self,
@@ -170,9 +163,7 @@ impl OrchestrationRepository {
         Ok(row.get("snapshot_id"))
     }
 
-    // =========================================================================
-    // 5. AUDITORÍA DEL SISTEMA
-    // =========================================================================
+    // * * * 5. AUDITORÍA DEL SISTEMA * * *
 
     pub async fn log_audit(
         &self,

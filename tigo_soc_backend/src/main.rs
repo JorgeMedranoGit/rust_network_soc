@@ -1,3 +1,5 @@
+// * * * MOTOR PRINCIPAL Y ORQUESTADOR CENTRAL DE TIGOSOC BACKEND * * *
+
 mod domain;
 mod infrastructure;
 mod presentation;
@@ -7,13 +9,15 @@ use std::env;
 use std::net::{IpAddr, SocketAddr};
 use std::str::FromStr;
 use std::sync::Arc;
+use std::time::Duration;
 use chrono::Utc;
 use tokio::net::TcpListener;
+use tokio::time::Instant;
 
 use domain::{
     feature_engine::PolarsFeatureEngine,
     ml_trainer::LightGBMTrainer,
-    models::NetworkEvent,
+    models::{NetworkEvent, TCP_FLAG_SYN},
     threat_detector::ThreatDetector,
 };
 use infrastructure::{
@@ -35,59 +39,66 @@ struct TrafficStats {
     bytes: u64,
 }
 
+// * * * ESTRUCTURA DE RASTREO Y MUESTREO ADAPTATIVO POR FLUJO (HIGH-THROUGHPUT) * * *
+struct FlowTracker {
+    window: VecDeque<NetworkEvent>,
+    packet_count: u64,
+    last_eval_instant: Instant,
+}
+
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let _ = dotenvy::dotenv();
 
-    // * * * 0. CLI Execution Modes (Server vs Training) * * *
+    // * * * 0. MODOS DE EJECUCIÓN CLI (SERVIDOR VS ENTRENAMIENTO) * * *
     let args: Vec<String> = env::args().collect();
     let mode = args.get(1).map(|s| s.as_str()).unwrap_or("server");
 
     match mode {
         "train" => {
             let data_arg = args.get(2).map(|s| s.as_str());
-            println!("|- INFO -| Modo de entrenamiento seleccionado (K-Fold + Polars + LightGBM CPU).");
+            println!("|- INSTRUCCION -| Modo de entrenamiento seleccionado (K-Fold + Polars + LightGBM CPU).");
             LightGBMTrainer::run_training(false, data_arg)?;
             return Ok(());
         }
         "train-gpu" => {
             let data_arg = args.get(2).map(|s| s.as_str());
-            println!("|- INFO -| Modo de entrenamiento GPU seleccionado.");
+            println!("|- INSTRUCCION -| Modo de entrenamiento GPU seleccionado.");
             LightGBMTrainer::run_training(true, data_arg)?;
             return Ok(());
         }
         "server" => {}
         other => {
-            println!("|- WARN -| Argumento desconocido '{}'. Modos válidos: server | train | train-gpu", other);
+            println!("|- INSTRUCCION -| [WARN] Argumento desconocido '{}'. Modos válidos: server | train | train-gpu", other);
         }
     }
 
-    println!("|- INFO -| Iniciando Motor Core de TigoSOC Backend (Rust + Polars + LightGBM)...");
+    println!("|- INSTRUCCION -| Iniciando Motor Core de TigoSOC Backend (Rust + Polars + LightGBM)...");
 
-    // * * * 1. Database Connection * * *
+    // * * * 1. INICIALIZACIÓN DE CONEXIÓN A BASE DE DATOS POSTGRESQL * * *
     let db_pool = match db_connection::init_pool().await {
         Ok(pool) => {
-            println!("|- DB -| Conexión establecida con éxito en PostgreSQL.");
+            println!("|- INSTRUCCION -| Conexión establecida con éxito en PostgreSQL.");
             pool
         }
         Err(e) => {
-            eprintln!("|- FATAL -| Falló la conexión a PostgreSQL: {}", e);
+            eprintln!("|- INSTRUCCION -| [FATAL] Falló la conexión a PostgreSQL: {}", e);
             return Err(e.into());
         }
     };
 
-    // * * * 2. Initialize and Seed Catalogs & Topology Inventory * * *
+    // * * * 2. VERIFICACIÓN Y SEMBRADO DE CATÁLOGOS E INVENTARIO TOPOLÓGICO * * *
     let catalogs = CatalogsRepository::new(db_pool.clone());
     seed_initial_catalogs(&catalogs).await;
 
     let inventory = InventoryRepository::new(db_pool.clone());
     seed_initial_inventory(&inventory, &catalogs).await;
 
-    // * * * 3. Load Topology Cache into Memory (IP -> node_id for O(1) resolution) * * *
+    // * * * 3. CARGA DE CACHÉ DE TOPOLOGÍA EN MEMORIA RAM (O(1) RESOLUTION) * * *
     let ip_cache = Arc::new(load_ip_cache(&inventory).await);
-    println!("|- CACHE -| Topología cargada en memoria RAM: {} nodos indexados O(1).", ip_cache.len());
+    println!("|- INSTRUCCION -| Topología cargada en memoria RAM: {} nodos indexados O(1).", ip_cache.len());
 
-    // * * * 4. Load LightGBM Model & Feature Engine * * *
+    // * * * 4. CARGA DEL MODELO LIGHTGBM Y MOTOR DE DETECCIÓN * * *
     let model_path = env::var("ML_MODEL_PATH").unwrap_or_else(|_| "models/mejor_modelo_kfold.txt".to_string());
     let ml_threshold = env::var("ML_THRESHOLD")
         .unwrap_or_else(|_| "0.50".to_string())
@@ -96,31 +107,31 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let threat_detector = match ThreatDetector::new_from_file(&model_path, ml_threshold) {
         Ok(td) => {
-            println!("|- ML -| ThreatDetector inicializado con umbral de detección: [{:.2}]", ml_threshold);
+            println!("|- INSTRUCCION -| [ML] ThreatDetector inicializado con umbral de detección: [{:.2}]", ml_threshold);
             Some(td)
         }
         Err(e) => {
-            eprintln!("|- WARN -| No se pudo cargar el modelo LightGBM: {}. El sistema continuará sin ML activo.", e);
+            eprintln!("|- INSTRUCCION -| [WARN] No se pudo cargar el modelo LightGBM: {}. El sistema continuará sin ML activo.", e);
             None
         }
     };
 
-    // * * * 5. Event Broadcast Channel * * *
+    // * * * 5. CANAL DE TRANSMISIÓN DE EVENTOS EN TIEMPO REAL * * *
     let stream_handler = TelemetryStreamHandler::new(1024);
 
-    // * * * 6. Start Network Capture (Sniffer with Producer-Consumer Pattern) * * *
+    // * * * 6. INICIAR CAPTURA ASÍNCRONA DE RED (PATRÓN PRODUCTOR-CONSUMIDOR) * * *
     let capture_iface = env::var("CAPTURE_INTERFACE").unwrap_or_else(|_| "any".to_string());
     let adapter = NetworkAdapter::new(&capture_iface);
     let mut rx_events = adapter.start_capture(65536);
-    println!("|- SNIFFER -| Escuchando interfaz de red activa: [{}]", capture_iface);
+    println!("|- INSTRUCCION -| [SNIFFER] Escuchando interfaz de red activa: [{}]", capture_iface);
 
-    // * * * 7. Decoupled Channel for Isolated Inference (LightGBM + Polars) * * *
+    // * * * 7. CANAL DESACOPLADO PARA INFERENCIA FORENSE AISLADA * * *
     let (forensic_tx, mut forensic_rx) = tokio::sync::mpsc::channel::<NetworkEvent>(65536);
 
     let telemetry = Arc::new(TelemetryRepository::new(db_pool.clone()));
     let orchestration = Arc::new(OrchestrationRepository::new(db_pool.clone()));
 
-    // * * * ISOLATED INFERENCE WORKER (Polars Feature Extraction + LightGBM Evaluation) * * *
+    // * * * WORKER FORENSE AISLADO (FEATURE ENGINEERING CON POLARS + LIGHTGBM) * * *
     let telemetry_forensic = Arc::clone(&telemetry);
     let orchestration_forensic = Arc::clone(&orchestration);
     let ip_cache_forensic = Arc::clone(&ip_cache);
@@ -128,31 +139,51 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     tokio::spawn(async move {
         if let Some(detector) = detector_opt {
-            println!("|- WORKER FORENSE -| Motor LightGBM + Polars Feature Engineering activo en hilo aislado.");
+            println!("|- INSTRUCCION -| [WORKER FORENSE] Motor LightGBM + Polars Feature Engineering activo en hilo aislado.");
 
-            // Búfer de micro-ventana deslizante por flujo (source_ip) para cálculo columnar en Polars
-            let mut flow_buffers: HashMap<IpAddr, VecDeque<NetworkEvent>> = HashMap::with_capacity(256);
+            // * * * BÚFERES DE VENTANAS DESLIZANTES POR FLUJO (SOURCE IP) CON MUESTREO ADAPTATIVO * * *
+            let mut flow_trackers: HashMap<IpAddr, FlowTracker> = HashMap::with_capacity(512);
             let mut eval_counter: u64 = 0;
 
             while let Some(event) = forensic_rx.recv().await {
-                eval_counter += 1;
+                let tracker = flow_trackers.entry(event.source_ip).or_insert_with(|| FlowTracker {
+                    window: VecDeque::with_capacity(16),
+                    packet_count: 0,
+                    last_eval_instant: Instant::now(),
+                });
 
-                // 1. Acumular evento en la ventana deslizante del flujo (máx 15 paquetes)
-                let buffer = flow_buffers.entry(event.source_ip).or_insert_with(|| VecDeque::with_capacity(16));
-                if buffer.len() >= 15 {
-                    buffer.pop_front();
+                tracker.packet_count += 1;
+                if tracker.window.len() >= 15 {
+                    tracker.window.pop_front();
                 }
-                buffer.push_back(event);
+                tracker.window.push_back(event);
 
-                // Requiere al menos 5 paquetes acumulados para tener una ventana estadísticamente válida
-                if buffer.len() < 5 {
+                // * * * POLÍTICA DE CADENCIA DE INFERENCIA PARA ALTO RENDIMIENTO (+40,000 PPS) * * *
+                // 1. Requiere al menos 5 paquetes para validez estadística
+                if tracker.packet_count < 5 {
                     continue;
                 }
 
-                // Convertir ventana a slice continuo
-                let window: Vec<NetworkEvent> = buffer.iter().copied().collect();
+                // 2. Evaluar de inmediato al alcanzar 5 paquetes (clasificación inicial rápida)
+                // 3. O evaluar cada 15 paquetes acumulados (renovación de ventana)
+                // 4. O evaluar si han transcurrido más de 100ms desde la última inferencia en este flujo
+                // 5. O evaluar si se detecta ráfaga de flags SYN o tamaño de paquete inusual
+                let is_cadence_tick = tracker.packet_count == 5
+                    || tracker.packet_count % 15 == 0
+                    || tracker.last_eval_instant.elapsed() >= Duration::from_millis(100)
+                    || ((event.flags & TCP_FLAG_SYN) != 0 && tracker.packet_count % 5 == 0);
 
-                // 2. Extraer 23 características columnares estructuradas con Polars
+                if !is_cadence_tick {
+                    continue;
+                }
+
+                tracker.last_eval_instant = Instant::now();
+                eval_counter += 1;
+
+                // * * * CONVERTIR MICRO-VENTANA A SLICE CONTINUO EN RAM * * *
+                let window: Vec<NetworkEvent> = tracker.window.iter().copied().collect();
+
+                // * * * EXTRAER 23 CARACTERÍSTICAS COLUMNARES CON POLARS * * *
                 let (features, polars_time_us) = match PolarsFeatureEngine::extract_features_columnar(&window) {
                     Ok(res) => res,
                     Err(_) => continue,
@@ -161,18 +192,18 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 let src_str = event.source_ip.to_string();
                 let dst_str = event.destination_ip.to_string();
 
-                // 3. Inferencia de anomalía en LightGBM
+                // * * * INFERENCIA ULTRA-RÁPIDA CON LIGHTGBM * * *
                 let evaluation = detector.evaluate_features(&features, &src_str, polars_time_us);
 
-                // Log periódico de rendimiento del motor de IA
+                // * * * LOG PERIÓDICO DE MONITOREO DEL MOTOR ML * * *
                 if eval_counter % 200 == 1 {
                     println!(
-                        "|- ML -| Evaluado: {} -> {} | Prob: {:.4} | Polars: {:.1} µs | LightGBM: {:.1} µs | Total: {:.1} µs",
+                        "|- INSTRUCCION -| [ML] Evaluado: {} -> {} | Prob: {:.4} | Polars: {:.1} µs | LightGBM: {:.1} µs | Total: {:.1} µs",
                         src_str, dst_str, evaluation.probability, evaluation.feature_time_us, evaluation.inference_time_us, evaluation.total_time_us
                     );
                 }
 
-                // 4. Si clasifica como ataque, ejecutar pipeline forense completo
+                // * * * EJECUTAR PIPELINE FORENSE COMPLETO ANTE AMENAZAS DETECTADAS * * *
                 if evaluation.is_attack {
                     let node_id = ip_cache_forensic
                         .get(&event.source_ip)
@@ -181,14 +212,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                         .unwrap_or(6);
 
                     println!(
-                        "|- ALERTA -| [!] AMENAZA DETECTADA: [{}] (Prob: {:.2}%) en Nodo ID [{}] | Flujo: {} -> {}",
+                        "|- INSTRUCCION -| [ALERTA] AMENAZA DETECTADA: [{}] (Prob: {:.2}%) en Nodo ID [{}] | Flujo: {} -> {}",
                         evaluation.threat_name, evaluation.probability * 100.0, node_id, src_str, dst_str
                     );
                     println!(
-                        "|- ALERTA -| Severidad: [{}] | Impacto: [{}] | Resolución: [{}] | Latencia: {:.1} µs",
+                        "|- INSTRUCCION -| [ALERTA] Severidad: [{}] | Impacto: [{}] | Resolución: [{}] | Latencia: {:.1} µs",
                         evaluation.severity, evaluation.impact, evaluation.resolution, evaluation.total_time_us
                     );
-                    println!("|- ALERTA -| Detalles: {}", evaluation.technical_details);
+                    println!("|- INSTRUCCION -| [ALERTA] Detalles: {}", evaluation.technical_details);
 
                     let telemetry_db = Arc::clone(&telemetry_forensic);
                     let orch_db = Arc::clone(&orchestration_forensic);
@@ -199,9 +230,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                     let threat_id = evaluation.threat_id;
                     let score = evaluation.probability as f64;
 
-                    // Desacoplar I/O de PostgreSQL en tarea secundaria para garantizar Cero Latencia
+                    // * * * DESACOPLAR I/O DE POSTGRESQL EN TAREA SECUNDARIA ASÍNCRONA * * *
                     tokio::spawn(async move {
-                        // A. Inserción en network_logs
                         let log_id = match telemetry_db
                             .insert_log(
                                 Some(node_id),
@@ -215,33 +245,31 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                         {
                             Ok(id) => id,
                             Err(e) => {
-                                eprintln!("|- DB ERROR -| Falló el registro forense en network_logs: {}", e);
+                                eprintln!("|- INSTRUCCION -| [DB ERROR] Falló el registro forense en network_logs: {}", e);
                                 return;
                             }
                         };
 
-                        // B. Inserción del vector columnar en feature_store
                         let feature_id = match telemetry_db.insert_features(log_id, feature_val).await {
                             Ok(fid) => fid,
                             Err(e) => {
-                                eprintln!("|- DB ERROR -| Falló la inserción en feature_store: {}", e);
+                                eprintln!("|- INSTRUCCION -| [DB ERROR] Falló la inserción en feature_store: {}", e);
                                 return;
                             }
                         };
 
-                        // C. Inserción de la alerta en security_alerts
                         if let Err(e) = orch_db.create_alert(Some(feature_id), Some(threat_id), Some(1), score).await {
-                            eprintln!("|- DB ERROR -| Falló la creación de security_alerts: {}", e);
+                            eprintln!("|- INSTRUCCION -| [DB ERROR] Falló la creación de security_alerts: {}", e);
                         }
                     });
                 }
             }
         } else {
-            println!("|- WORKER FORENSE -| Motor LightGBM en espera (sin modelo cargado).");
+            println!("|- INSTRUCCION -| [WORKER FORENSE] Motor LightGBM en espera (sin modelo cargado).");
         }
     });
 
-    // * * * PERIODIC BENCHMARK TELEMETRY TICKER * * *
+    // * * * TELEMETRÍA PERIÓDICA DE RENDIMIENTO DEL MOTOR ML * * *
     let detector_bench = threat_detector.clone();
     tokio::spawn(async move {
         let mut interval = tokio::time::interval(tokio::time::Duration::from_secs(15));
@@ -253,7 +281,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 let stats = det.get_performance_stats();
                 if stats.total_evaluations > 0 {
                     println!(
-                        "|- ML STATS -| Evaluaciones: {} | Anomalías: {} | Polars AVG: {:.1} µs | LightGBM AVG: {:.1} µs | Latencia Total AVG: {:.1} µs | Mín: {:.1} µs | Máx: {:.1} µs",
+                        "|- INSTRUCCION -| [ML STATS] Evaluaciones: {} | Anomalías: {} | Polars AVG: {:.1} µs | LightGBM AVG: {:.1} µs | Latencia Total AVG: {:.1} µs | Mín: {:.1} µs | Máx: {:.1} µs",
                         stats.total_evaluations, stats.total_anomalies, stats.avg_feature_time_us, stats.avg_inference_time_us, stats.avg_total_time_us, stats.min_inference_time_us, stats.max_inference_time_us
                     );
                 }
@@ -261,13 +289,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     });
 
-    // * * * MAIN CONSUMER (Statistical Route with tokio::select! and std::mem::take) * * *
+    // * * * CONSUMIDOR PRINCIPAL (MUNDO ESTADÍSTICO CON TOKIO::SELECT! Y VOLCADO ATÓMICO) * * *
     let telemetry_metrics = Arc::clone(&telemetry);
     let ip_cache_main = Arc::clone(&ip_cache);
     let stream_consumer = stream_handler.clone();
 
     tokio::spawn(async move {
-        println!("|- WORKER ESTADÍSTICO -| Pipeline de agregación atómica en RAM iniciado.");
+        println!("|- INSTRUCCION -| [WORKER ESTADÍSTICO] Pipeline de agregación atómica en RAM iniciado.");
 
         let mut accumulator: HashMap<i32, TrafficStats> = HashMap::with_capacity(128);
         let mut window_start = Utc::now();
@@ -282,7 +310,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 Some(event) = rx_events.recv() => {
                     packet_counter += 1;
 
-                    // Resolve O(1) in RAM; fallback to ID 6 if unmapped
+                    // * * * RESOLUCIÓN O(1) EN MEMORIA RAM CON NODO 6 POR DEFECTO * * *
                     let node_id = ip_cache_main
                         .get(&event.source_ip)
                         .or_else(|| ip_cache_main.get(&event.destination_ip))
@@ -293,13 +321,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                     entry.packets += 1;
                     entry.bytes += event.packet_size as u64;
 
-                    // Enviar evento al canal de inferencia ML
+                    // * * * ENVIAR EVENTO AL CANAL DE INFERENCIA ML * * *
                     let _ = forensic_tx.try_send(event);
                     stream_consumer.broadcast_event(event);
 
                     if packet_counter % 500 == 1 {
                         println!(
-                            "|- PACKET -| Total: {} pkts | Flujo: {}:{} -> {}:{} | Proto: [{}] | Size: {} bytes",
+                            "|- INSTRUCCION -| [PACKET] Total: {} pkts | Flujo: {}:{} -> {}:{} | Proto: [{}] | Size: {} bytes",
                             packet_counter,
                             event.source_ip,
                             event.source_port,
@@ -331,7 +359,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                                     )
                                     .await
                                 {
-                                    eprintln!("|- DB ERROR -| Falló el volcado atómico en network_traffic_metrics: {}", e);
+                                    eprintln!("|- INSTRUCCION -| [DB ERROR] Falló el volcado atómico en network_traffic_metrics: {}", e);
                                 }
                             }
                         });
@@ -341,7 +369,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     });
 
-    // * * * 8. Start Axum Web Server * * *
+    // * * * 8. INICIAR SERVIDOR WEB AXUM * * *
     let port = env::var("PORT")
         .unwrap_or_else(|_| "3000".to_string())
         .parse::<u16>()
@@ -357,23 +385,24 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let addr = SocketAddr::from(([0, 0, 0, 0], port));
     let listener = TcpListener::bind(&addr).await?;
 
-    println!("|- API REST -| Servidor expuesto y escuchando en: http://{}", addr);
-    println!("|- API REST -| Rutas operativas disponibles:");
-    println!("       - GET /health");
-    println!("       - GET /api/v1/status");
-    println!("       - GET /api/v1/catalogs/device-types");
-    println!("       - GET /api/v1/inventory/nodes");
-    println!("       - GET /api/v1/telemetry/metrics");
-    println!("       - GET /api/v1/telemetry/logs");
-    println!("       - GET /api/v1/alerts");
-    println!("       - GET /api/v1/ml/stats");
-    println!("       - GET /api/v1/ml/model-info");
+    println!("|- INSTRUCCION -| [API REST] Servidor expuesto y escuchando en: http://{}", addr);
+    println!("|- INSTRUCCION -| [API REST] Rutas operativas disponibles:");
+    println!("|- INSTRUCCION -|    - GET /health");
+    println!("|- INSTRUCCION -|    - GET /api/v1/status");
+    println!("|- INSTRUCCION -|    - GET /api/v1/catalogs/device-types");
+    println!("|- INSTRUCCION -|    - GET /api/v1/inventory/nodes");
+    println!("|- INSTRUCCION -|    - GET /api/v1/telemetry/metrics");
+    println!("|- INSTRUCCION -|    - GET /api/v1/telemetry/logs");
+    println!("|- INSTRUCCION -|    - GET /api/v1/alerts");
+    println!("|- INSTRUCCION -|    - GET /api/v1/ml/stats");
+    println!("|- INSTRUCCION -|    - GET /api/v1/ml/model-info");
 
     axum::serve(listener, app).await?;
 
     Ok(())
 }
 
+// * * * CARGA DE TABLA DE TOPOLOGÍA EN MEMORIA RAM * * *
 async fn load_ip_cache(inventory: &InventoryRepository) -> HashMap<IpAddr, i32> {
     let mut map = HashMap::new();
     if let Ok(nodes) = inventory.get_nodes().await {
@@ -388,6 +417,7 @@ async fn load_ip_cache(inventory: &InventoryRepository) -> HashMap<IpAddr, i32> 
     map
 }
 
+// * * * SEMBRADO INICIAL DEL INVENTARIO DE NODOS DE RED * * *
 async fn seed_initial_inventory(
     inventory: &InventoryRepository,
     catalogs: &CatalogsRepository,
@@ -411,8 +441,9 @@ async fn seed_initial_inventory(
     }
 }
 
+// * * * SEMBRADO INICIAL DE CATÁLOGOS BASE DEL SISTEMA * * *
 async fn seed_initial_catalogs(repo: &CatalogsRepository) {
-    println!("|- INIT -| Verificando integridad y sembrado de catálogos base...");
+    println!("|- INSTRUCCION -| [INIT] Verificando integridad y sembrado de catálogos base...");
 
     let device_types = [
         "ROUTER_CORE_L3",
@@ -464,5 +495,5 @@ async fn seed_initial_catalogs(repo: &CatalogsRepository) {
         let _ = repo.create_role(name, desc).await;
     }
 
-    println!("|- INIT -| Catálogos base sincronizados correctamente.");
+    println!("|- INSTRUCCION -| [INIT] Catálogos base sincronizados correctamente.");
 }

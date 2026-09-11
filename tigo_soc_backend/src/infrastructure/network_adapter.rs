@@ -1,3 +1,5 @@
+// * * * ADAPTADOR DE CAPTURA DE RED ASÍNCRONA (PRODUCER-CONSUMER CON PCAP) * * *
+
 use std::net::IpAddr;
 use std::thread;
 use chrono::Utc;
@@ -20,18 +22,17 @@ impl NetworkAdapter {
         }
     }
 
-    /// Inicia el Sniffer asíncrono implementando el Patrón Productor-Consumidor.
-    /// Retorna un Receiver de Tokio por el cual el consumidor procesa los paquetes parseados.
+    // * * * INICIAR HILO PRODUCTOR DEDICADO PARA CAPTURA DE PAQUETES CON PCAP * * *
     pub fn start_capture(&self, buffer_size: usize) -> mpsc::Receiver<NetworkEvent> {
         let (tx, rx) = mpsc::channel(buffer_size);
         let iface = self.interface_name.clone();
 
         println!(
-            "[INFRASTRUCTURE] Iniciando captura de red en la interfaz: '{}' (Patrón Productor-Consumidor)",
+            "|- INSTRUCCION -| Iniciando captura de red en la interfaz: '{}' (Patrón Productor-Consumidor)",
             iface
         );
 
-        // Productor: Hilo bloqueante dedicado con libpcap
+        // * * * HILO BLOQUEANTE DEDICADO CON LIBPCAP * * *
         thread::spawn(move || {
             let mut cap = match Capture::from_device(iface.as_str()) {
                 Ok(builder) => match builder
@@ -43,7 +44,7 @@ impl NetworkAdapter {
                     Ok(cap) => cap,
                     Err(e) => {
                         eprintln!(
-                            "[INFRASTRUCTURE] Error al abrir interfaz '{}': {}. Revisa permisos o network_mode: host.",
+                            "|- INSTRUCCION -| [ERROR] Error al abrir interfaz '{}': {}. Revisa permisos o network_mode: host.",
                             iface, e
                         );
                         return;
@@ -51,7 +52,7 @@ impl NetworkAdapter {
                 },
                 Err(e) => {
                     eprintln!(
-                        "[INFRASTRUCTURE] No se encontró el dispositivo de red '{}': {}. El sniffer quedará a la espera.",
+                        "|- INSTRUCCION -| [WARN] No se encontró el dispositivo de red '{}': {}. El sniffer quedará a la espera.",
                         iface, e
                     );
                     return;
@@ -60,7 +61,7 @@ impl NetworkAdapter {
 
             let datalink = cap.get_datalink();
             println!(
-                "[INFRASTRUCTURE] Productor activo en '{}' (LinkType ID: {:?})",
+                "|- INSTRUCCION -| Productor activo en '{}' (LinkType ID: {:?})",
                 iface, datalink
             );
 
@@ -69,7 +70,7 @@ impl NetworkAdapter {
                     Ok(packet) => {
                         if let Some(event) = parse_raw_packet(datalink, packet.data, packet.header.len as i32) {
                             if tx.blocking_send(event).is_err() {
-                                println!("[INFRASTRUCTURE] Canal de telemetría cerrado. Deteniendo captura.");
+                                println!("|- INSTRUCCION -| Canal de telemetría cerrado. Deteniendo captura.");
                                 break;
                             }
                         }
@@ -78,7 +79,7 @@ impl NetworkAdapter {
                         continue;
                     }
                     Err(e) => {
-                        eprintln!("[INFRASTRUCTURE] Error capturando paquete: {}", e);
+                        eprintln!("|- INSTRUCCION -| [ERROR] Error capturando paquete: {}", e);
                         thread::sleep(std::time::Duration::from_millis(500));
                     }
                 }
@@ -89,14 +90,14 @@ impl NetworkAdapter {
     }
 }
 
-/// Parsea el paquete según su LinkType (Ethernet, Linux Cooked SLL/SLL2 para 'any', o Raw IP)
+// * * * PARSEO MULTI-LINKTYPE DE TRAMAS DE RED (ETHERNET, SLL, SLL2, RAW IP) * * *
 fn parse_raw_packet(datalink: Linktype, data: &[u8], packet_len: i32) -> Option<NetworkEvent> {
-    // 1. Intentar como Ethernet estándar
+    // * * * 1. INTENTAR COMO ETHERNET ESTÁNDAR * * *
     if let Ok(sliced) = SlicedPacket::from_ethernet(data) {
         return extract_event(&sliced, packet_len);
     }
 
-    // 2. Linux Cooked Capture (interfaz 'any': SLL = 16 bytes, SLL2 = 20 bytes)
+    // * * * 2. LINUX COOKED CAPTURE (INTERFAZ ANY: SLL / SLL2) * * *
     if (datalink.0 == 113 || datalink.0 == 276) && data.len() > 20 {
         let offset = if datalink.0 == 113 { 16 } else { 20 };
         if let Ok(sliced) = SlicedPacket::from_ip(&data[offset..]) {
@@ -104,14 +105,14 @@ fn parse_raw_packet(datalink: Linktype, data: &[u8], packet_len: i32) -> Option<
         }
     }
 
-    // 3. BSD Loopback (NULL)
+    // * * * 3. BSD LOOPBACK (NULL) * * *
     if datalink.0 == 0 && data.len() > 4 {
         if let Ok(sliced) = SlicedPacket::from_ip(&data[4..]) {
             return extract_event(&sliced, packet_len);
         }
     }
 
-    // 4. Intentar directamente como IP puro
+    // * * * 4. INTENTAR DIRECTAMENTE COMO IP PURO * * *
     if let Ok(sliced) = SlicedPacket::from_ip(data) {
         return extract_event(&sliced, packet_len);
     }
@@ -119,6 +120,7 @@ fn parse_raw_packet(datalink: Linktype, data: &[u8], packet_len: i32) -> Option<
     None
 }
 
+// * * * EXTRACCIÓN DE METADATOS Y FILTRADO ESTRICTO DE AUTO-CAPTURA * * *
 fn extract_event(sliced: &SlicedPacket, packet_len: i32) -> Option<NetworkEvent> {
     let (src_ip, dst_ip, proto, header_len, ttl) = match &sliced.net {
         Some(NetSlice::Ipv4(ipv4)) => {
@@ -172,15 +174,15 @@ fn extract_event(sliced: &SlicedPacket, packet_len: i32) -> Option<NetworkEvent>
     };
 
     // * * * FILTRAR TRÁFICO INTERNO DEL SOC PARA EVITAR BUCLES DE AUTO-CAPTURA * * *
-    // 1. Ignorar puertos de servicio interno: PostgreSQL (5432) y API Axum (3000)
+    // * * * 1. IGNORAR PUERTOS INTERNOS: POSTGRESQL (5432) Y API AXUM (3000) * * *
     if src_port == 5432 || dst_port == 5432 || src_port == 3000 || dst_port == 3000 {
         return None;
     }
-    // 2. Ignorar tráfico local Loopback (127.0.0.1 / ::1)
+    // * * * 2. IGNORAR TRÁFICO LOOPBACK LOCAL (127.0.0.1 / ::1) * * *
     if src_ip.is_loopback() || dst_ip.is_loopback() {
         return None;
     }
-    // 3. Ignorar tráfico interno de Docker bridge (172.16.0.0/12) entre contenedores
+    // * * * 3. IGNORAR TRÁFICO INTERNO DE LA SUBRED BRIDGE DE DOCKER * * *
     let is_docker_bridge = |ip: &IpAddr| match ip {
         IpAddr::V4(v4) => {
             let octets = v4.octets();

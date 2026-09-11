@@ -46,6 +46,9 @@ Diseño en 3 capas encapsuladas mediante `mod.rs`:
         *   Persistencia forense desacoplada en PostgreSQL (`network_logs`, `feature_store`, `security_alerts`).
         *   Soporte para entrenamiento K-Fold cruzado con Polars + LightGBM (`cargo run -- train`).
         *   Exposición de métricas de rendimiento y estadísticas en endpoints REST `/api/v1/ml/stats` y `/api/v1/ml/model-info`.
+        *   **Optimización de Alto Rendimiento (+40k PPS Carrier-Grade):** Muestreo y cadencia adaptativa por flujo en RAM (`FlowTracker`), evaluación inmediata en frontera de 5 paquetes y cadencia de 15 paquetes / 100ms, y compilación en modo `--release`.
+        *   **Unificación Estándar CamelCase:** Serialización y deserialización REST / JSONB unificada en `camelCase` en todos los modelos (`#[serde(rename_all = "camelCase")]`) manteniendo compatibilidad SQL `FromRow`.
+        *   **Estandarización de Comentarios y Logs:** Todos los comentarios formateados como `// * * * SECCION * * *` y salidas de consola estandarizadas con `|- INSTRUCCION -| Mensaje`.
 *   **Fase Siguiente (Mitigación & Orquestación):**
     *   Implementación del Patrón Adapter (Traits en Rust) para la mitigación agnóstica de dispositivos de red (pfSense, FortiGate, Routers).
 
@@ -53,7 +56,7 @@ Diseño en 3 capas encapsuladas mediante `mod.rs`:
 Asume el rol de Arquitecto de Software Senior y experto en Rust/Ciberseguridad. Responde con código limpio, modular y técnicamente riguroso, manteniendo un enfoque apto para una tesis universitaria de ingeniería.
 *   **Estilo de Código Estricto:** 
     *   Para comentarios separadores de bloques usar siempre el formato: `// * * * NOMBRE DE SECCIÓN * * *`.
-    *   Para salidas en consola estándar usar prefijos estructurados: `|- INFO -|`, `|- DB -|`, `|- PACKET -|`, `|- ALERTA -|`, `|- FATAL -|`.
+    *   Para salidas en consola estándar usar prefijos estructurados: `|- INSTRUCCION -| Mensaje` (con sub-etiquetas `[ALERTA]`, `[ML]`, `[PACKET]`, `[INIT]`, etc.).
     *   Si una IP no se encuentra en la caché de topología durante la ingesta de red, asignar SIEMPRE el `node_id = 6` por defecto, nunca usar `NULL` ni omitirlo.
 
 ## 7. Flujo de Trabajo Git y Gestión de Versiones (Obligatorio)

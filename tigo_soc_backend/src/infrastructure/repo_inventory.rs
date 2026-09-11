@@ -1,3 +1,4 @@
+// * * * REPOSITORIO DE INVENTARIO Y GESTIÓN DE NODOS DE RED * * *
 #![allow(dead_code)]
 use sqlx::{Error, PgPool, Row};
 use crate::domain::models::NetworkNode;
@@ -12,6 +13,7 @@ impl InventoryRepository {
         Self { pool }
     }
 
+    // * * * CREACIÓN O ACTUALIZACIÓN ATÓMICA DE NODO * * *
     pub async fn create_node(
         &self,
         hostname: &str,
@@ -38,6 +40,7 @@ impl InventoryRepository {
         Ok(row.get("node_id"))
     }
 
+    // * * * OBTENER LISTADO COMPLETO DE NODOS * * *
     pub async fn get_nodes(&self) -> Result<Vec<NetworkNode>, Error> {
         sqlx::query_as::<_, NetworkNode>(
             "SELECT node_id, hostname, ip_address, type_id, protocol_id FROM network_nodes ORDER BY node_id ASC"
@@ -46,6 +49,7 @@ impl InventoryRepository {
         .await
     }
 
+    // * * * BUSCAR NODO POR DIRECCIÓN IP * * *
     pub async fn get_node_by_ip(&self, ip_address: &str) -> Result<Option<NetworkNode>, Error> {
         sqlx::query_as::<_, NetworkNode>(
             "SELECT node_id, hostname, ip_address, type_id, protocol_id FROM network_nodes WHERE ip_address = $1"
@@ -55,6 +59,7 @@ impl InventoryRepository {
         .await
     }
 
+    // * * * BUSCAR NODO POR IDENTIFICADOR ÚNICO * * *
     pub async fn get_node_by_id(&self, node_id: i32) -> Result<Option<NetworkNode>, Error> {
         sqlx::query_as::<_, NetworkNode>(
             "SELECT node_id, hostname, ip_address, type_id, protocol_id FROM network_nodes WHERE node_id = $1"

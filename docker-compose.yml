@@ -1,3 +1,4 @@
+# * * * DEFINICIÓN DE SERVICIOS DOCKER COMPOSE PARA TIGOSOC * * *
 services:
   postgres_soc:
     image: postgres:15-alpine
@@ -26,10 +27,11 @@ services:
     restart: always
     network_mode: "host"
     environment:
-      # Con network_mode: host, se conecta a Postgres en localhost/127.0.0.1
+      # * * * CONEXIÓN A POSTGRES EN LOCALHOST GRACIAS A NETWORK_MODE HOST * * *
       DATABASE_URL: postgres://postgres:postgres@127.0.0.1:5432/tigo_soc
       PORT: "3000"
       CAPTURE_INTERFACE: "any"
+    command: ["cargo", "run", "--release", "--", "server"]
     depends_on:
       postgres_soc:
         condition: service_healthy

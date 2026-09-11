@@ -1,3 +1,4 @@
+// * * * MÓDULOS DE INFRAESTRUCTURA Y ACCESO A DATOS * * *
 pub mod db_connection;
 pub mod network_adapter;
 pub mod repo_catalogs;

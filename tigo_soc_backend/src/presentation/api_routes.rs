@@ -1,3 +1,5 @@
+// * * * CONTROLADORES DE RUTAS Y RESPUESTAS REST (ENCODING UNIFICADO EN CAMELCASE) * * *
+
 use axum::{
     extract::State,
     http::StatusCode,
@@ -25,6 +27,7 @@ pub struct AppState {
     pub threat_detector: Option<ThreatDetector>,
 }
 
+// * * * CONFIGURACIÓN DEL ENRUTADOR PRINCIPAL DE LA API * * *
 pub fn create_router(state: AppState) -> Router {
     Router::new()
         .route("/health", get(health_check_handler))
@@ -39,6 +42,7 @@ pub fn create_router(state: AppState) -> Router {
         .with_state(state)
 }
 
+// * * * VERIFICACIÓN DE SALUD DEL SISTEMA (HEALTH CHECK) * * *
 async fn health_check_handler(State(state): State<AppState>) -> impl IntoResponse {
     let db_ok = sqlx::query("SELECT 1")
         .execute(&state.pool)
@@ -55,27 +59,29 @@ async fn health_check_handler(State(state): State<AppState>) -> impl IntoRespons
         status,
         Json(json!({
             "status": if db_ok { "operational" } else { "degraded" },
-            "database_connected": db_ok,
+            "databaseConnected": db_ok,
             "architecture": "Layer 3 Clean Architecture",
             "service": "Tigo SOC Backend"
         })),
     )
 }
 
+// * * * ESTADO GLOBAL Y METADATOS DEL MOTOR * * *
 async fn system_status_handler() -> impl IntoResponse {
     Json(json!({
         "status": "online",
         "environment": "GNS3 Virtual Lab",
-        "sniffer_engine": "libpcap + etherparse (Producer-Consumer)",
-        "ml_target": "LightGBM Anomaly Detection",
+        "snifferEngine": "libpcap + etherparse (Producer-Consumer)",
+        "mlTarget": "LightGBM Anomaly Detection",
         "phase": "Traffic Capture & Telemetry Normalization"
     }))
 }
 
+// * * * CONSULTA DE CATÁLOGOS DE DISPOSITIVOS * * *
 async fn get_device_types_handler(State(state): State<AppState>) -> impl IntoResponse {
     let repo = CatalogsRepository::new(state.pool);
     match repo.get_device_types().await {
-        Ok(items) => (StatusCode::OK, Json(json!({ "device_types": items }))),
+        Ok(items) => (StatusCode::OK, Json(json!({ "deviceTypes": items }))),
         Err(e) => (
             StatusCode::INTERNAL_SERVER_ERROR,
             Json(json!({ "error": e.to_string() })),
@@ -83,10 +89,11 @@ async fn get_device_types_handler(State(state): State<AppState>) -> impl IntoRes
     }
 }
 
+// * * * CONSULTA DE INVENTARIO Y TOPOLOGÍA DE NODOS * * *
 async fn get_nodes_handler(State(state): State<AppState>) -> impl IntoResponse {
     let repo = InventoryRepository::new(state.pool);
     match repo.get_nodes().await {
-        Ok(items) => (StatusCode::OK, Json(json!({ "network_nodes": items }))),
+        Ok(items) => (StatusCode::OK, Json(json!({ "networkNodes": items }))),
         Err(e) => (
             StatusCode::INTERNAL_SERVER_ERROR,
             Json(json!({ "error": e.to_string() })),
@@ -94,6 +101,7 @@ async fn get_nodes_handler(State(state): State<AppState>) -> impl IntoResponse {
     }
 }
 
+// * * * CONSULTA DE MÉTRICAS AGREGADAS DE TRÁFICO * * *
 async fn get_metrics_handler(State(state): State<AppState>) -> impl IntoResponse {
     let repo = TelemetryRepository::new(state.pool);
     match repo.get_recent_metrics(50).await {
@@ -105,6 +113,7 @@ async fn get_metrics_handler(State(state): State<AppState>) -> impl IntoResponse
     }
 }
 
+// * * * CONSULTA DE LOGS FORENSES DE EVENTOS DE RED * * *
 async fn get_logs_handler(State(state): State<AppState>) -> impl IntoResponse {
     let repo = TelemetryRepository::new(state.pool);
     match repo.get_recent_logs(50).await {
@@ -116,6 +125,7 @@ async fn get_logs_handler(State(state): State<AppState>) -> impl IntoResponse {
     }
 }
 
+// * * * CONSULTA DE ALERTAS DE SEGURIDAD GENERADAS * * *
 async fn get_alerts_handler(State(state): State<AppState>) -> impl IntoResponse {
     let repo = OrchestrationRepository::new(state.pool);
     match repo.get_recent_alerts(50).await {
@@ -127,10 +137,11 @@ async fn get_alerts_handler(State(state): State<AppState>) -> impl IntoResponse 
     }
 }
 
+// * * * CONSULTA DE TELEMETRÍA Y MÉTRICAS DE RENDIMIENTO ML * * *
 async fn get_ml_stats_handler(State(state): State<AppState>) -> impl IntoResponse {
     if let Some(ref detector) = state.threat_detector {
         let stats = detector.get_performance_stats();
-        (StatusCode::OK, Json(json!({ "ml_stats": stats })))
+        (StatusCode::OK, Json(json!({ "mlStats": stats })))
     } else {
         (
             StatusCode::SERVICE_UNAVAILABLE,
@@ -139,6 +150,7 @@ async fn get_ml_stats_handler(State(state): State<AppState>) -> impl IntoRespons
     }
 }
 
+// * * * CONSULTA DE INFORMACIÓN Y ESTADÍSTICAS DEL MODELO K-FOLD * * *
 async fn get_model_info_handler() -> impl IntoResponse {
     let paths = [
         "models/training_stats.json",
@@ -157,7 +169,7 @@ async fn get_model_info_handler() -> impl IntoResponse {
     (
         StatusCode::OK,
         Json(json!({
-            "model_type": "LightGBM GBDT (23 features)",
+            "modelType": "LightGBM GBDT (23 features)",
             "validation": "K-Fold Cross-Validation (k=5)",
             "framework": "Polars + lightgbm3 (Rust)",
             "status": "Loaded and Active"

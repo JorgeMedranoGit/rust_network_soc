@@ -1,6 +1,6 @@
--- =========================================================================
--- 1. CATÁLOGOS BASE
--- =========================================================================
+-- * * * ESQUEMA DE BASE DE DATOS TIGOSOC EN TERCERA FORMA NORMAL (BCNF) * * *
+
+-- * * * 1. CATÁLOGOS BASE DEL SISTEMA * * *
 
 CREATE TABLE device_types (
     type_id SERIAL PRIMARY KEY,
@@ -28,9 +28,7 @@ CREATE TABLE task_statuses (
     status_name VARCHAR(20) UNIQUE NOT NULL 
 );
 
--- =========================================================================
--- 2. RBAC Y SEGURIDAD DEL SISTEMA
--- =========================================================================
+-- * * * 2. RBAC Y SEGURIDAD DEL SISTEMA * * *
 
 CREATE TABLE roles (
     role_id SERIAL PRIMARY KEY,
@@ -67,9 +65,7 @@ CREATE TABLE system_parameters (
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
--- =========================================================================
--- 3. INVENTARIO Y TELEMETRÍA (DIVIDIDA: AGREGADA VS FORENSE)
--- =========================================================================
+-- * * * 3. INVENTARIO Y TELEMETRÍA (DIVIDIDA: AGREGADA VS FORENSE) * * *
 
 CREATE TABLE network_nodes (
     node_id SERIAL PRIMARY KEY,
@@ -79,8 +75,7 @@ CREATE TABLE network_nodes (
     protocol_id INT REFERENCES mgmt_protocols(protocol_id) ON DELETE RESTRICT
 );
 
--- NUEVA TABLA: Almacena métricas agregadas por intervalos (ej. cada minuto/10 mins)
--- Resuelve el cálculo de porcentajes sin saturar la base con tráfico normal.
+-- * * * MÉTRICAS AGREGADAS PERIÓDICAS PARA VOLÚMENES MASIVOS SIN SATURAR DISCO * * *
 CREATE TABLE network_traffic_metrics (
     metric_id BIGSERIAL PRIMARY KEY,
     node_id INT REFERENCES network_nodes(node_id) ON DELETE CASCADE,
@@ -92,7 +87,7 @@ CREATE TABLE network_traffic_metrics (
     UNIQUE (node_id, window_start)
 );
 
--- FORENSE: Solo guarda paquetes maliciosos o sospechosos (ataques aislados)
+-- * * * REGISTROS FORENSES AISLADOS EXCLUSIVOS PARA ANOMALÍAS DE SEGURIDAD * * *
 CREATE TABLE network_logs (
     log_id BIGSERIAL PRIMARY KEY,
     node_id INT REFERENCES network_nodes(node_id) ON DELETE CASCADE,
@@ -111,9 +106,7 @@ CREATE TABLE feature_store (
     processed_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
--- =========================================================================
--- 4. ORQUESTACIÓN Y MITIGACIÓN
--- =========================================================================
+-- * * * 4. ORQUESTACIÓN Y MITIGACIÓN AGNOSTICA * * *
 
 CREATE TABLE mitigation_actions (
     action_id SERIAL PRIMARY KEY,
@@ -157,9 +150,7 @@ CREATE TABLE mitigation_audit (
     result_status VARCHAR(50) NOT NULL
 );
 
--- =========================================================================
--- 5. AUDITORÍA GENERAL
--- =========================================================================
+-- * * * 5. AUDITORÍA GENERAL DEL SISTEMA * * *
 
 CREATE TABLE system_audit_logs (
     sys_audit_id BIGSERIAL PRIMARY KEY,

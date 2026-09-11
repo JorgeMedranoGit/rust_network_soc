@@ -1,21 +1,23 @@
+// * * * PRUEBAS DE INTEGRACIÓN Y BENCHMARKS DEL MOTOR ML Y POLARS * * *
+
 use chrono::Utc;
 use std::net::IpAddr;
 use std::str::FromStr;
 
-// Import modules from the main crate if library or directly
 use tigo_soc_backend::domain::{
     feature_engine::PolarsFeatureEngine,
     models::{L4Protocol, NetworkEvent, TCP_FLAG_ACK, TCP_FLAG_SYN},
     threat_detector::ThreatDetector,
 };
 
+// * * * PRUEBA 1: EXTRACCIÓN COLUMNAR DE CARACTERÍSTICAS CON POLARS * * *
 #[test]
 fn test_polars_feature_engineering_columnar() {
     let mut events = Vec::new();
     let src = IpAddr::from_str("192.168.1.50").unwrap();
     let dst = IpAddr::from_str("192.168.1.10").unwrap();
 
-    // Crear 10 paquetes simulando una ráfaga
+    // * * * CREAR 10 PAQUETES SIMULANDO RÁFAGA DE TRÁFICO * * *
     for i in 0..10 {
         events.push(NetworkEvent {
             source_ip: src,
@@ -34,7 +36,7 @@ fn test_polars_feature_engineering_columnar() {
 
     let (features, time_us) = PolarsFeatureEngine::extract_features_columnar(&events).unwrap();
 
-    println!("|- TEST -| Tiempo Polars Feature Engineering: {:.2} µs", time_us);
+    println!("|- INSTRUCCION -| [TEST] Tiempo Polars Feature Engineering: {:.2} µs", time_us);
     assert_eq!(features.number, 10.0);
     assert!(features.rate > 0.0);
     assert_eq!(features.http, 1.0);
@@ -46,6 +48,7 @@ fn test_polars_feature_engineering_columnar() {
     assert_eq!(features.to_vector().len(), 23);
 }
 
+// * * * PRUEBA 2: LATENCIA DE INFERENCIA EN TIEMPO REAL CON LIGHTGBM * * *
 #[test]
 fn test_lightgbm_inference_latency() {
     let detector = ThreatDetector::new_from_file("models/mejor_modelo_kfold.txt", 0.50)
@@ -75,10 +78,10 @@ fn test_lightgbm_inference_latency() {
     let evaluation = detector.evaluate_features(&features, "192.168.1.50", polars_time_us);
 
     println!(
-        "|- TEST -| Inferencia completada: Probabilidad = {:.4}, Tiempo Inferencia = {:.2} µs, Tiempo Total = {:.2} µs",
+        "|- INSTRUCCION -| [TEST] Inferencia completada: Probabilidad = {:.4}, Tiempo Inferencia = {:.2} µs, Tiempo Total = {:.2} µs",
         evaluation.probability, evaluation.inference_time_us, evaluation.total_time_us
     );
 
     assert!(evaluation.inference_time_us > 0.0);
-    assert!(evaluation.features.len() == 23);
+    assert_eq!(evaluation.features.len(), 23);
 }

@@ -1,26 +1,28 @@
+// * * * MODELOS DE DOMINIO Y ESTRUCTURAS DE DATOS (ARQUITECTURA LIMPIA) * * *
 #![allow(dead_code)]
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use sqlx::FromRow;
 
-// =========================================================================
-// 1. CATÁLOGOS BASE
-// =========================================================================
+// * * * 1. CATÁLOGOS BASE * * *
 
 #[derive(Serialize, Deserialize, Debug, Clone, FromRow)]
+#[serde(rename_all = "camelCase")]
 pub struct DeviceType {
     pub type_id: Option<i32>,
     pub type_name: String,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, FromRow)]
+#[serde(rename_all = "camelCase")]
 pub struct MgmtProtocol {
     pub protocol_id: Option<i32>,
     pub protocol_name: String,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, FromRow)]
+#[serde(rename_all = "camelCase")]
 pub struct ThreatType {
     pub threat_id: Option<i32>,
     pub threat_name: String,
@@ -28,22 +30,23 @@ pub struct ThreatType {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, FromRow)]
+#[serde(rename_all = "camelCase")]
 pub struct AlertStatus {
     pub status_id: Option<i32>,
     pub status_name: String,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, FromRow)]
+#[serde(rename_all = "camelCase")]
 pub struct TaskStatus {
     pub status_id: Option<i32>,
     pub status_name: String,
 }
 
-// =========================================================================
-// 2. RBAC Y SEGURIDAD DEL SISTEMA
-// =========================================================================
+// * * * 2. RBAC Y SEGURIDAD DEL SISTEMA * * *
 
 #[derive(Serialize, Deserialize, Debug, Clone, FromRow)]
+#[serde(rename_all = "camelCase")]
 pub struct Role {
     pub role_id: Option<i32>,
     pub role_name: String,
@@ -51,6 +54,7 @@ pub struct Role {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, FromRow)]
+#[serde(rename_all = "camelCase")]
 pub struct Permission {
     pub permission_id: Option<i32>,
     pub permission_name: String,
@@ -58,12 +62,14 @@ pub struct Permission {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, FromRow)]
+#[serde(rename_all = "camelCase")]
 pub struct RolePermission {
     pub role_id: i32,
     pub permission_id: i32,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, FromRow)]
+#[serde(rename_all = "camelCase")]
 pub struct SysUser {
     pub user_id: Option<i32>,
     pub username: String,
@@ -73,6 +79,7 @@ pub struct SysUser {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, FromRow)]
+#[serde(rename_all = "camelCase")]
 pub struct SystemParameter {
     pub param_id: Option<i32>,
     pub param_key: String,
@@ -82,11 +89,10 @@ pub struct SystemParameter {
     pub updated_at: Option<DateTime<Utc>>,
 }
 
-// =========================================================================
-// 3. INVENTARIO Y TELEMETRÍA (DIVIDIDA: AGREGADA VS FORENSE)
-// =========================================================================
+// * * * 3. INVENTARIO Y TELEMETRÍA (DIVIDIDA: AGREGADA VS FORENSE) * * *
 
 #[derive(Serialize, Deserialize, Debug, Clone, FromRow)]
+#[serde(rename_all = "camelCase")]
 pub struct NetworkNode {
     pub node_id: Option<i32>,
     pub hostname: String,
@@ -96,6 +102,7 @@ pub struct NetworkNode {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, FromRow)]
+#[serde(rename_all = "camelCase")]
 pub struct NetworkTrafficMetric {
     pub metric_id: Option<i64>,
     pub node_id: Option<i32>,
@@ -107,6 +114,7 @@ pub struct NetworkTrafficMetric {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, FromRow)]
+#[serde(rename_all = "camelCase")]
 pub struct NetworkLog {
     pub log_id: Option<i64>,
     pub node_id: Option<i32>,
@@ -119,6 +127,7 @@ pub struct NetworkLog {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, FromRow)]
+#[serde(rename_all = "camelCase")]
 pub struct FeatureStore {
     pub feature_id: Option<i64>,
     pub log_id: i64,
@@ -126,11 +135,10 @@ pub struct FeatureStore {
     pub processed_at: Option<DateTime<Utc>>,
 }
 
-// =========================================================================
-// 4. ORQUESTACIÓN Y MITIGACIÓN
-// =========================================================================
+// * * * 4. ORQUESTACIÓN Y MITIGACIÓN * * *
 
 #[derive(Serialize, Deserialize, Debug, Clone, FromRow)]
+#[serde(rename_all = "camelCase")]
 pub struct MitigationAction {
     pub action_id: Option<i32>,
     pub action_name: String,
@@ -139,6 +147,7 @@ pub struct MitigationAction {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, FromRow)]
+#[serde(rename_all = "camelCase")]
 pub struct SecurityAlert {
     pub alert_id: Option<i64>,
     pub feature_id: Option<i64>,
@@ -149,6 +158,7 @@ pub struct SecurityAlert {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, FromRow)]
+#[serde(rename_all = "camelCase")]
 pub struct ExecutionQueue {
     pub task_id: Option<i64>,
     pub alert_id: Option<i64>,
@@ -160,6 +170,7 @@ pub struct ExecutionQueue {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, FromRow)]
+#[serde(rename_all = "camelCase")]
 pub struct RollbackSnapshot {
     pub snapshot_id: Option<i64>,
     pub task_id: i64,
@@ -169,6 +180,7 @@ pub struct RollbackSnapshot {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, FromRow)]
+#[serde(rename_all = "camelCase")]
 pub struct MitigationAudit {
     pub audit_id: Option<i64>,
     pub task_id: Option<i64>,
@@ -178,6 +190,7 @@ pub struct MitigationAudit {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, FromRow)]
+#[serde(rename_all = "camelCase")]
 pub struct SystemAuditLog {
     pub sys_audit_id: Option<i64>,
     pub user_id: Option<i32>,
@@ -187,9 +200,7 @@ pub struct SystemAuditLog {
     pub timestamp: Option<DateTime<Utc>>,
 }
 
-// =========================================================================
-// 5. DOMAIN EVENTS (Para Sniffer y Threat Detection - Cero Heap Allocations)
-// =========================================================================
+// * * * 5. EVENTOS DE DOMINIO DE RED (SNIFFER - CERO ASIGNACIONES EN HEAP) * * *
 
 use std::net::IpAddr;
 
@@ -201,6 +212,7 @@ pub const TCP_FLAG_ACK: u8 = 0b0001_0000;
 pub const TCP_FLAG_URG: u8 = 0b0010_0000;
 
 #[derive(Serialize, Deserialize, Debug, Clone, Copy, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
 #[repr(u8)]
 pub enum L4Protocol {
     TCP = 6,
@@ -221,6 +233,7 @@ impl L4Protocol {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, Copy)]
+#[serde(rename_all = "camelCase")]
 pub struct NetworkEvent {
     pub source_ip: IpAddr,
     pub destination_ip: IpAddr,
@@ -236,6 +249,7 @@ pub struct NetworkEvent {
 }
 
 impl NetworkEvent {
+    // * * * CONVERSIÓN DE MÁSCARAS DE BITS TCP A REPRESENTACIÓN EN CADENA * * *
     pub fn flags_to_string(&self) -> Option<String> {
         if self.flags == 0 {
             return None;
@@ -255,11 +269,10 @@ impl NetworkEvent {
     }
 }
 
-// =========================================================================
-// 6. ESTRUCTURAS DE MACHINE LEARNING (LIGHTGBM & POLARS)
-// =========================================================================
+// * * * 6. ESTRUCTURAS DE MACHINE LEARNING (LIGHTGBM Y POLARS) * * *
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
 pub struct ExtractedFeatures {
     pub rate: f32,
     pub iat: f32,
@@ -287,7 +300,7 @@ pub struct ExtractedFeatures {
 }
 
 impl ExtractedFeatures {
-    /// Convierte las 23 características al vector exacto esperado por el modelo LightGBM
+    // * * * CONVERTIR CARACTERÍSTICAS AL VECTOR EXACTO DE ENTRADA LIGHTGBM * * *
     pub fn to_vector(&self) -> Vec<f32> {
         vec![
             self.rate,
@@ -316,37 +329,38 @@ impl ExtractedFeatures {
         ]
     }
 
-    /// Serializa el vector a formato JSONB estructurado para `feature_store`
+    // * * * SERIALIZAR A FORMATO JSONB ESTRUCTURADO PARA FEATURE_STORE * * *
     pub fn to_json(&self) -> Value {
         serde_json::json!({
-            "Rate": self.rate,
-            "IAT": self.iat,
-            "Variance": self.variance,
-            "Header_Length": self.header_length,
-            "Time_To_Live": self.ttl,
-            "ack_count": self.ack_count,
-            "syn_count": self.syn_count,
-            "fin_count": self.fin_count,
-            "rst_count": self.rst_count,
-            "HTTP": self.http,
-            "HTTPS": self.https,
-            "DNS": self.dns,
-            "SSH": self.ssh,
-            "TCP": self.tcp,
-            "UDP": self.udp,
-            "ICMP": self.icmp,
-            "Tot sum": self.tot_sum,
-            "Min": self.min_size,
-            "Max": self.max_size,
-            "AVG": self.avg_size,
-            "Std": self.std_size,
-            "Tot size": self.tot_size,
-            "Number": self.number
+            "rate": self.rate,
+            "iat": self.iat,
+            "variance": self.variance,
+            "headerLength": self.header_length,
+            "timeToLive": self.ttl,
+            "ackCount": self.ack_count,
+            "synCount": self.syn_count,
+            "finCount": self.fin_count,
+            "rstCount": self.rst_count,
+            "http": self.http,
+            "https": self.https,
+            "dns": self.dns,
+            "ssh": self.ssh,
+            "tcp": self.tcp,
+            "udp": self.udp,
+            "icmp": self.icmp,
+            "totSum": self.tot_sum,
+            "min": self.min_size,
+            "max": self.max_size,
+            "avg": self.avg_size,
+            "std": self.std_size,
+            "totSize": self.tot_size,
+            "number": self.number
         })
     }
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
 pub struct ThreatEvaluation {
     pub is_attack: bool,
     pub probability: f32,

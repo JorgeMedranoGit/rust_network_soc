@@ -38,6 +38,7 @@ pub const FEATURE_COLUMNS: [&str; 23] = [
 ];
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
+#[serde(rename_all = "camelCase")]
 pub struct MetricReport {
     pub fold: usize,
     pub accuracy: f64,
@@ -51,6 +52,7 @@ pub struct MetricReport {
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
+#[serde(rename_all = "camelCase")]
 pub struct GlobalTrainingData {
     pub folds: Vec<MetricReport>,
     pub importance: HashMap<String, f64>,
@@ -61,10 +63,10 @@ pub struct GlobalTrainingData {
 pub struct LightGBMTrainer;
 
 impl LightGBMTrainer {
-    /// Ejecuta el pipeline completo de entrenamiento K-Fold con Polars y LightGBM
+    // * * * EJECUCIÓN DEL PIPELINE COMPLETO DE ENTRENAMIENTO K-FOLD * * *
     pub fn run_training(use_gpu: bool, data_path: Option<&str>) -> Result<GlobalTrainingData> {
         println!(
-            "|- ML -| INICIANDO ENTRENAMIENTO K-FOLD LIGHTGBM (Modo GPU: {})",
+            "|- INSTRUCCION -| [ML] INICIANDO ENTRENAMIENTO K-FOLD LIGHTGBM (Modo GPU: {})",
             use_gpu
         );
 
@@ -78,10 +80,10 @@ impl LightGBMTrainer {
             }
         }
 
-        // Si no se encuentran CSVs, utilizar generador sintético basado en perfiles Carrier Tigo
+        // * * * CARGA DE ARCHIVOS CSV O GENERACIÓN SINTÉTICA CARRIER TIGO * * *
         let (train_df, total_records) = if !paths.is_empty() {
             println!(
-                "|- ML -| Cargando {} archivos CSV mediante LazyFrame de Polars...",
+                "|- INSTRUCCION -| [ML] Cargando {} archivos CSV mediante LazyFrame de Polars...",
                 paths.len()
             );
             let lf = LazyCsvReader::new_paths(Arc::from(paths))
@@ -97,19 +99,19 @@ impl LightGBMTrainer {
             let h = df.height();
             (df, h)
         } else {
-            println!("|- ML -| Modo Sintético / Perfiles Carrier Tigo (Dataset masivo no montado)");
+            println!("|- INSTRUCCION -| [ML] Modo Sintético / Perfiles Carrier Tigo (Dataset masivo no montado)");
             let df = Self::generate_synthetic_dataset(50000)?;
             let h = df.height();
             (df, h)
         };
 
         println!(
-            "|- ML -| DataFrame estructurado en Polars: {} registros x {} columnas",
+            "|- INSTRUCCION -| [ML] DataFrame estructurado en Polars: {} registros x {} columnas",
             total_records,
             FEATURE_COLUMNS.len() + 1
         );
 
-        // Extraer etiquetas objetivo
+        // * * * EXTRACCIÓN Y NORMALIZACIÓN DE ETIQUETAS OBJETIVO * * *
         let labels: Vec<f32> = train_df
             .column("target")?
             .str()?
@@ -150,7 +152,7 @@ impl LightGBMTrainer {
         };
 
         for fold in 0..k {
-            println!("|- ML -| Procesando Fold {}/{}", fold + 1, k);
+            println!("|- INSTRUCCION -| [ML] Procesando Fold {}/{}", fold + 1, k);
             let start = fold * fold_size;
             let end = if fold == k - 1 {
                 total_records
@@ -232,7 +234,7 @@ impl LightGBMTrainer {
             timestamp: chrono::Local::now().format("%Y-%m-%d %H:%M:%S").to_string(),
         };
 
-        // Guardar modelo y estadísticas
+        // * * * GUARDAR MODELO Y ESTADÍSTICAS EN DISCO * * *
         let _ = fs::create_dir_all("models");
         fs::write(
             "models/training_stats.json",
@@ -241,15 +243,15 @@ impl LightGBMTrainer {
         best.save_file("models/mejor_modelo_kfold.txt")?;
 
         println!(
-            "|- ML -| Entrenamiento completado con éxito. Mejor Recall: {:.2}%",
+            "|- INSTRUCCION -| [ML] Entrenamiento completado con éxito. Mejor Recall: {:.2}%",
             best_recall
         );
-        println!("|- ML -| Modelo guardado en: [models/mejor_modelo_kfold.txt]");
+        println!("|- INSTRUCCION -| [ML] Modelo guardado en: [models/mejor_modelo_kfold.txt]");
 
         Ok(global_stats)
     }
 
-    /// Genera un dataset sintético estructurado en Polars con distribuciones realistas
+    // * * * GENERAR DATASET SINTÉTICO BASADO EN PERFILES DE TRÁFICO TIGO * * *
     fn generate_synthetic_dataset(rows: usize) -> Result<DataFrame> {
         let mut rng = thread_rng();
         let mut cols_data: HashMap<&str, Vec<f32>> = HashMap::new();

@@ -1,3 +1,4 @@
+// * * * REPOSITORIO DE TELEMETRÍA Y LOGS FORENSES * * *
 #![allow(dead_code)]
 use chrono::{DateTime, Utc};
 use serde_json::Value;
@@ -14,9 +15,7 @@ impl TelemetryRepository {
         Self { pool }
     }
 
-    // =========================================================================
-    // 1. TELEMETRÍA AGREGADA (Mundo Estadístico / Masivo)
-    // =========================================================================
+    // * * * 1. TELEMETRÍA AGREGADA (MUNDO ESTADÍSTICO / MASIVO) * * *
 
     pub async fn record_metric(
         &self,
@@ -58,9 +57,7 @@ impl TelemetryRepository {
         .await
     }
 
-    // =========================================================================
-    // 2. LOGS FORENSES (Mundo Forense / Alertas)
-    // =========================================================================
+    // * * * 2. LOGS FORENSES (MUNDO FORENSE / ALERTAS) * * *
 
     pub async fn insert_log(
         &self,
@@ -100,9 +97,7 @@ impl TelemetryRepository {
         .await
     }
 
-    // =========================================================================
-    // 3. FEATURE STORE (ML / LightGBM)
-    // =========================================================================
+    // * * * 3. ARBORESCENCIA DE CARACTERÍSTICAS (FEATURE STORE) * * *
 
     pub async fn insert_features(&self, log_id: i64, feature_vector: Value) -> Result<i64, Error> {
         let row = sqlx::query(

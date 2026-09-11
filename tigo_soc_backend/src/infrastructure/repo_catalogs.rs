@@ -1,3 +1,4 @@
+// * * * REPOSITORIO DE CATÁLOGOS BASE Y CONFIGURACIONES ESTÁTICAS * * *
 #![allow(dead_code)]
 use sqlx::{Error, PgPool};
 use crate::domain::models::{AlertStatus, DeviceType, MgmtProtocol, Role, TaskStatus, ThreatType};
@@ -12,7 +13,7 @@ impl CatalogsRepository {
         Self { pool }
     }
 
-    // --- DEVICE TYPES ---
+    // * * * 1. GESTIÓN DE TIPOS DE DISPOSITIVOS * * *
     pub async fn create_device_type(&self, type_name: &str) -> Result<(), Error> {
         sqlx::query(
             "INSERT INTO device_types (type_name) VALUES ($1) ON CONFLICT (type_name) DO NOTHING"
@@ -29,7 +30,7 @@ impl CatalogsRepository {
             .await
     }
 
-    // --- MANAGEMENT PROTOCOLS ---
+    // * * * 2. GESTIÓN DE PROTOCOLOS DE GESTIÓN * * *
     pub async fn create_mgmt_protocol(&self, protocol_name: &str) -> Result<(), Error> {
         sqlx::query(
             "INSERT INTO mgmt_protocols (protocol_name) VALUES ($1) ON CONFLICT (protocol_name) DO NOTHING"
@@ -46,7 +47,7 @@ impl CatalogsRepository {
             .await
     }
 
-    // --- THREAT TYPES ---
+    // * * * 3. GESTIÓN DE TIPOS DE AMENAZAS * * *
     pub async fn create_threat_type(&self, threat_name: &str, severity_level: i32) -> Result<(), Error> {
         sqlx::query(
             "INSERT INTO threat_types (threat_name, severity_level) VALUES ($1, $2) ON CONFLICT (threat_name) DO NOTHING"
@@ -64,7 +65,7 @@ impl CatalogsRepository {
             .await
     }
 
-    // --- ALERT STATUSES ---
+    // * * * 4. GESTIÓN DE ESTADOS DE ALERTAS * * *
     pub async fn create_alert_status(&self, status_name: &str) -> Result<(), Error> {
         sqlx::query(
             "INSERT INTO alert_statuses (status_name) VALUES ($1) ON CONFLICT (status_name) DO NOTHING"
@@ -81,7 +82,7 @@ impl CatalogsRepository {
             .await
     }
 
-    // --- TASK STATUSES ---
+    // * * * 5. GESTIÓN DE ESTADOS DE TAREAS * * *
     pub async fn create_task_status(&self, status_name: &str) -> Result<(), Error> {
         sqlx::query(
             "INSERT INTO task_statuses (status_name) VALUES ($1) ON CONFLICT (status_name) DO NOTHING"
@@ -98,7 +99,7 @@ impl CatalogsRepository {
             .await
     }
 
-    // --- ROLES ---
+    // * * * 6. GESTIÓN DE ROLES DEL SISTEMA * * *
     pub async fn create_role(&self, role_name: &str, description: Option<&str>) -> Result<(), Error> {
         sqlx::query(
             "INSERT INTO roles (role_name, description) VALUES ($1, $2) ON CONFLICT (role_name) DO NOTHING"

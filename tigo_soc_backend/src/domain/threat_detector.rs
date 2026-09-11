@@ -14,6 +14,7 @@ unsafe impl Send for BoosterWrapper {}
 unsafe impl Sync for BoosterWrapper {}
 
 #[derive(Debug, Default, Clone, serde::Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct ThreatDetectorStats {
     pub total_evaluations: u64,
     pub total_anomalies: u64,
@@ -34,11 +35,11 @@ pub struct ThreatDetector {
     anomalies_counter: Arc<AtomicU64>,
     cum_feature_time_ns: Arc<AtomicU64>,
     cum_inference_time_ns: Arc<AtomicU64>,
-    stats_mutex: Arc<Mutex<(f64, f64, f32, f64)>>, // (min_us, max_us, last_prob, last_us)
+    stats_mutex: Arc<Mutex<(f64, f64, f32, f64)>>,
 }
 
 impl ThreatDetector {
-    /// Carga el modelo LightGBM pre-entrenado desde archivo (.txt)
+    // * * * CARGAR MODELO PRE-ENTRENADO LIGHTGBM DESDE ARCHIVO TXT * * *
     pub fn new_from_file(model_path: &str, threshold: f32) -> Result<Self> {
         let path = if fs::metadata(model_path).is_ok() {
             model_path.to_string()
@@ -55,11 +56,11 @@ impl ThreatDetector {
             ));
         };
 
-        println!("|- ML -| Cargando modelo LightGBM pre-entrenado desde: [{}]", path);
+        println!("|- INSTRUCCION -| [ML] Cargando modelo LightGBM pre-entrenado desde: [{}]", path);
         let booster = Booster::from_file(&path)
             .map_err(|e| anyhow::anyhow!("Error al deserializar booster LightGBM: {:?}", e))?;
 
-        println!("|- ML -| Modelo LightGBM cargado con éxito en RAM (23 características, K-Fold validado).");
+        println!("|- INSTRUCCION -| [ML] Modelo LightGBM cargado con éxito en RAM (23 características, K-Fold validado).");
 
         Ok(Self {
             booster: Arc::new(BoosterWrapper(booster)),
@@ -72,7 +73,7 @@ impl ThreatDetector {
         })
     }
 
-    /// Inferencia ultra-rápida con LightGBM y cronometraje de alta resolución
+    // * * * INFERENCIA ULTRA-RÁPIDA CON CRONOMETRAJE EN SUB-MICROSEGUNDOS * * *
     pub fn evaluate_features(
         &self,
         features: &ExtractedFeatures,
@@ -93,7 +94,7 @@ impl ThreatDetector {
         let inf_time_us = inf_elapsed_ns as f64 / 1000.0;
         let total_time_us = feature_time_us + inf_time_us;
 
-        // Actualizar contadores atómicos para benchmarks
+        // * * * ACTUALIZAR CONTADORES ATÓMICOS DE RENDIMIENTO * * *
         let _ev_count = self.evaluations_counter.fetch_add(1, Ordering::Relaxed) + 1;
         self.cum_feature_time_ns
             .fetch_add((feature_time_us * 1000.0) as u64, Ordering::Relaxed);
@@ -112,15 +113,9 @@ impl ThreatDetector {
         }
 
         // * * * CALIBRACIÓN BAYESIANA DE PRIOR (COMPENSACIÓN DE SESGO DE DATASET) * * *
-        // El dataset de entrenamiento CIC IoT 2023 contiene un 98% de ataques, fijando el logit
-        // base del árbol raíz en +4.743, lo que produce una probabilidad basal de reposo de ~0.991364.
-        // Calibramos el puntaje relativo para que el tráfico normal permanezca en [0.0 - 0.2]
-        // y solo las desviaciones anómalas reales escalen hacia [0.5 - 1.0].
         let calibrated_score = if probability <= 0.9914 {
-            // Tráfico benigno en reposo / baseline
             ((probability - 0.980).max(0.0) * 5.0).min(0.25)
         } else {
-            // Ataque anómalo que excede el baseline del modelo
             0.50 + ((probability - 0.9914) / (1.0 - 0.9914)).min(1.0) * 0.50
         };
 
@@ -129,7 +124,7 @@ impl ThreatDetector {
             self.anomalies_counter.fetch_add(1, Ordering::Relaxed);
         }
 
-        // Política de categorización heurística & ISP Carrier (Tigo)
+        // * * * POLÍTICA DE CATEGORIZACIÓN HEURÍSTICA Y REGLAS CARRIER TIGO * * *
         let (threat_name, threat_id, description, tech_details) = Self::classify_threat(features, calibrated_score);
         let (severity, impact, resolution) = Self::evaluate_policy(source_ip, calibrated_score, is_attack);
 
@@ -150,6 +145,7 @@ impl ThreatDetector {
         }
     }
 
+    // * * * EVALUACIÓN DE POLÍTICAS DE MITIGACIÓN Y SLA CARRIER * * *
     fn evaluate_policy(source_ip: &str, prob: f32, is_attack: bool) -> (String, String, String) {
         if !is_attack {
             return ("LOW".to_string(), "LOW".to_string(), "PASS".to_string());
@@ -173,6 +169,7 @@ impl ThreatDetector {
         (severity.to_string(), impact.to_string(), resolution.to_string())
     }
 
+    // * * * CLASIFICACIÓN GRANULAR DE AMENAZAS DETECTADAS * * *
     fn classify_threat(features: &ExtractedFeatures, _prob: f32) -> (String, i32, String, String) {
         if features.rate > 800.0 || features.syn_count > 50.0 {
             (
@@ -205,7 +202,7 @@ impl ThreatDetector {
         }
     }
 
-    /// Retorna las estadísticas consolidadas de rendimiento del motor de IA
+    // * * * OBTENER ESTADÍSTICAS CONSOLIDADAS DE RENDIMIENTO * * *
     pub fn get_performance_stats(&self) -> ThreatDetectorStats {
         let evs = self.evaluations_counter.load(Ordering::Relaxed);
         let anoms = self.anomalies_counter.load(Ordering::Relaxed);
