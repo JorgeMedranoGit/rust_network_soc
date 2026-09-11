@@ -87,7 +87,12 @@ impl PolarsFeatureEngine {
         // Calcular delta de tiempo (IAT)
         let first_ts = timestamps.first().copied().unwrap_or(0.0);
         let last_ts = timestamps.last().copied().unwrap_or(first_ts);
-        let duration_secs = (last_ts - first_ts).abs().max(0.001);
+        let raw_duration = (last_ts - first_ts).abs();
+        let duration_secs = if raw_duration >= 0.05 {
+            raw_duration
+        } else {
+            1.0 // Normalizar ráfagas sub-50ms a ventana base de 1s para prevenir tasas artificiales
+        };
 
         // 2. Ejecutar agregaciones columnares mediante Polars LazyFrame
         let aggregated = df

@@ -111,18 +111,31 @@ impl ThreatDetector {
             lock.3 = inf_time_us;
         }
 
-        let is_attack = probability >= self.anomaly_threshold;
+        // * * * CALIBRACIÓN BAYESIANA DE PRIOR (COMPENSACIÓN DE SESGO DE DATASET) * * *
+        // El dataset de entrenamiento CIC IoT 2023 contiene un 98% de ataques, fijando el logit
+        // base del árbol raíz en +4.743, lo que produce una probabilidad basal de reposo de ~0.991364.
+        // Calibramos el puntaje relativo para que el tráfico normal permanezca en [0.0 - 0.2]
+        // y solo las desviaciones anómalas reales escalen hacia [0.5 - 1.0].
+        let calibrated_score = if probability <= 0.9914 {
+            // Tráfico benigno en reposo / baseline
+            ((probability - 0.980).max(0.0) * 5.0).min(0.25)
+        } else {
+            // Ataque anómalo que excede el baseline del modelo
+            0.50 + ((probability - 0.9914) / (1.0 - 0.9914)).min(1.0) * 0.50
+        };
+
+        let is_attack = calibrated_score >= self.anomaly_threshold;
         if is_attack {
             self.anomalies_counter.fetch_add(1, Ordering::Relaxed);
         }
 
         // Política de categorización heurística & ISP Carrier (Tigo)
-        let (threat_name, threat_id, description, tech_details) = Self::classify_threat(features, probability);
-        let (severity, impact, resolution) = Self::evaluate_policy(source_ip, probability, is_attack);
+        let (threat_name, threat_id, description, tech_details) = Self::classify_threat(features, calibrated_score);
+        let (severity, impact, resolution) = Self::evaluate_policy(source_ip, calibrated_score, is_attack);
 
         ThreatEvaluation {
             is_attack,
-            probability,
+            probability: calibrated_score,
             threat_name,
             threat_id,
             severity,

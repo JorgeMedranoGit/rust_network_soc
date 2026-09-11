@@ -144,6 +144,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 }
                 buffer.push_back(event);
 
+                // Requiere al menos 5 paquetes acumulados para tener una ventana estadísticamente válida
+                if buffer.len() < 5 {
+                    continue;
+                }
+
                 // Convertir ventana a slice continuo
                 let window: Vec<NetworkEvent> = buffer.iter().copied().collect();
 

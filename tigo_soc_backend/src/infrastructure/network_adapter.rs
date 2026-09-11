@@ -171,6 +171,27 @@ fn extract_event(sliced: &SlicedPacket, packet_len: i32) -> Option<NetworkEvent>
         _ => (0u8, 0u16, 0u16),
     };
 
+    // * * * FILTRAR TRÁFICO INTERNO DEL SOC PARA EVITAR BUCLES DE AUTO-CAPTURA * * *
+    // 1. Ignorar puertos de servicio interno: PostgreSQL (5432) y API Axum (3000)
+    if src_port == 5432 || dst_port == 5432 || src_port == 3000 || dst_port == 3000 {
+        return None;
+    }
+    // 2. Ignorar tráfico local Loopback (127.0.0.1 / ::1)
+    if src_ip.is_loopback() || dst_ip.is_loopback() {
+        return None;
+    }
+    // 3. Ignorar tráfico interno de Docker bridge (172.16.0.0/12) entre contenedores
+    let is_docker_bridge = |ip: &IpAddr| match ip {
+        IpAddr::V4(v4) => {
+            let octets = v4.octets();
+            octets[0] == 172 && (16..=31).contains(&octets[1])
+        }
+        _ => false,
+    };
+    if is_docker_bridge(&src_ip) && is_docker_bridge(&dst_ip) {
+        return None;
+    }
+
     Some(NetworkEvent {
         source_ip: src_ip,
         destination_ip: dst_ip,
