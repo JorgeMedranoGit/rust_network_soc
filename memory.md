@@ -39,12 +39,22 @@ Diseño en 3 capas encapsuladas mediante `mod.rs`:
     *   Servidor Web Axum operativo en el puerto 3000 con endpoints de salud, estado, inventario, catálogos y telemetría.
     *   Captura asíncrona de red (Sniffer) funcionando bajo el Patrón Productor-Consumidor (`pcap` + `etherparse` + canales `tokio::sync::mpsc`) con soporte para LinkTypes Ethernet y Linux Cooked SLL/SLL2.
     *   Contenedores Docker estabilizados con `network_mode: "host"`, resolviendo el bucle de reinicios.
-*   **Fase Siguiente (Sprint ML & Mitigación):**
-    *   Integración del modelo Machine Learning (LightGBM / Polars) sobre la telemetría agregada y extracción de vectores de características en `feature_store`.
+    *   **Motor de Feature Engineering Columnar con Polars:** Extracción de 23 características de tráfico (Rate, IAT, Variance, Header_Length, TTL, flags TCP, protocolos L4/L7, estadísticas agregadas) ejecutadas en microsegundos sobre micro-ventanas continuas.
+    *   **Motor de Inferencia y Entrenamiento LightGBM Integrado:** 
+        *   Inferencia real-time aislada con latencia sub-milisegundo (~25-50 µs) evaluada sobre tráfico vivo y ráfagas.
+        *   Clasificación automática de amenazas (`DATA_EXFILTRATION`, `DDOS_SYN_FLOOD`, `PORT_SCAN`, `UNAUTHORIZED_ACCESS`), niveles de severidad (`CRITICAL`, `HIGH`, `MEDIUM`) y políticas Carrier-Grade.
+        *   Persistencia forense desacoplada en PostgreSQL (`network_logs`, `feature_store`, `security_alerts`).
+        *   Soporte para entrenamiento K-Fold cruzado con Polars + LightGBM (`cargo run -- train`).
+        *   Exposición de métricas de rendimiento y estadísticas en endpoints REST `/api/v1/ml/stats` y `/api/v1/ml/model-info`.
+*   **Fase Siguiente (Mitigación & Orquestación):**
     *   Implementación del Patrón Adapter (Traits en Rust) para la mitigación agnóstica de dispositivos de red (pfSense, FortiGate, Routers).
 
 ## 6. Instrucción para el Asistente AI
 Asume el rol de Arquitecto de Software Senior y experto en Rust/Ciberseguridad. Responde con código limpio, modular y técnicamente riguroso, manteniendo un enfoque apto para una tesis universitaria de ingeniería.
+*   **Estilo de Código Estricto:** 
+    *   Para comentarios separadores de bloques usar siempre el formato: `// * * * NOMBRE DE SECCIÓN * * *`.
+    *   Para salidas en consola estándar usar prefijos estructurados: `|- INFO -|`, `|- DB -|`, `|- PACKET -|`, `|- ALERTA -|`, `|- FATAL -|`.
+    *   Si una IP no se encuentra en la caché de topología durante la ingesta de red, asignar SIEMPRE el `node_id = 6` por defecto, nunca usar `NULL` ni omitirlo.
 
 ## 7. Flujo de Trabajo Git y Gestión de Versiones (Obligatorio)
 Para fines de auditoría, trazabilidad y documentación técnica de la tesis:

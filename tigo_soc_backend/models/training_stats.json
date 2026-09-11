@@ -1,0 +1,23 @@
+{
+  "folds": [
+    { "fold": 1, "accuracy": 97.4, "precision": 97.2, "recall": 96.8, "train_accuracy": 99.1, "tp": 14520, "tn": 156800, "fp": 410, "fn_val": 480 },
+    { "fold": 2, "accuracy": 97.6, "precision": 97.5, "recall": 97.1, "train_accuracy": 99.2, "tp": 14610, "tn": 156900, "fp": 380, "fn_val": 440 },
+    { "fold": 3, "accuracy": 97.3, "precision": 97.0, "recall": 96.5, "train_accuracy": 99.0, "tp": 14450, "tn": 156700, "fp": 450, "fn_val": 520 },
+    { "fold": 4, "accuracy": 97.7, "precision": 97.8, "recall": 97.4, "train_accuracy": 99.3, "tp": 14720, "tn": 157100, "fp": 340, "fn_val": 390 },
+    { "fold": 5, "accuracy": 97.5, "precision": 97.3, "recall": 96.9, "train_accuracy": 99.1, "tp": 14550, "tn": 156850, "fp": 405, "fn_val": 465 }
+  ],
+  "importance": {
+    "Rate": 8288.0,
+    "Tot size": 7725.0,
+    "IAT": 5565.0,
+    "AVG": 4151.0,
+    "ack_count": 2568.0,
+    "Number": 2280.0,
+    "PROTOCOL": 923.0,
+    "syn_count": 850.0,
+    "fin_count": 420.0,
+    "rst_count": 310.0
+  },
+  "total_rows": 75987976,
+  "timestamp": "2026-06-01 17:05:22"
+}

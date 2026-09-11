@@ -36,3 +36,4 @@ services:
     volumes:
       - ./tigo_soc_backend/src:/app/src
       - ./tigo_soc_backend/Cargo.toml:/app/Cargo.toml
+      - ./tigo_soc_backend/models:/app/models

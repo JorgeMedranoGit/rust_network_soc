@@ -224,8 +224,12 @@ impl L4Protocol {
 pub struct NetworkEvent {
     pub source_ip: IpAddr,
     pub destination_ip: IpAddr,
+    pub source_port: u16,
+    pub destination_port: u16,
     pub protocol: L4Protocol,
     pub packet_size: u16,
+    pub header_length: u8,
+    pub ttl: u8,
     pub flags: u8,
     pub anomaly_score: Option<f32>,
     pub timestamp: DateTime<Utc>,
@@ -249,4 +253,112 @@ impl NetworkEvent {
             Some(list.join("|"))
         }
     }
+}
+
+// =========================================================================
+// 6. ESTRUCTURAS DE MACHINE LEARNING (LIGHTGBM & POLARS)
+// =========================================================================
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct ExtractedFeatures {
+    pub rate: f32,
+    pub iat: f32,
+    pub variance: f32,
+    pub header_length: f32,
+    pub ttl: f32,
+    pub ack_count: f32,
+    pub syn_count: f32,
+    pub fin_count: f32,
+    pub rst_count: f32,
+    pub http: f32,
+    pub https: f32,
+    pub dns: f32,
+    pub ssh: f32,
+    pub tcp: f32,
+    pub udp: f32,
+    pub icmp: f32,
+    pub tot_sum: f32,
+    pub min_size: f32,
+    pub max_size: f32,
+    pub avg_size: f32,
+    pub std_size: f32,
+    pub tot_size: f32,
+    pub number: f32,
+}
+
+impl ExtractedFeatures {
+    /// Convierte las 23 características al vector exacto esperado por el modelo LightGBM
+    pub fn to_vector(&self) -> Vec<f32> {
+        vec![
+            self.rate,
+            self.iat,
+            self.variance,
+            self.header_length,
+            self.ttl,
+            self.ack_count,
+            self.syn_count,
+            self.fin_count,
+            self.rst_count,
+            self.http,
+            self.https,
+            self.dns,
+            self.ssh,
+            self.tcp,
+            self.udp,
+            self.icmp,
+            self.tot_sum,
+            self.min_size,
+            self.max_size,
+            self.avg_size,
+            self.std_size,
+            self.tot_size,
+            self.number,
+        ]
+    }
+
+    /// Serializa el vector a formato JSONB estructurado para `feature_store`
+    pub fn to_json(&self) -> Value {
+        serde_json::json!({
+            "Rate": self.rate,
+            "IAT": self.iat,
+            "Variance": self.variance,
+            "Header_Length": self.header_length,
+            "Time_To_Live": self.ttl,
+            "ack_count": self.ack_count,
+            "syn_count": self.syn_count,
+            "fin_count": self.fin_count,
+            "rst_count": self.rst_count,
+            "HTTP": self.http,
+            "HTTPS": self.https,
+            "DNS": self.dns,
+            "SSH": self.ssh,
+            "TCP": self.tcp,
+            "UDP": self.udp,
+            "ICMP": self.icmp,
+            "Tot sum": self.tot_sum,
+            "Min": self.min_size,
+            "Max": self.max_size,
+            "AVG": self.avg_size,
+            "Std": self.std_size,
+            "Tot size": self.tot_size,
+            "Number": self.number
+        })
+    }
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct ThreatEvaluation {
+    pub is_attack: bool,
+    pub probability: f32,
+    pub threat_name: String,
+    pub threat_id: i32,
+    pub severity: String,
+    pub impact: String,
+    pub resolution: String,
+    pub description: String,
+    pub technical_details: String,
+    pub features: Vec<f32>,
+    pub feature_time_us: f64,
+    pub inference_time_us: f64,
+    pub total_time_us: f64,
 }

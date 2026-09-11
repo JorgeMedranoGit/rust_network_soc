@@ -120,7 +120,7 @@ fn parse_raw_packet(datalink: Linktype, data: &[u8], packet_len: i32) -> Option<
 }
 
 fn extract_event(sliced: &SlicedPacket, packet_len: i32) -> Option<NetworkEvent> {
-    let (src_ip, dst_ip, proto) = match &sliced.net {
+    let (src_ip, dst_ip, proto, header_len, ttl) = match &sliced.net {
         Some(NetSlice::Ipv4(ipv4)) => {
             let p = match ipv4.header().protocol() {
                 etherparse::IpNumber::TCP => L4Protocol::TCP,
@@ -132,6 +132,8 @@ fn extract_event(sliced: &SlicedPacket, packet_len: i32) -> Option<NetworkEvent>
                 IpAddr::V4(ipv4.header().source_addr()),
                 IpAddr::V4(ipv4.header().destination_addr()),
                 p,
+                ipv4.header().ihl() * 4,
+                ipv4.header().ttl(),
             )
         }
         Some(NetSlice::Ipv6(ipv6)) => {
@@ -145,12 +147,14 @@ fn extract_event(sliced: &SlicedPacket, packet_len: i32) -> Option<NetworkEvent>
                 IpAddr::V6(ipv6.header().source_addr()),
                 IpAddr::V6(ipv6.header().destination_addr()),
                 p,
+                40u8,
+                ipv6.header().hop_limit(),
             )
         }
         _ => return None,
     };
 
-    let flags = match &sliced.transport {
+    let (flags, src_port, dst_port) = match &sliced.transport {
         Some(TransportSlice::Tcp(tcp)) => {
             let mut f = 0u8;
             if tcp.syn() { f |= TCP_FLAG_SYN; }
@@ -159,16 +163,23 @@ fn extract_event(sliced: &SlicedPacket, packet_len: i32) -> Option<NetworkEvent>
             if tcp.rst() { f |= TCP_FLAG_RST; }
             if tcp.psh() { f |= TCP_FLAG_PSH; }
             if tcp.urg() { f |= TCP_FLAG_URG; }
-            f
+            (f, tcp.source_port(), tcp.destination_port())
         }
-        _ => 0u8,
+        Some(TransportSlice::Udp(udp)) => {
+            (0u8, udp.source_port(), udp.destination_port())
+        }
+        _ => (0u8, 0u16, 0u16),
     };
 
     Some(NetworkEvent {
         source_ip: src_ip,
         destination_ip: dst_ip,
+        source_port: src_port,
+        destination_port: dst_port,
         protocol: proto,
         packet_size: packet_len.clamp(0, u16::MAX as i32) as u16,
+        header_length: header_len,
+        ttl,
         flags,
         anomaly_score: None,
         timestamp: Utc::now(),
