@@ -6,17 +6,18 @@
 // * * * Extraer de: Firebase Console -> Project Settings -> General -> Web Apps * * *
 // * * * ================================================================= * * *
 const firebaseConfig = {
-  apiKey: "AIzaSy_REEMPLAZAR_CON_TU_FIREBASE_WEB_API_KEY",
-  authDomain: "tigo-soc-alerts.firebaseapp.com",
-  projectId: "tigo-soc-alerts",
-  storageBucket: "tigo-soc-alerts.appspot.com",
-  messagingSenderId: "123456789012",
-  appId: "1:123456789012:web:abcdef1234567890abcdef"
+  apiKey: "AIzaSyAE_ktZD-9PseALRWF3bdPXcldjtFgLh8o",
+  authDomain: "rust-soc.firebaseapp.com",
+  projectId: "rust-soc",
+  storageBucket: "rust-soc.firebasestorage.app",
+  messagingSenderId: "528522824606",
+  appId: "1:528522824606:web:419b5cf17dcad96af5648f",
+  measurementId: "G-MJZD609N3P"
 };
 
 // * * * 2. LLAVE PÚBLICA VAPID (WEB PUSH CERTIFICATES) * * *
 // Extraer de: Firebase Console -> Project Settings -> Cloud Messaging -> Web configuration -> Key pair
-const VAPID_KEY = "BD_REEMPLAZAR_CON_TU_VAPID_PUBLIC_KEY_GENERADA_EN_FIREBASE";
+const VAPID_KEY = "BCfqLaSBhdlTmxfHlximq3dVdVb98ZsvbmX9CycpxXhS1UlWU3GTcRYR3zzWFvpMfuBZo3pEqV11AltVLps1qSc";
 
 // Referencias DOM
 const dom = {
@@ -155,7 +156,23 @@ async function obtainFcmToken(registration) {
       currentToken = token;
       dom.fcmTokenVal.textContent = token;
       console.log('[TigoSOC] Token de registro FCM obtenido:', token);
-      console.log('|- INSTRUCCION -| Para suscribir este dispositivo al tema /topics/soc_alerts, use el token mostrado.');
+
+      // Auto-suscripción transparente del dispositivo al topic en el backend
+      try {
+        const apiBase = window.location.origin;
+        const subRes = await fetch(`${apiBase}/api/v1/alerts/subscribe`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ token })
+        });
+        if (subRes.ok) {
+          console.log('[TigoSOC] ✅ Dispositivo suscrito automáticamente al tema /topics/soc_alerts');
+        } else {
+          console.warn('[TigoSOC] Respuesta no exitosa al suscribir tema:', await subRes.text());
+        }
+      } catch (subErr) {
+        console.warn('[TigoSOC] Error de red al auto-suscribir tema:', subErr);
+      }
     } else {
       dom.fcmTokenVal.textContent = 'No se generó token (Verifique llaves VAPID en app.js)';
     }

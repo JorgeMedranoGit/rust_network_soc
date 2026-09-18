@@ -45,6 +45,8 @@ struct FlowTracker {
     window: VecDeque<NetworkEvent>,
     packet_count: u64,
     last_eval_instant: Instant,
+    last_packet_instant: Instant,
+    last_alert_instant: Option<Instant>,
 }
 
 #[tokio::main]
@@ -156,7 +158,18 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                     window: VecDeque::with_capacity(16),
                     packet_count: 0,
                     last_eval_instant: Instant::now(),
+                    last_packet_instant: Instant::now(),
+                    last_alert_instant: None,
                 });
+
+                // * * * EXPIRACIÓN DE FLUJO CARRIER-GRADE (TIGO SOC) * * *
+                // Si la ráfaga anterior terminó hace más de 1.5s, la micro-ventana de 15 paquetes
+                // está caduca y debe limpiarse para no contaminar sesiones o protocolos nuevos (ej. ICMP ping).
+                if tracker.last_packet_instant.elapsed() > Duration::from_millis(1500) {
+                    tracker.window.clear();
+                    tracker.packet_count = 0;
+                }
+                tracker.last_packet_instant = Instant::now();
 
                 tracker.packet_count += 1;
                 if tracker.window.len() >= 15 {
@@ -211,6 +224,17 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
                 // * * * EJECUTAR PIPELINE FORENSE COMPLETO ANTE AMENAZAS DETECTADAS * * *
                 if evaluation.is_attack {
+                    // Throttling de alertas por flujo (máximo 1 alerta/despacho cada 2s para proteger BD y FCM)
+                    let should_dispatch = match tracker.last_alert_instant {
+                        Some(t) => t.elapsed() >= Duration::from_secs(2),
+                        None => true,
+                    };
+
+                    if !should_dispatch {
+                        continue;
+                    }
+                    tracker.last_alert_instant = Some(Instant::now());
+
                     let node_id = ip_cache_forensic
                         .get(&event.source_ip)
                         .or_else(|| ip_cache_forensic.get(&event.destination_ip))

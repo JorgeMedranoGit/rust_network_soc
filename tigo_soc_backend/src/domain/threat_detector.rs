@@ -113,10 +113,25 @@ impl ThreatDetector {
         }
 
         // * * * CALIBRACIÓN BAYESIANA DE PRIOR (COMPENSACIÓN DE SESGO DE DATASET) * * *
-        let calibrated_score = if probability <= 0.9914 {
+        let ml_score = if probability <= 0.9950 {
             ((probability - 0.980).max(0.0) * 5.0).min(0.25)
         } else {
-            0.50 + ((probability - 0.9914) / (1.0 - 0.9914)).min(1.0) * 0.50
+            0.50 + ((probability - 0.9950) / (1.0 - 0.9950)).min(1.0) * 0.50
+        };
+
+        // * * * DETECCIÓN DE ANOMALÍAS ADAPTADA A MICRO-VENTANAS DE 15 PAQUETES (CARRIER-GRADE) * * *
+        // Para una ISP real (Tigo), un ataque DoS o escaneo requiere altas tasas (volumétrico).
+        // Tráfico ICMP normal (Ping a ~1 PPS) o paquetes dispersos no deben activar alertas de TCP SYN o RST.
+        let is_heuristic_attack = (features.tcp > 0.0 && features.syn_count >= 8.0 && features.ack_count <= 2.0 && features.rate >= 10.0)
+            || (features.tcp > 0.0 && features.rate > 50.0 && features.syn_count >= 5.0)
+            || (features.tcp > 0.0 && features.rst_count >= 6.0 && features.rate >= 10.0)
+            || (features.icmp > 0.0 && features.rate > 100.0) // Ping flood volumétrico
+            || (features.tot_size > 40000.0 && features.rate > 100.0);
+
+        let calibrated_score = if is_heuristic_attack {
+            ml_score.max(0.95)
+        } else {
+            ml_score
         };
 
         let is_attack = calibrated_score >= self.anomaly_threshold;
@@ -171,26 +186,33 @@ impl ThreatDetector {
 
     // * * * CLASIFICACIÓN GRANULAR DE AMENAZAS DETECTADAS * * *
     fn classify_threat(features: &ExtractedFeatures, _prob: f32) -> (String, i32, String, String) {
-        if features.rate > 800.0 || features.syn_count > 50.0 {
+        if features.tcp > 0.0 && ((features.syn_count >= 8.0 && features.ack_count <= 2.0 && features.rate >= 10.0) || (features.rate > 50.0 && features.syn_count >= 5.0)) {
             (
                 "DDOS_SYN_FLOOD".to_string(),
                 3,
                 "Inundación masiva de tráfico detectada (DoS/DDoS)".to_string(),
-                format!("Tasa de paquetes: {:.1} PPS | SYN: {:.0}", features.rate, features.syn_count),
+                format!("Tasa de paquetes: {:.1} PPS | SYN: {:.0} | ACK: {:.0}", features.rate, features.syn_count, features.ack_count),
             )
-        } else if features.tot_size > 5000.0 || (features.tot_sum > 2000.0 && features.avg_size > 1000.0) {
-            (
-                "DATA_EXFILTRATION".to_string(),
-                1,
-                "Fuga o exfiltración volumétrica anómala de datos".to_string(),
-                format!("Bytes transferidos: {:.0} bytes | AVG: {:.1}", features.tot_size, features.avg_size),
-            )
-        } else if features.rst_count > 20.0 || (features.rate > 100.0 && features.tot_size < 1000.0) {
+        } else if features.tcp > 0.0 && ((features.rst_count >= 6.0 && features.rate >= 10.0) || (features.rate > 20.0 && features.tot_size < 1000.0)) {
             (
                 "PORT_SCAN".to_string(),
                 2,
                 "Escaneo de puertos / Reconocimiento activo".to_string(),
                 format!("RST count: {:.0} | PPS: {:.1}", features.rst_count, features.rate),
+            )
+        } else if features.icmp > 0.0 && features.rate > 100.0 {
+            (
+                "ICMP_FLOOD".to_string(),
+                5,
+                "Inundación ICMP / Ping Flood masivo".to_string(),
+                format!("Tasa ICMP: {:.1} PPS", features.rate),
+            )
+        } else if features.tot_size > 40000.0 && features.rate > 100.0 {
+            (
+                "DATA_EXFILTRATION".to_string(),
+                1,
+                "Fuga o exfiltración volumétrica anómala de datos".to_string(),
+                format!("Bytes transferidos: {:.0} bytes | Tasa: {:.1} PPS", features.tot_size, features.rate),
             )
         } else {
             (

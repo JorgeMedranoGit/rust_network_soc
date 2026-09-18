@@ -31,6 +31,9 @@ services:
       DATABASE_URL: postgres://postgres:postgres@127.0.0.1:5432/tigo_soc
       PORT: "3000"
       CAPTURE_INTERFACE: "any"
+      FCM_ENABLED: "true"
+    env_file:
+      - .env
     command: ["cargo", "run", "--release", "--", "server"]
     depends_on:
       postgres_soc:
@@ -39,3 +42,6 @@ services:
       - ./tigo_soc_backend/src:/app/src
       - ./tigo_soc_backend/Cargo.toml:/app/Cargo.toml
       - ./tigo_soc_backend/models:/app/models
+      - ./frontend:/app/frontend
+      - ./service-account.json:/app/service-account.json
+

@@ -48,6 +48,7 @@ pub fn create_router(state: AppState) -> Router {
         .route("/api/v1/alerts", get(get_alerts_handler))
         .route("/api/v1/alerts/:id", get(get_alert_by_id_handler))
         .route("/api/v1/alerts/simulate-push", post(simulate_push_handler))
+        .route("/api/v1/alerts/subscribe", post(subscribe_topic_handler))
         .route("/api/v1/ml/stats", get(get_ml_stats_handler))
         .route("/api/v1/ml/model-info", get(get_model_info_handler));
 
@@ -191,9 +192,50 @@ async fn simulate_push_handler(
     State(state): State<AppState>,
     Json(payload): Json<SimulatePushRequest>,
 ) -> impl IntoResponse {
-    let alert_id = payload.alert_id.unwrap_or(999);
     let severity = payload.severity.unwrap_or_else(|| "CRITICAL".to_string());
     let category = payload.threat_category.unwrap_or_else(|| "DATA_EXFILTRATION".to_string());
+
+    // Crear registro forense sintético en PostgreSQL para permitir inspección completa en la PWA
+    let repo_telemetry = TelemetryRepository::new(state.pool.clone());
+    let repo_orch = OrchestrationRepository::new(state.pool.clone());
+
+    let synthetic_features = json!({
+        "number": 15.0,
+        "rate": 182.4,
+        "http": 1.0,
+        "tcp": 1.0,
+        "udp": 0.0,
+        "min_size": 64.0,
+        "max_size": 1400.0,
+        "avg_size": 890.5,
+        "std_size": 220.1,
+        "syn_count": 15.0,
+        "ack_count": 0.0,
+        "simulation": true
+    });
+
+    let alert_id = if let Ok(log_id) = repo_telemetry
+        .insert_log(
+            Some(6),
+            "192.168.1.50",
+            "192.168.1.10",
+            "TCP",
+            1400,
+            Some("SYN"),
+        )
+        .await
+    {
+        if let Ok(feature_id) = repo_telemetry.insert_features(log_id, synthetic_features).await {
+            repo_orch
+                .create_alert(Some(feature_id), Some(1), Some(1), 0.982)
+                .await
+                .unwrap_or_else(|_| payload.alert_id.unwrap_or(999))
+        } else {
+            payload.alert_id.unwrap_or(999)
+        }
+    } else {
+        payload.alert_id.unwrap_or(999)
+    };
 
     let fcm = Arc::clone(&state.fcm_notifier);
     match fcm.send_opaque_alert(alert_id, &severity, &category).await {
@@ -213,6 +255,36 @@ async fn simulate_push_handler(
             Json(json!({
                 "status": "error",
                 "message": format!("Fallo al enviar notificación Push FCM: {}", e)
+            })),
+        ),
+    }
+}
+
+#[derive(Deserialize, Debug)]
+struct SubscribeTopicRequest {
+    token: String,
+}
+
+// * * * SUSCRIPCIÓN AUTOMÁTICA DE TOKEN DE DISPOSITIVO AL TEMA FCM * * *
+async fn subscribe_topic_handler(
+    State(state): State<AppState>,
+    Json(payload): Json<SubscribeTopicRequest>,
+) -> impl IntoResponse {
+    let fcm = Arc::clone(&state.fcm_notifier);
+    match fcm.subscribe_device_to_topic(&payload.token).await {
+        Ok(_) => (
+            StatusCode::OK,
+            Json(json!({
+                "status": "success",
+                "message": "Dispositivo suscrito exitosamente al tema /topics/soc_alerts",
+                "topic": "/topics/soc_alerts"
+            })),
+        ),
+        Err(e) => (
+            StatusCode::BAD_GATEWAY,
+            Json(json!({
+                "status": "error",
+                "message": format!("Fallo al suscribir dispositivo a FCM: {}", e)
             })),
         ),
     }

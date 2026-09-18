@@ -16,6 +16,8 @@ bd/data/
 .env
 .env.*
 !.env.example
+service-account.json
+*.service-account.json
 
 # IDEs and Editors
 .idea/
@@ -44,3 +46,8 @@ logs/
 *.pcapng
 captures/
 tigo_soc_backend/frontend
+
+# Private documentation, handovers and internal guides
+memory.md
+lastAssignment.md
+COMANDOS_GUIA_SOC.txt

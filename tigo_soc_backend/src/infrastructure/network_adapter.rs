@@ -92,29 +92,39 @@ impl NetworkAdapter {
 
 // * * * PARSEO MULTI-LINKTYPE DE TRAMAS DE RED (ETHERNET, SLL, SLL2, RAW IP) * * *
 fn parse_raw_packet(datalink: Linktype, data: &[u8], packet_len: i32) -> Option<NetworkEvent> {
-    // * * * 1. INTENTAR COMO ETHERNET ESTÁNDAR * * *
-    if let Ok(sliced) = SlicedPacket::from_ethernet(data) {
-        return extract_event(&sliced, packet_len);
-    }
-
-    // * * * 2. LINUX COOKED CAPTURE (INTERFAZ ANY: SLL / SLL2) * * *
-    if (datalink.0 == 113 || datalink.0 == 276) && data.len() > 20 {
+    // 1. Linux Cooked Capture (interfaz 'any': SLL = 113, SLL2 = 276)
+    if (datalink.0 == 113 || datalink.0 == 276) && data.len() > 16 {
         let offset = if datalink.0 == 113 { 16 } else { 20 };
-        if let Ok(sliced) = SlicedPacket::from_ip(&data[offset..]) {
-            return extract_event(&sliced, packet_len);
+        if data.len() > offset {
+            if let Ok(sliced) = SlicedPacket::from_ip(&data[offset..]) {
+                if let Some(event) = extract_event(&sliced, packet_len) {
+                    return Some(event);
+                }
+            }
         }
     }
 
-    // * * * 3. BSD LOOPBACK (NULL) * * *
+    // 2. Ethernet estándar (Linktype = 1)
+    if let Ok(sliced) = SlicedPacket::from_ethernet(data) {
+        if let Some(event) = extract_event(&sliced, packet_len) {
+            return Some(event);
+        }
+    }
+
+    // 3. BSD Loopback (Linktype = 0)
     if datalink.0 == 0 && data.len() > 4 {
         if let Ok(sliced) = SlicedPacket::from_ip(&data[4..]) {
-            return extract_event(&sliced, packet_len);
+            if let Some(event) = extract_event(&sliced, packet_len) {
+                return Some(event);
+            }
         }
     }
 
-    // * * * 4. INTENTAR DIRECTAMENTE COMO IP PURO * * *
+    // 4. Intentar directamente como IP puro (Linktype = 12 / 101)
     if let Ok(sliced) = SlicedPacket::from_ip(data) {
-        return extract_event(&sliced, packet_len);
+        if let Some(event) = extract_event(&sliced, packet_len) {
+            return Some(event);
+        }
     }
 
     None
@@ -191,6 +201,22 @@ fn extract_event(sliced: &SlicedPacket, packet_len: i32) -> Option<NetworkEvent>
         _ => false,
     };
     if is_docker_bridge(&src_ip) && is_docker_bridge(&dst_ip) {
+        return None;
+    }
+
+    // * * * 4. AISLAMIENTO ESTRICTO DEL ALCANCE DE RED DEL LABORATORIO SOC * * *
+    // Monitorear únicamente tráfico perteneciente a la topología SOC/GNS3 (192.168.1.0/24) o prefijos Carrier.
+    // Descarta tráfico de navegación personal (WiFi wlo1 192.168.0.x, VPN WARP, IPv6 público, etc.)
+    let is_monitored_soc_network = |ip: &IpAddr| match ip {
+        IpAddr::V4(v4) => {
+            let octets = v4.octets();
+            // Subred del laboratorio SOC GNS3: 192.168.1.x
+            octets[0] == 192 && octets[1] == 168 && octets[2] == 1
+        }
+        IpAddr::V6(_) => false,
+    };
+
+    if !is_monitored_soc_network(&src_ip) && !is_monitored_soc_network(&dst_ip) {
         return None;
     }
 

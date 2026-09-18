@@ -10,12 +10,13 @@ importScripts('https://www.gstatic.com/firebasejs/9.23.0/firebase-messaging-comp
 // * * * Extraer de: Firebase Console -> Project Settings -> General -> Web Apps * * *
 // * * * ================================================================= * * *
 const firebaseConfig = {
-  apiKey: "AIzaSy_REEMPLAZAR_CON_TU_FIREBASE_WEB_API_KEY",
-  authDomain: "tigo-soc-alerts.firebaseapp.com",
-  projectId: "tigo-soc-alerts",
-  storageBucket: "tigo-soc-alerts.appspot.com",
-  messagingSenderId: "123456789012",
-  appId: "1:123456789012:web:abcdef1234567890abcdef"
+  apiKey: "AIzaSyAE_ktZD-9PseALRWF3bdPXcldjtFgLh8o",
+  authDomain: "rust-soc.firebaseapp.com",
+  projectId: "rust-soc",
+  storageBucket: "rust-soc.firebasestorage.app",
+  messagingSenderId: "528522824606",
+  appId: "1:528522824606:web:419b5cf17dcad96af5648f",
+  measurementId: "G-MJZD609N3P"
 };
 
 // 2. Inicializar Firebase en el contexto de Service Worker

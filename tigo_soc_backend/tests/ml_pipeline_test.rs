@@ -126,6 +126,7 @@ async fn test_zero_data_push_fcm_notification() {
         server_key: None,
         project_id: None,
         bearer_token: None,
+        service_account_path: None,
         topic: "soc_alerts".to_string(),
         enabled: false, // Modo simulación seguro
     };
@@ -137,3 +138,25 @@ async fn test_zero_data_push_fcm_notification() {
 
     assert!(result.is_ok(), "El despacho Zero-Data Push debe ejecutarse sin errores en simulación");
 }
+
+// * * * PRUEBA 5: AUTENTICACIÓN GOOGLE SERVICE ACCOUNT Y OAUTH2 TOKEN RENEWAL * * *
+#[tokio::test]
+async fn test_google_service_account_oauth2_token() {
+    use tigo_soc_backend::infrastructure::fcm_client::{FcmConfig, FcmNotifier};
+
+    let sa_exists = std::path::Path::new("../service-account.json").exists()
+        || std::path::Path::new("service-account.json").exists();
+    if !sa_exists {
+        return;
+    }
+
+    let config = FcmConfig::from_env();
+    let notifier = FcmNotifier::new(config);
+    let token_result = notifier.get_valid_bearer_token().await;
+    assert!(token_result.is_ok(), "Debe poder generar un bearer token OAuth2 válido desde service-account.json: {:?}", token_result.err());
+    let token = token_result.unwrap();
+    assert!(!token.is_empty());
+    assert!(token.starts_with("ya29."));
+    println!("|- INSTRUCCION -| [TEST] Token OAuth2 Bearer autogenerado con éxito (Prefijo: {}...)", &token[..15]);
+}
+
