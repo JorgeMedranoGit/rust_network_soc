@@ -59,6 +59,7 @@ Diseño en 3 capas encapsuladas mediante `mod.rs`:
             *   PWA minimalista en Vanilla JavaScript (sin frameworks de UI pesados) con soporte offline y manifiesto `manifest.json`.
             *   Service Worker dedicado `firebase-messaging-sw.js` registrado en la raíz para recepción de alertas en segundo plano e interacciones nativas del navegador.
             *   Soporte para recepción en primer plano (`onMessage`), audio-alerta perimetral y consulta forense bajo demanda conectada con el backend de Axum.
+        *   **Documento de Handover y Continuidad (`lastAssignment.md`):** Bitácora detallada para reanudar sesiones en AGY sin perder el hilo, con inventario de archivos, pasos de arranque y guía de integración FCM.
 *   **Fase Siguiente (Mitigación & Orquestación):**
     *   Implementación del Patrón Adapter (Traits en Rust) para la mitigación agnóstica de dispositivos de red (pfSense, FortiGate, Routers).
 
