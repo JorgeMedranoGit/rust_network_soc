@@ -2,7 +2,7 @@
 #![allow(dead_code)]
 use serde_json::Value;
 use sqlx::{Error, PgPool, Row};
-use crate::domain::models::{MitigationAction, SecurityAlert};
+use crate::domain::models::{EnrichedAlert, MitigationAction, SecurityAlert};
 
 #[derive(Clone)]
 pub struct OrchestrationRepository {
@@ -57,6 +57,78 @@ impl OrchestrationRepository {
             "SELECT alert_id, feature_id, threat_id, status_id, anomaly_score, detected_at
              FROM security_alerts
              ORDER BY detected_at DESC
+             LIMIT $1"
+        )
+        .bind(limit)
+        .fetch_all(&self.pool)
+        .await
+    }
+
+    pub async fn get_alert_by_id(&self, alert_id: i64) -> Result<Option<SecurityAlert>, Error> {
+        sqlx::query_as::<_, SecurityAlert>(
+            "SELECT alert_id, feature_id, threat_id, status_id, anomaly_score, detected_at
+             FROM security_alerts
+             WHERE alert_id = $1"
+        )
+        .bind(alert_id)
+        .fetch_optional(&self.pool)
+        .await
+    }
+
+    pub async fn get_enriched_alert_by_id(&self, alert_id: i64) -> Result<Option<EnrichedAlert>, Error> {
+        sqlx::query_as::<_, EnrichedAlert>(
+            "SELECT 
+                 sa.alert_id,
+                 sa.feature_id,
+                 sa.threat_id,
+                 tt.threat_name,
+                 tt.severity_level,
+                 sa.status_id,
+                 ast.status_name,
+                 sa.anomaly_score,
+                 sa.detected_at,
+                 nl.source_ip,
+                 nl.destination_ip,
+                 nl.protocol,
+                 nl.packet_size,
+                 nl.flags,
+                 fs.feature_vector
+             FROM security_alerts sa
+             LEFT JOIN threat_types tt ON sa.threat_id = tt.threat_id
+             LEFT JOIN alert_statuses ast ON sa.status_id = ast.status_id
+             LEFT JOIN feature_store fs ON sa.feature_id = fs.feature_id
+             LEFT JOIN network_logs nl ON fs.log_id = nl.log_id
+             WHERE sa.alert_id = $1"
+        )
+        .bind(alert_id)
+        .fetch_optional(&self.pool)
+        .await
+    }
+
+    pub async fn get_recent_enriched_alerts(&self, limit: i64) -> Result<Vec<EnrichedAlert>, Error> {
+        sqlx::query_as::<_, EnrichedAlert>(
+            "SELECT 
+                 sa.alert_id,
+                 sa.feature_id,
+                 sa.threat_id,
+                 tt.threat_name,
+                 tt.severity_level,
+                 sa.status_id,
+                 ast.status_name,
+                 sa.anomaly_score,
+                 sa.detected_at,
+                 nl.source_ip,
+                 nl.destination_ip,
+                 nl.protocol,
+                 nl.packet_size,
+                 nl.flags,
+                 fs.feature_vector
+             FROM security_alerts sa
+             LEFT JOIN threat_types tt ON sa.threat_id = tt.threat_id
+             LEFT JOIN alert_statuses ast ON sa.status_id = ast.status_id
+             LEFT JOIN feature_store fs ON sa.feature_id = fs.feature_id
+             LEFT JOIN network_logs nl ON fs.log_id = nl.log_id
+             ORDER BY sa.detected_at DESC
              LIMIT $1"
         )
         .bind(limit)

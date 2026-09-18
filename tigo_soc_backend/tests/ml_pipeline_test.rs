@@ -85,3 +85,55 @@ fn test_lightgbm_inference_latency() {
     assert!(evaluation.inference_time_us > 0.0);
     assert_eq!(evaluation.features.len(), 23);
 }
+
+// * * * PRUEBA 3: PARIDAD ZERO-ALLOCATION (ARRAY EN EL STACK VS VECTOR) * * *
+#[test]
+fn test_zero_allocation_array_and_vector_parity() {
+    let src = IpAddr::from_str("192.168.1.50").unwrap();
+    let dst = IpAddr::from_str("192.168.1.10").unwrap();
+
+    let events = vec![NetworkEvent {
+        source_ip: src,
+        destination_ip: dst,
+        source_port: 80,
+        destination_port: 80,
+        protocol: L4Protocol::TCP,
+        packet_size: 500,
+        header_length: 20,
+        ttl: 64,
+        flags: TCP_FLAG_SYN,
+        anomaly_score: None,
+        timestamp: Utc::now(),
+    }];
+
+    let (features, _) = PolarsFeatureEngine::extract_features_columnar(&events).unwrap();
+    let array = features.to_array();
+    let vector = features.to_vector();
+
+    assert_eq!(array.len(), 23);
+    assert_eq!(vector.len(), 23);
+    for i in 0..23 {
+        assert_eq!(array[i], vector[i]);
+    }
+}
+
+// * * * PRUEBA 4: ESTRATEGIA ZERO-DATA PUSH FCM (PAYLOAD OPACO SIN PII NI IPS) * * *
+#[tokio::test]
+async fn test_zero_data_push_fcm_notification() {
+    use tigo_soc_backend::infrastructure::fcm_client::{FcmConfig, FcmNotifier};
+
+    let config = FcmConfig {
+        server_key: None,
+        project_id: None,
+        bearer_token: None,
+        topic: "soc_alerts".to_string(),
+        enabled: false, // Modo simulación seguro
+    };
+
+    let notifier = FcmNotifier::new(config);
+    let result = notifier
+        .send_opaque_alert(42, "CRITICAL", "DATA_EXFILTRATION")
+        .await;
+
+    assert!(result.is_ok(), "El despacho Zero-Data Push debe ejecutarse sin errores en simulación");
+}

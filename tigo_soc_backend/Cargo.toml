@@ -25,3 +25,7 @@ clap = { version = "4.5", features = ["derive"] }
 rand = "0.8"
 glob = "0.3"
 anyhow = "1.0"
+# Cliente HTTP para webhooks y notificaciones Push (FCM)
+reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls"] }
+# Servidor de archivos estáticos y CORS para PWA
+tower-http = { version = "0.5", features = ["fs", "cors"] }

@@ -43,3 +43,4 @@ logs/
 *.pcap
 *.pcapng
 captures/
+tigo_soc_backend/frontend

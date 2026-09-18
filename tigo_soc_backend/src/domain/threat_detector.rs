@@ -80,13 +80,13 @@ impl ThreatDetector {
         source_ip: &str,
         feature_time_us: f64,
     ) -> ThreatEvaluation {
-        let feature_vector = features.to_vector();
+        let feature_array = features.to_array();
         let inf_start = Instant::now();
 
         let preds = self
             .booster
             .0
-            .predict(&feature_vector, 23, false)
+            .predict(&feature_array, 23, false)
             .unwrap_or_else(|_| vec![0.0]);
 
         let probability = preds.first().copied().unwrap_or(0.0) as f32;
@@ -138,7 +138,7 @@ impl ThreatDetector {
             resolution,
             description,
             technical_details: tech_details,
-            features: feature_vector,
+            features: feature_array.to_vec(),
             feature_time_us,
             inference_time_us: inf_time_us,
             total_time_us,

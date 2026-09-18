@@ -5,6 +5,7 @@ pub mod repo_catalogs;
 pub mod repo_inventory;
 pub mod repo_orchestration;
 pub mod repo_telemetry;
+pub mod fcm_client;
 
 #[allow(unused_imports)]
 pub use repo_catalogs as catalog;

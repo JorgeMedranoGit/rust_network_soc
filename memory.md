@@ -49,6 +49,16 @@ Diseño en 3 capas encapsuladas mediante `mod.rs`:
         *   **Optimización de Alto Rendimiento (+40k PPS Carrier-Grade):** Muestreo y cadencia adaptativa por flujo en RAM (`FlowTracker`), evaluación inmediata en frontera de 5 paquetes y cadencia de 15 paquetes / 100ms, y compilación en modo `--release`.
         *   **Unificación Estándar CamelCase:** Serialización y deserialización REST / JSONB unificada en `camelCase` en todos los modelos (`#[serde(rename_all = "camelCase")]`) manteniendo compatibilidad SQL `FromRow`.
         *   **Estandarización de Comentarios y Logs:** Todos los comentarios formateados como `// * * * SECCION * * *` y salidas de consola estandarizadas con `|- INSTRUCCION -| Mensaje`.
+        *   **Motor de Inferencia Zero-Allocation (Stack Slice):** Implementación de `ExtractedFeatures::to_array()` entregando un arreglo estático `[f32; 23]` en el stack de ejecución, logrando paridad con el vector columnar de Polars y eliminando asignaciones en el Heap durante la evaluación con `Booster::predict`.
+        *   **Indexación Forense Asíncrona en PostgreSQL y Estrategia "Zero-Data Push" (FCM):**
+            *   Persistencia no bloqueante de alertas con `tokio::spawn` coordinando `network_logs`, `feature_store` y `security_alerts`.
+            *   Cliente HTTP resiliente con `reqwest` (`FcmNotifier`) para el tema `/topics/soc_alerts`.
+            *   Estrategia de notificación "Zero-Data Push" con payload opaco (ID de alerta, severidad, categoría y token de verificación criptográfica) protegiendo IPs y telemetría de red frente a intermediarios de nube pública (Google FCM).
+            *   Endpoints REST `/api/v1/alerts/:id` para resolución forense autenticada y `/api/v1/alerts/simulate-push` para pruebas de integración.
+        *   **Scaffolding de FrontEnd Público (Receptor Web Push PWA):**
+            *   PWA minimalista en Vanilla JavaScript (sin frameworks de UI pesados) con soporte offline y manifiesto `manifest.json`.
+            *   Service Worker dedicado `firebase-messaging-sw.js` registrado en la raíz para recepción de alertas en segundo plano e interacciones nativas del navegador.
+            *   Soporte para recepción en primer plano (`onMessage`), audio-alerta perimetral y consulta forense bajo demanda conectada con el backend de Axum.
 *   **Fase Siguiente (Mitigación & Orquestación):**
     *   Implementación del Patrón Adapter (Traits en Rust) para la mitigación agnóstica de dispositivos de red (pfSense, FortiGate, Routers).
 

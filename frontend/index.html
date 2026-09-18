@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#0f172a">
+  <meta name="description" content="Tigo SOC - Consola PWA de Recepción de Alertas Push en Tiempo Real">
+  <title>Tigo SOC | Receptor Web Push Carrier-Grade</title>
+  
+  <!-- Manifiesto PWA -->
+  <link rel="manifest" href="/pwa/manifest.json">
+  <link rel="icon" type="image/svg+xml" href="/pwa/icons/icon-192.svg">
+  <link rel="apple-touch-icon" href="/pwa/icons/icon-192.svg">
+  
+  <!-- Hoja de Estilos Pura (Zero-Framework) -->
+  <link rel="stylesheet" href="/pwa/style.css">
+</head>
+<body>
+
+  <!-- ENCABEZADO -->
+  <header>
+    <div class="brand">
+      <img src="/pwa/icons/icon-192.svg" alt="Tigo SOC Logo" class="brand-icon">
+      <div>
+        <div class="brand-title">Tigo SOC Network Sentinel</div>
+        <div class="brand-subtitle">Receptor Web Push Vendor-Agnostic | Zero-Data Model</div>
+      </div>
+    </div>
+    <div class="header-status">
+      <label style="font-size: 0.8rem; color: var(--text-muted); display: flex; align-items: center; gap: 0.35rem; cursor: pointer;">
+        <input type="checkbox" id="audioToggle" checked> Alerta Sonora
+      </label>
+    </div>
+  </header>
+
+  <!-- CONTENIDO PRINCIPAL -->
+  <main>
+    <!-- PANEL DE TELEMETRÍA Y ESTADO DE CONEXIÓN PUSH -->
+    <section class="card">
+      <div class="card-header">
+        <span class="card-title">Estado del Receptor Web Push</span>
+        <span style="font-size: 0.75rem; color: var(--accent-cyan); font-family: var(--font-mono);">TOPIC: /topics/soc_alerts</span>
+      </div>
+
+      <div class="status-grid">
+        <div class="status-box">
+          <span class="status-label">Service Worker (SW)</span>
+          <span class="status-val" id="swStatus">
+            <span class="badge-dot dot-yellow"></span> Verificando...
+          </span>
+        </div>
+
+        <div class="status-box">
+          <span class="status-label">Permiso de Notificaciones</span>
+          <span class="status-val" id="permStatus">
+            <span class="badge-dot dot-yellow"></span> Consultando...
+          </span>
+        </div>
+
+        <div class="status-box">
+          <span class="status-label">Motor de Inferencia</span>
+          <span class="status-val">
+            <span class="badge-dot dot-green"></span> Polars + LightGBM
+          </span>
+        </div>
+      </div>
+
+      <!-- BOTONES DE ACCIÓN -->
+      <div class="btn-row">
+        <button class="btn" id="btnRequestPerm">
+          🔔 Activar Alertas Push (Permiso de Navegador)
+        </button>
+        <button class="btn btn-secondary" id="btnSimulatePush">
+          ⚡ Simular Alerta Zero-Data Push (FCM)
+        </button>
+        <button class="btn btn-secondary" id="btnClearAlerts">
+          🗑️ Limpiar Consola
+        </button>
+      </div>
+
+      <!-- VISOR DE TOKEN FCM DISPOSITIVO -->
+      <div style="margin-top: 1rem;">
+        <span class="status-label">Token de Registro FCM del Dispositivo:</span>
+        <div class="token-container" id="fcmTokenVal">
+          Haga clic en "Activar Alertas Push" para registrar el Service Worker y generar su token único de dispositivo.
+        </div>
+      </div>
+    </section>
+
+    <!-- BANDEJA DE ALERTAS RECIBIDAS EN TIEMPO REAL -->
+    <section class="card">
+      <div class="card-header">
+        <span class="card-title">Feed de Alertas e Incidentes en Vivo</span>
+        <span style="font-size: 0.75rem; color: var(--text-muted);">Modelo Zero-Trust & Zero-Data</span>
+      </div>
+
+      <div id="alertsContainer" class="alerts-list">
+        <!-- Tarjetas dinámicas inyectadas por app.js -->
+      </div>
+
+      <div id="emptyState" style="text-align: center; padding: 2.5rem; color: var(--text-muted); font-size: 0.85rem;">
+        <div style="font-size: 2rem; margin-bottom: 0.5rem;">🛡️</div>
+        <div>Esperando incidentes de seguridad o transmisiones push en segundo plano...</div>
+        <div style="font-size: 0.75rem; color: var(--border-color); margin-top: 0.5rem;">
+          Las alertas enviadas a <code>/topics/soc_alerts</code> aparecerán automáticamente aquí.
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- MODAL DE ANÁLISIS FORENSE SEGURO (ZERO-DATA RESOLUTION) -->
+  <div class="modal-overlay" id="modalOverlay">
+    <div class="modal-content">
+      <div class="modal-header">
+        <span class="card-title">Evidencia Forense Detallada (Canal Seguro)</span>
+        <button class="btn btn-secondary" id="modalCloseBtn" style="padding: 0.2rem 0.6rem;">✕</button>
+      </div>
+      <div id="modalBody">
+        <!-- Inyectado dinámicamente por app.js -->
+      </div>
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+  <footer>
+    Tigo SOC Automated Vendor-Agnostic Defense | Inferencia Sub-Microsegundo con Rust, Polars & LightGBM
+  </footer>
+
+  <!-- Firebase Compat SDKs Oficiales -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-messaging-compat.js"></script>
+
+  <!-- Lógica PWA pura -->
+  <script src="/pwa/app.js"></script>
+</body>
+</html>

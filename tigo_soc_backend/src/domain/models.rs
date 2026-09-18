@@ -300,9 +300,10 @@ pub struct ExtractedFeatures {
 }
 
 impl ExtractedFeatures {
-    // * * * CONVERTIR CARACTERÍSTICAS AL VECTOR EXACTO DE ENTRADA LIGHTGBM * * *
-    pub fn to_vector(&self) -> Vec<f32> {
-        vec![
+    // * * * CONVERSIÓN DE CARACTERÍSTICAS A ARREGLO ESTÁTICO EN EL STACK (ZERO-ALLOCATION) * * *
+    #[inline(always)]
+    pub fn to_array(&self) -> [f32; 23] {
+        [
             self.rate,
             self.iat,
             self.variance,
@@ -327,6 +328,11 @@ impl ExtractedFeatures {
             self.tot_size,
             self.number,
         ]
+    }
+
+    // * * * CONVERTIR CARACTERÍSTICAS AL VECTOR EXACTO DE ENTRADA LIGHTGBM * * *
+    pub fn to_vector(&self) -> Vec<f32> {
+        self.to_array().to_vec()
     }
 
     // * * * SERIALIZAR A FORMATO JSONB ESTRUCTURADO PARA FEATURE_STORE * * *
@@ -375,4 +381,26 @@ pub struct ThreatEvaluation {
     pub feature_time_us: f64,
     pub inference_time_us: f64,
     pub total_time_us: f64,
+}
+
+// * * * 7. ESTRUCTURA ENRIQUECIDA PARA CONSULTA FORENSE DE ALERTAS * * *
+
+#[derive(Serialize, Deserialize, Debug, Clone, FromRow)]
+#[serde(rename_all = "camelCase")]
+pub struct EnrichedAlert {
+    pub alert_id: i64,
+    pub feature_id: Option<i64>,
+    pub threat_id: Option<i32>,
+    pub threat_name: Option<String>,
+    pub severity_level: Option<i32>,
+    pub status_id: Option<i32>,
+    pub status_name: Option<String>,
+    pub anomaly_score: f64,
+    pub detected_at: Option<DateTime<Utc>>,
+    pub source_ip: Option<String>,
+    pub destination_ip: Option<String>,
+    pub protocol: Option<String>,
+    pub packet_size: Option<i32>,
+    pub flags: Option<String>,
+    pub feature_vector: Option<Value>,
 }

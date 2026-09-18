@@ -22,6 +22,7 @@ use domain::{
 };
 use infrastructure::{
     db_connection,
+    fcm_client::{FcmConfig, FcmNotifier},
     network_adapter::NetworkAdapter,
     repo_catalogs::CatalogsRepository,
     repo_inventory::InventoryRepository,
@@ -131,10 +132,15 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let telemetry = Arc::new(TelemetryRepository::new(db_pool.clone()));
     let orchestration = Arc::new(OrchestrationRepository::new(db_pool.clone()));
 
+    // * * * CLIENTE DE NOTIFICACIONES PUSH ZERO-DATA (FCM) * * *
+    let fcm_config = FcmConfig::from_env();
+    let fcm_notifier = Arc::new(FcmNotifier::new(fcm_config));
+
     // * * * WORKER FORENSE AISLADO (FEATURE ENGINEERING CON POLARS + LIGHTGBM) * * *
     let telemetry_forensic = Arc::clone(&telemetry);
     let orchestration_forensic = Arc::clone(&orchestration);
     let ip_cache_forensic = Arc::clone(&ip_cache);
+    let fcm_forensic = Arc::clone(&fcm_notifier);
     let detector_opt = threat_detector.clone();
 
     tokio::spawn(async move {
@@ -198,8 +204,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 // * * * LOG PERIÓDICO DE MONITOREO DEL MOTOR ML * * *
                 if eval_counter % 200 == 1 {
                     println!(
-                        "|- INSTRUCCION -| [ML] Evaluado: {} -> {} | Prob: {:.4} | Polars: {:.1} µs | LightGBM: {:.1} µs | Total: {:.1} µs",
-                        src_str, dst_str, evaluation.probability, evaluation.feature_time_us, evaluation.inference_time_us, evaluation.total_time_us
+                        "|- INSTRUCCION -| [ML] Evaluado: {} -> {} | Prob: {:.4} | Polars: {:.0} ns | LightGBM: {:.0} ns | Total: {:.0} ns",
+                        src_str, dst_str, evaluation.probability, evaluation.feature_time_us * 1000.0, evaluation.inference_time_us * 1000.0, evaluation.total_time_us * 1000.0
                     );
                 }
 
@@ -216,21 +222,24 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                         evaluation.threat_name, evaluation.probability * 100.0, node_id, src_str, dst_str
                     );
                     println!(
-                        "|- INSTRUCCION -| [ALERTA] Severidad: [{}] | Impacto: [{}] | Resolución: [{}] | Latencia: {:.1} µs",
-                        evaluation.severity, evaluation.impact, evaluation.resolution, evaluation.total_time_us
+                        "|- INSTRUCCION -| [ALERTA] Severidad: [{}] | Impacto: [{}] | Resolución: [{}] | Latencia: {:.0} ns",
+                        evaluation.severity, evaluation.impact, evaluation.resolution, evaluation.total_time_us * 1000.0
                     );
                     println!("|- INSTRUCCION -| [ALERTA] Detalles: {}", evaluation.technical_details);
 
                     let telemetry_db = Arc::clone(&telemetry_forensic);
                     let orch_db = Arc::clone(&orchestration_forensic);
+                    let fcm_push = Arc::clone(&fcm_forensic);
                     let proto_str = event.protocol.as_str().to_string();
                     let flags_str = event.flags_to_string();
                     let psize = event.packet_size as i32;
                     let feature_val = features.to_json();
                     let threat_id = evaluation.threat_id;
+                    let threat_name = evaluation.threat_name.clone();
+                    let threat_sev = evaluation.severity.clone();
                     let score = evaluation.probability as f64;
 
-                    // * * * DESACOPLAR I/O DE POSTGRESQL EN TAREA SECUNDARIA ASÍNCRONA * * *
+                    // * * * DESACOPLAR I/O DE POSTGRESQL Y PUSH NOTIFICATION EN SEGUNDO PLANO * * *
                     tokio::spawn(async move {
                         let log_id = match telemetry_db
                             .insert_log(
@@ -258,8 +267,17 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                             }
                         };
 
-                        if let Err(e) = orch_db.create_alert(Some(feature_id), Some(threat_id), Some(1), score).await {
-                            eprintln!("|- INSTRUCCION -| [DB ERROR] Falló la creación de security_alerts: {}", e);
+                        let alert_id = match orch_db.create_alert(Some(feature_id), Some(threat_id), Some(1), score).await {
+                            Ok(aid) => aid,
+                            Err(e) => {
+                                eprintln!("|- INSTRUCCION -| [DB ERROR] Falló la creación de security_alerts: {}", e);
+                                return;
+                            }
+                        };
+
+                        // * * * ESTRATEGIA ZERO-DATA PUSH: NOTIFICACIÓN OPACA A FIREBASE (TOPIC: /topics/soc_alerts) * * *
+                        if let Err(e) = fcm_push.send_opaque_alert(alert_id, &threat_sev, &threat_name).await {
+                            eprintln!("|- INSTRUCCION -| [FCM ERROR] Falló el envío del webhook Push: {}", e);
                         }
                     });
                 }
@@ -281,8 +299,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 let stats = det.get_performance_stats();
                 if stats.total_evaluations > 0 {
                     println!(
-                        "|- INSTRUCCION -| [ML STATS] Evaluaciones: {} | Anomalías: {} | Polars AVG: {:.1} µs | LightGBM AVG: {:.1} µs | Latencia Total AVG: {:.1} µs | Mín: {:.1} µs | Máx: {:.1} µs",
-                        stats.total_evaluations, stats.total_anomalies, stats.avg_feature_time_us, stats.avg_inference_time_us, stats.avg_total_time_us, stats.min_inference_time_us, stats.max_inference_time_us
+                        "|- INSTRUCCION -| [ML STATS] Evaluaciones: {} | Anomalías: {} | Polars AVG: {:.0} ns | LightGBM AVG: {:.0} ns | Latencia Total AVG: {:.0} ns | Mín: {:.0} ns | Máx: {:.0} ns",
+                        stats.total_evaluations, stats.total_anomalies, stats.avg_feature_time_us * 1000.0, stats.avg_inference_time_us * 1000.0, stats.avg_total_time_us * 1000.0, stats.min_inference_time_us * 1000.0, stats.max_inference_time_us * 1000.0
                     );
                 }
             }
@@ -379,6 +397,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         pool: db_pool.clone(),
         stream_handler,
         threat_detector,
+        fcm_notifier: Arc::clone(&fcm_notifier),
     };
 
     let app = create_router(state);
@@ -394,8 +413,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("|- INSTRUCCION -|    - GET /api/v1/telemetry/metrics");
     println!("|- INSTRUCCION -|    - GET /api/v1/telemetry/logs");
     println!("|- INSTRUCCION -|    - GET /api/v1/alerts");
+    println!("|- INSTRUCCION -|    - GET /api/v1/alerts/:id");
+    println!("|- INSTRUCCION -|    - POST /api/v1/alerts/simulate-push");
     println!("|- INSTRUCCION -|    - GET /api/v1/ml/stats");
     println!("|- INSTRUCCION -|    - GET /api/v1/ml/model-info");
+    println!("|- INSTRUCCION -|    - GET /pwa (Receptor Web Push PWA)");
 
     axum::serve(listener, app).await?;
 
