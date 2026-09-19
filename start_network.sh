@@ -9,8 +9,8 @@ if ! pgrep -x "gns3server" > /dev/null; then
     sleep 5
 fi
 
-chmod +x build_topology.py
-python3 build_topology.py
+chmod +x build_topology.sh
+python3 build_topology.sh
 
 echo -e "\e[1;33m[INFO] Esperando a que los contenedores enlacen con el kernel...\e[0m"
 sleep 5
