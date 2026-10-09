@@ -3,7 +3,7 @@
 use chrono::{DateTime, Utc};
 use serde_json::Value;
 use sqlx::{Error, PgPool, Row};
-use crate::domain::models::{FeatureStore, NetworkLog, NetworkTrafficMetric};
+use crate::domain::models::{FeatureStore, NetworkLog, NetworkTrafficMetric, SystemMetricsSummary};
 
 #[derive(Clone)]
 pub struct TelemetryRepository {
@@ -55,6 +55,66 @@ impl TelemetryRepository {
         .bind(limit)
         .fetch_all(&self.pool)
         .await
+    }
+
+    // * * * RESUMEN ESTADÍSTICO GLOBAL DEL SOC (POSTGRESQL AGGREGATION) * * *
+    pub async fn get_metrics_summary(&self) -> Result<SystemMetricsSummary, Error> {
+        let traffic_row = sqlx::query(
+            "SELECT 
+                COALESCE(SUM(total_packets), 0)::BIGINT AS total_packets, 
+                COALESCE(SUM(total_bytes), 0)::BIGINT AS total_bytes 
+             FROM network_traffic_metrics"
+        )
+        .fetch_one(&self.pool)
+        .await?;
+
+        let threats_count: (i64,) = sqlx::query_as(
+            "SELECT COUNT(*)::BIGINT FROM security_alerts"
+        )
+        .fetch_one(&self.pool)
+        .await?;
+
+        let nodes_count: (i64,) = sqlx::query_as(
+            "SELECT COUNT(*)::BIGINT FROM network_nodes"
+        )
+        .fetch_one(&self.pool)
+        .await?;
+
+        let logs_count: (i64,) = sqlx::query_as(
+            "SELECT COUNT(*)::BIGINT FROM network_logs"
+        )
+        .fetch_one(&self.pool)
+        .await?;
+
+        let threat_distribution_rows = sqlx::query(
+            "SELECT 
+                COALESCE(tt.threat_name, 'UNKNOWN') AS threat_name, 
+                COUNT(sa.alert_id)::BIGINT AS count 
+             FROM security_alerts sa 
+             LEFT JOIN threat_types tt ON sa.threat_id = tt.threat_id 
+             GROUP BY tt.threat_name"
+        )
+        .fetch_all(&self.pool)
+        .await?;
+
+        let mut threats_by_category = std::collections::HashMap::new();
+        for r in threat_distribution_rows {
+            let name: String = r.get("threat_name");
+            let count: i64 = r.get("count");
+            threats_by_category.insert(name, count);
+        }
+
+        let total_packets: i64 = traffic_row.get("total_packets");
+        let total_bytes: i64 = traffic_row.get("total_bytes");
+
+        Ok(SystemMetricsSummary {
+            total_threats: threats_count.0,
+            total_packets_processed: total_packets,
+            total_bytes_processed: total_bytes,
+            monitored_nodes_count: nodes_count.0,
+            forensic_logs_count: logs_count.0,
+            threats_by_category,
+        })
     }
 
     // * * * 2. LOGS FORENSES (MUNDO FORENSE / ALERTAS) * * *

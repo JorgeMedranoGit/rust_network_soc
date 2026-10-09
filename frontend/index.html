@@ -7,13 +7,17 @@
   <meta name="description" content="Tigo SOC - Consola PWA de Recepción de Alertas Push en Tiempo Real">
   <title>Tigo SOC | Receptor Web Push Carrier-Grade</title>
   
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
+  
   <!-- Manifiesto PWA -->
   <link rel="manifest" href="/pwa/manifest.json">
   <link rel="icon" type="image/svg+xml" href="/pwa/icons/icon-192.svg">
   <link rel="apple-touch-icon" href="/pwa/icons/icon-192.svg">
   
   <!-- Hoja de Estilos Pura (Zero-Framework) -->
-  <link rel="stylesheet" href="/pwa/style.css">
+  <link rel="stylesheet" href="/pwa/style.css?v=20260925_zt5">
 </head>
 <body>
 
@@ -121,6 +125,42 @@
     </div>
   </div>
 
+  <!-- ZERO TRUST ACCESS CONTROL GATE (PERÍMETRO DE SEGURIDAD) -->
+  <div id="zeroTrustLockout" class="zero-trust-overlay" style="display: flex;">
+    <div class="zero-trust-card">
+      <div class="zt-shield-icon">🛡️</div>
+      <div class="zt-status-badge">ACCESO DENEGADO — POLÍTICA ZERO TRUST (HTTP 403)</div>
+      <h1 class="zt-title">Estación No Autorizada</h1>
+      <p class="zt-description">
+        Su dirección IP pública no forma parte de la lista blanca autorizada en el perímetro de seguridad del SOC.
+      </p>
+
+      <div class="zt-ip-comparison">
+        <div class="zt-ip-box zt-ip-blocked">
+          <span class="zt-label">IP Detectada (Su Dispositivo):</span>
+          <span class="zt-val" id="ztDetectedIp">Analizando IP pública...</span>
+          <span class="zt-tag tag-blocked">DENEGADO (DROP)</span>
+        </div>
+        <div class="zt-ip-box zt-ip-allowed">
+          <span class="zt-label">IPs Autorizadas (Estación SOC):</span>
+          <span class="zt-val" id="ztAllowedIp">200.58.87.90, 189.28.95.161, 104.28.218.240, 104.28.250.240 (104.28.0.0/16)</span>
+          <span class="zt-tag tag-allowed">AUTORIZADO (ACCEPT)</span>
+        </div>
+      </div>
+
+      <div class="zt-info-box">
+        <strong>📡 Arquitectura Zero-Data Push Validada:</strong>
+        <p>
+          La notificación de alerta fue entregada exitosamente en este dispositivo a través del canal <em>Out-of-Band</em> de Google FCM sin exponer la infraestructura interna. Sin embargo, por directriz de ciberseguridad Zero Trust, la telemetría en vivo, topología y expediente forense solo son accesibles desde la terminal autorizada del SOC.
+        </p>
+      </div>
+
+      <div class="zt-actions">
+        <button class="btn btn-secondary" onclick="window.location.reload(true);">🔄 Reintentar Validación</button>
+      </div>
+    </div>
+  </div>
+
   <!-- FOOTER -->
   <footer>
     Tigo SOC Automated Vendor-Agnostic Defense | Inferencia Sub-Microsegundo con Rust, Polars & LightGBM
@@ -130,7 +170,7 @@
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-messaging-compat.js"></script>
 
-  <!-- Lógica PWA pura -->
-  <script src="/pwa/app.js"></script>
+  <!-- Lógica PWA pura con versionado anti-caché -->
+  <script src="/pwa/app.js?v=1790382236"></script>
 </body>
 </html>

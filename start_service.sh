@@ -14,6 +14,6 @@ if [ ! -f "tigo_soc_backend/service-account.json" ]; then
 fi
 
 # Levantar TigoSOC (Backend + BD) con Docker Compose
-sudo docker compose -f docker-compose.yml up -d --build
+sudo docker compose -f docker-compose.yml up -d
 
 echo -e "\e[1;32m[OK] Servicios SOC (Rust + PostgreSQL + PWA) ejecutándose.\e[0m"

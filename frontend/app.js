@@ -39,12 +39,87 @@ let messaging = null;
 let currentToken = null;
 let audioContext = null;
 
+// * * * CONTROL DE ACCESO PERIMETRAL ZERO TRUST * * *
+const ALLOWED_SOC_IPS = [
+  '189.28.95.161',
+  '104.28.218.240',
+  '104.28.250.240',
+  '104.28.', // Cobertura total para rango móvil Cloudflare WARP egress (104.28.0.0/16)
+  '127.0.0.1',
+  'localhost'
+];
+let isSessionAuthorized = false;
+
+async function enforceZeroTrustGate() {
+  const lockoutEl = document.getElementById('zeroTrustLockout');
+  const detectedIpEl = document.getElementById('ztDetectedIp');
+
+  // Parámetro opcional de bypass para contingencias
+  const urlParams = new URLSearchParams(window.location.search);
+  if (urlParams.get('bypass_zt') === 'true' || localStorage.getItem('zt_bypass') === 'true') {
+    if (urlParams.get('bypass_zt') === 'true') {
+      localStorage.setItem('zt_bypass', 'true');
+    }
+    console.log('[ZeroTrust] Modo Bypass verificado.');
+    if (lockoutEl) lockoutEl.style.display = 'none';
+    isSessionAuthorized = true;
+    return true;
+  }
+
+  let clientIp = '';
+  // Intento 1: api.ipify.org (rápido, universal y sin bloqueo CORS)
+  try {
+    const ipRes = await fetch('https://api.ipify.org?format=json', { cache: 'no-store' });
+    if (ipRes.ok) {
+      const data = await ipRes.json();
+      clientIp = data.ip ? data.ip.trim() : '';
+    }
+  } catch (e) {
+    console.warn('[ZeroTrust] Consulta a ipify falló:', e);
+  }
+
+  // Intento 2: Fallback Cloudflare trace
+  if (!clientIp) {
+    try {
+      const traceRes = await fetch('/cdn-cgi/trace', { cache: 'no-store' });
+      if (traceRes.ok) {
+        const text = await traceRes.text();
+        const ipMatch = text.match(/ip=([^\n]+)/);
+        if (ipMatch) {
+          clientIp = ipMatch[1].trim();
+        }
+      }
+    } catch (e) {}
+  }
+
+  console.log('[ZeroTrust] IP de cliente detectada:', clientIp);
+
+  const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+  const isAllowed = isLocal || (Boolean(clientIp) && ALLOWED_SOC_IPS.some(allowed => clientIp === allowed || clientIp.startsWith(allowed)));
+
+  if (!isAllowed) {
+    console.warn(`[ZeroTrust] ACCESO DENEGADO. IP [${clientIp}] fuera de la lista blanca del SOC.`);
+    if (detectedIpEl) detectedIpEl.textContent = clientIp || 'Red Móvil / IP No Autorizada';
+    if (lockoutEl) lockoutEl.style.display = 'flex';
+    isSessionAuthorized = false;
+    return false;
+  } else {
+    console.log(`[ZeroTrust] ACCESO CONCEDIDO. Estación SOC autorizada: [${clientIp}]`);
+    if (lockoutEl) lockoutEl.style.display = 'none';
+    isSessionAuthorized = true;
+    return true;
+  }
+}
+
 // * * * 3. INICIALIZACIÓN PRINCIPAL * * *
 window.addEventListener('DOMContentLoaded', async () => {
   console.log('[TigoSOC] Inicializando PWA Web Push Receiver...');
   updatePermissionBadge();
 
-  // Inicializar Firebase Compat
+  // Validación estricta del perímetro Zero Trust
+  const isAuthorized = await enforceZeroTrustGate();
+
+  // Inicializar Firebase Compat (siempre activo para suscripción/recepción de pushes)
   try {
     if (!firebase.apps.length) {
       firebase.initializeApp(firebaseConfig);
@@ -66,11 +141,13 @@ window.addEventListener('DOMContentLoaded', async () => {
     setupForegroundMessages();
   }
 
-  // Verificar si la URL contiene parámetro de inspección directa de alerta
-  const urlParams = new URLSearchParams(window.location.search);
-  const targetAlertId = urlParams.get('alertId');
-  if (targetAlertId) {
-    inspectAlert(targetAlertId);
+  // Si está autorizado y la URL contiene parámetro de inspección, abrir alerta
+  if (isAuthorized) {
+    const urlParams = new URLSearchParams(window.location.search);
+    const targetAlertId = urlParams.get('alertId');
+    if (targetAlertId) {
+      inspectAlert(targetAlertId);
+    }
   }
 });
 
@@ -201,6 +278,24 @@ function setupForegroundMessages() {
       timestamp,
       verificationToken: data.verificationToken || 'N/A'
     });
+
+    // Forzar notificación emergente del sistema operativo aunque la app esté en primer plano
+    if (Notification.permission === 'granted' && 'serviceWorker' in navigator) {
+      navigator.serviceWorker.ready.then((reg) => {
+        reg.showNotification(`🚨 [Tigo SOC] Incidente #${alertId} - ${category}`, {
+          body: `Severidad: [${severity}] | Se detectó tráfico anómalo en tiempo real.`,
+          icon: '/pwa/icons/icon-192.svg',
+          badge: '/pwa/icons/icon-192.svg',
+          tag: `tigo-soc-alert-${alertId}`,
+          vibrate: [300, 100, 300],
+          renotify: true,
+          data: {
+            alertId: alertId,
+            url: `/pwa/?alertId=${alertId}&source=foreground_push`
+          }
+        });
+      }).catch(err => console.warn('[TigoSOC] Error al mostrar notificación en primer plano:', err));
+    }
   });
 }
 
@@ -244,6 +339,13 @@ function appendAlertCard(alert) {
 // El operador hace clic en la alerta y solicita la evidencia directamente al backend
 // usando comunicación interna segura y autenticada, completando la estrategia Zero-Data Push.
 async function inspectAlert(alertId) {
+  if (!isSessionAuthorized) {
+    console.warn(`[ZeroTrust] Intento de inspección forense bloqueado para Alerta #${alertId}.`);
+    const lockoutEl = document.getElementById('zeroTrustLockout');
+    if (lockoutEl) lockoutEl.style.display = 'flex';
+    return;
+  }
+
   console.log(`[TigoSOC] Solicitando evidencia forense para Alerta ID #${alertId}...`);
   dom.modalOverlay.style.display = 'flex';
   dom.modalBody.innerHTML = `<div style="text-align: center; padding: 2rem; font-family: var(--font-mono);">Cargando evidencia forense desde la API segura del SOC...</div>`;

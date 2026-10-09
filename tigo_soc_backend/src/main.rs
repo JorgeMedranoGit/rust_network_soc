@@ -411,7 +411,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     });
 
-    // * * * 8. INICIAR SERVIDOR WEB AXUM * * *
+    // * * * 8. INICIAR SERVIDOR WEB AXUM ASÍNCRONO * * *
     let port = env::var("PORT")
         .unwrap_or_else(|_| "3000".to_string())
         .parse::<u16>()
@@ -430,20 +430,38 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     println!("|- INSTRUCCION -| [API REST] Servidor expuesto y escuchando en: http://{}", addr);
     println!("|- INSTRUCCION -| [API REST] Rutas operativas disponibles:");
-    println!("|- INSTRUCCION -|    - GET /health");
+    println!("|- INSTRUCCION -|    - GET /health (Health Check liviano)");
+    println!("|- INSTRUCCION -|    - GET /api/v1/alerts (Últimas 50 alertas forenses)");
+    println!("|- INSTRUCCION -|    - GET /api/v1/metrics (Resumen estadístico global)");
     println!("|- INSTRUCCION -|    - GET /api/v1/status");
     println!("|- INSTRUCCION -|    - GET /api/v1/catalogs/device-types");
     println!("|- INSTRUCCION -|    - GET /api/v1/inventory/nodes");
     println!("|- INSTRUCCION -|    - GET /api/v1/telemetry/metrics");
     println!("|- INSTRUCCION -|    - GET /api/v1/telemetry/logs");
-    println!("|- INSTRUCCION -|    - GET /api/v1/alerts");
     println!("|- INSTRUCCION -|    - GET /api/v1/alerts/:id");
     println!("|- INSTRUCCION -|    - POST /api/v1/alerts/simulate-push");
+    println!("|- INSTRUCCION -|    - POST /api/v1/alerts/subscribe");
     println!("|- INSTRUCCION -|    - GET /api/v1/ml/stats");
     println!("|- INSTRUCCION -|    - GET /api/v1/ml/model-info");
     println!("|- INSTRUCCION -|    - GET /pwa (Receptor Web Push PWA)");
 
-    axum::serve(listener, app).await?;
+    // Servidor web ejecutándose de forma asíncrona junto con el resto del pipeline
+    let server_task = tokio::spawn(async move {
+        if let Err(e) = axum::serve(listener, app).await {
+            eprintln!("|- INSTRUCCION -| [API REST] Error crítico en el servidor web: {}", e);
+        }
+    });
+
+    tokio::select! {
+        res = server_task => {
+            if let Err(e) = res {
+                eprintln!("|- INSTRUCCION -| [API REST] Tarea del servidor web falló: {}", e);
+            }
+        }
+        _ = tokio::signal::ctrl_c() => {
+            println!("|- INSTRUCCION -| Interrupción recibida (Ctrl+C). Apagando servidor y pipeline Tigo SOC de forma controlada...");
+        }
+    }
 
     Ok(())
 }
@@ -475,9 +493,16 @@ async fn seed_initial_inventory(
     let get_pid = |name: &str| protocols.iter().find(|p| p.protocol_name == name).and_then(|p| p.protocol_id);
 
     let nodes = [
-        ("AttackerKali", "192.168.1.50", get_tid("ATTACKER_KALI"), get_pid("SSH")),
-        ("VictimeAlpine1", "192.168.1.10", get_tid("WORKSTATION_VICTIM"), get_pid("SSH")),
-        ("VictimeAlpine2", "192.168.1.20", get_tid("WORKSTATION_VICTIM"), get_pid("SSH")),
+        ("AttackerKali", "192.168.100.50", get_tid("ATTACKER_KALI"), get_pid("SSH")),
+        ("VictimeAlpine1", "192.168.1.11", get_tid("WORKSTATION_VICTIM"), get_pid("SSH")),
+        ("VictimeAlpine2", "192.168.1.12", get_tid("WORKSTATION_VICTIM"), get_pid("SSH")),
+        ("VictimeAlpine3", "192.168.1.13", get_tid("WORKSTATION_VICTIM"), get_pid("SSH")),
+        ("VictimeAlpine4", "192.168.1.14", get_tid("WORKSTATION_VICTIM"), get_pid("SSH")),
+        ("VictimeAlpine5", "192.168.1.15", get_tid("WORKSTATION_VICTIM"), get_pid("SSH")),
+        ("VictimeAlpine6", "192.168.1.16", get_tid("WORKSTATION_VICTIM"), get_pid("SSH")),
+        ("VictimeAlpine7", "192.168.1.17", get_tid("WORKSTATION_VICTIM"), get_pid("SSH")),
+        ("VictimeAlpine8", "192.168.1.18", get_tid("WORKSTATION_VICTIM"), get_pid("SSH")),
+        ("VictimeAlpine9", "192.168.1.19", get_tid("WORKSTATION_VICTIM"), get_pid("SSH")),
         ("pfSense_Gateway", "192.168.1.1", get_tid("FIREWALL_PERIMETER"), get_pid("SSH")),
         ("Router_Core_L3", "192.168.1.254", get_tid("ROUTER_CORE_L3"), get_pid("SSH")),
     ];
@@ -527,6 +552,7 @@ async fn seed_initial_catalogs(repo: &CatalogsRepository) {
         ("PORT_SCAN", 2),
         ("DDOS_SYN_FLOOD", 4),
         ("UNAUTHORIZED_ACCESS", 3),
+        ("ICMP_FLOOD", 3),
     ];
     for (name, sev) in threat_types {
         let _ = repo.create_threat_type(name, sev).await;

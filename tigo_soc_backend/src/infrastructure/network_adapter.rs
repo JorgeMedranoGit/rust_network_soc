@@ -100,6 +100,17 @@ fn parse_raw_packet(datalink: Linktype, data: &[u8], packet_len: i32) -> Option<
                 if let Some(event) = extract_event(&sliced, packet_len) {
                     return Some(event);
                 }
+                // Decapsulación de túneles ubridge GNS3 (UDP sobre loopback)
+                if let Some(TransportSlice::Udp(udp)) = &sliced.transport {
+                    let payload = udp.payload();
+                    if payload.len() >= 14 {
+                        if let Ok(inner_sliced) = SlicedPacket::from_ethernet(payload) {
+                            if let Some(event) = extract_event(&inner_sliced, payload.len() as i32) {
+                                return Some(event);
+                            }
+                        }
+                    }
+                }
             }
         }
     }
@@ -109,6 +120,16 @@ fn parse_raw_packet(datalink: Linktype, data: &[u8], packet_len: i32) -> Option<
         if let Some(event) = extract_event(&sliced, packet_len) {
             return Some(event);
         }
+        if let Some(TransportSlice::Udp(udp)) = &sliced.transport {
+            let payload = udp.payload();
+            if payload.len() >= 14 {
+                if let Ok(inner_sliced) = SlicedPacket::from_ethernet(payload) {
+                    if let Some(event) = extract_event(&inner_sliced, payload.len() as i32) {
+                        return Some(event);
+                    }
+                }
+            }
+        }
     }
 
     // 3. BSD Loopback (Linktype = 0)
@@ -116,6 +137,16 @@ fn parse_raw_packet(datalink: Linktype, data: &[u8], packet_len: i32) -> Option<
         if let Ok(sliced) = SlicedPacket::from_ip(&data[4..]) {
             if let Some(event) = extract_event(&sliced, packet_len) {
                 return Some(event);
+            }
+            if let Some(TransportSlice::Udp(udp)) = &sliced.transport {
+                let payload = udp.payload();
+                if payload.len() >= 14 {
+                    if let Ok(inner_sliced) = SlicedPacket::from_ethernet(payload) {
+                        if let Some(event) = extract_event(&inner_sliced, payload.len() as i32) {
+                            return Some(event);
+                        }
+                    }
+                }
             }
         }
     }
@@ -205,13 +236,13 @@ fn extract_event(sliced: &SlicedPacket, packet_len: i32) -> Option<NetworkEvent>
     }
 
     // * * * 4. AISLAMIENTO ESTRICTO DEL ALCANCE DE RED DEL LABORATORIO SOC * * *
-    // Monitorear únicamente tráfico perteneciente a la topología SOC/GNS3 (192.168.1.0/24) o prefijos Carrier.
+    // Monitorear únicamente tráfico perteneciente a la topología SOC/GNS3 (192.168.1.0/24 y 192.168.100.0/24)
     // Descarta tráfico de navegación personal (WiFi wlo1 192.168.0.x, VPN WARP, IPv6 público, etc.)
     let is_monitored_soc_network = |ip: &IpAddr| match ip {
         IpAddr::V4(v4) => {
             let octets = v4.octets();
-            // Subred del laboratorio SOC GNS3: 192.168.1.x
-            octets[0] == 192 && octets[1] == 168 && octets[2] == 1
+            // Subred del laboratorio SOC GNS3: 192.168.1.x y atacante Kali 192.168.100.x
+            octets[0] == 192 && octets[1] == 168 && (octets[2] == 1 || octets[2] == 100)
         }
         IpAddr::V6(_) => false,
     };

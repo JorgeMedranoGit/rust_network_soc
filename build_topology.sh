@@ -2,13 +2,23 @@
 set -e
 
 API_URL="http://127.0.0.1:3080/v2"
+PROJECT_NAME="Tigo_SOC_ISP_Expanded"
 
 echo -e "\e[1;34m[INFO] Inicializando construcción de topología ISP en Bash (API GNS3)...\e[0m"
 
-# 1. Crear el proyecto
+# 1. Limpiar el proyecto si ya existe
+EXISTING_PROJECT_ID=$(curl -s "$API_URL/projects" | jq -r --arg n "$PROJECT_NAME" '.[] | select(.name==$n) | .project_id')
+
+if [ -n "$EXISTING_PROJECT_ID" ] && [ "$EXISTING_PROJECT_ID" != "null" ]; then
+    echo -e "\e[1;33m[INFO] El proyecto '$PROJECT_NAME' ya existe. Eliminando infraestructura anterior...\e[0m"
+    curl -s -X DELETE "$API_URL/projects/$EXISTING_PROJECT_ID" > /dev/null
+    sleep 3
+fi
+
+# 2. Crear el proyecto nuevo
 PROJECT_RES=$(curl -s -X POST "$API_URL/projects" \
     -H "Content-Type: application/json" \
-    -d '{"name": "Tigo_SOC_ISP_Expanded"}')
+    -d "{\"name\": \"$PROJECT_NAME\"}")
 PROJECT_ID=$(echo "$PROJECT_RES" | jq -r '.project_id')
 
 if [ "$PROJECT_ID" == "null" ] || [ -z "$PROJECT_ID" ]; then
@@ -17,12 +27,12 @@ if [ "$PROJECT_ID" == "null" ] || [ -z "$PROJECT_ID" ]; then
 fi
 echo -e "\e[1;32m[+] Proyecto creado con ID: $PROJECT_ID\e[0m"
 
-# 2. Función para instanciar Docker
+# 3. Función para instanciar Docker (con console_type agregado para evitar auto-apagado)
 create_docker() {
     local name=$1
     local image=$2
     local payload=$(jq -n --arg name "$name" --arg image "$image" \
-        '{name: $name, node_type: "docker", compute_id: "local", properties: {image: $image, adapters: 1}}')
+        '{name: $name, node_type: "docker", compute_id: "local", console_type: "telnet", properties: {image: $image, adapters: 1}}')
     
     local res=$(curl -s -X POST "$API_URL/projects/$PROJECT_ID/nodes" \
         -H "Content-Type: application/json" -d "$payload")
@@ -30,14 +40,14 @@ create_docker() {
 }
 
 echo -e "\e[1;34m[INFO] Creando 10 dispositivos finales...\e[0m"
-ATTACKER_ID=$(create_docker "AttackerKali" "kalilinux/kali-rolling")
+ATTACKER_ID=$(create_docker "AttackerKali" "kali-soc-tools")
 
 declare -a VICTIM_IDS
 for i in {1..9}; do
     VICTIM_IDS[$i]=$(create_docker "VictimeAlpine$i" "alpine:latest")
 done
 
-# 3. Crear el Router Core del ISP (Switch de 16 puertos)
+# 4. Crear el Router Core
 SWITCH_PAYLOAD='{
     "name": "ISP_Core_Router",
     "node_type": "ethernet_switch",
@@ -63,7 +73,7 @@ SWITCH_ID=$(echo "$SWITCH_RES" | jq -r '.node_id')
 
 echo -e "\e[1;34m[INFO] Nodos instanciados. Estableciendo enlaces...\e[0m"
 
-# 4. Función para crear enlaces
+# 5. Función enlaces
 create_link() {
     local n1=$1
     local p1=$2
@@ -76,15 +86,13 @@ create_link() {
         -H "Content-Type: application/json" -d "$payload" > /dev/null
 }
 
-# Conectar Kali al puerto 0
 create_link "$ATTACKER_ID" 0 "$SWITCH_ID" 0
-
-# Conectar las 9 Víctimas a los puertos 1-9
 for i in {1..9}; do
     create_link "$SWITCH_ID" "$i" "${VICTIM_IDS[$i]}" 0
 done
 
 echo -e "\e[1;34m[INFO] Cableado finalizado. Iniciando nodos en paralelo...\e[0m"
-curl -s -X POST "$API_URL/projects/$PROJECT_ID/nodes/start" > /dev/null
+curl -s -X POST "$API_URL/projects/$PROJECT_ID/nodes/start" \
+    -H "Content-Type: application/json" -d "{}" > /dev/null
 
 echo -e "\e[1;32m[+] Topología ISP levantada exitosamente por script Bash.\e[0m"

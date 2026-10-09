@@ -1,21 +1,67 @@
 #!/bin/bash
+set -e
 
-echo -e "\e[1;34m[INFO] Iniciando verificación del Laboratorio Tigo SOC...\e[0m"
+echo -e "\e[1;34m[INFO] Iniciando verificación del Laboratorio Tigo SOC (Multi-Distro)...\e[0m"
+
+# 0. Captura interactiva / canalizada de IP para Firewall Zero Trust
+ALLOWED_IP=${1:-}
+if [ -z "$ALLOWED_IP" ]; then
+    if [ -t 0 ]; then
+        echo -e "\e[1;33m[FIREWALL ZERO TRUST] Ingrese la IP autorizada para acceder a la API SOC (ej: 8.8.8.8):\e[0m"
+        read -r ALLOWED_IP || true
+    else
+        read -r ALLOWED_IP || true
+    fi
+fi
 
 installInCase() {
-    if ! command -v $1 &> /dev/null; then
-        echo -e "\e[1;33m $1 no está instalado. Procediendo a instalar...\e[0m"
-        sudo pacman -Syu --needed --noconfirm $2
+    local cmd=$1
+    local apt_pkgs=$2
+    local pacman_pkgs=$3
+    local dnf_pkgs=$4
+    local zypper_pkgs=$5
+
+    if ! command -v $cmd &> /dev/null; then
+        echo -e "\e[1;33m $cmd no está instalado. Detectando gestor de paquetes...\e[0m"
+        
+        # Familia Debian / Ubuntu / Kali
+        if command -v apt-get &> /dev/null; then
+            if [ "$cmd" == "gns3server" ]; then
+                echo -e "\e[1;34m[INFO] Añadiendo repositorio PPA de GNS3 para la familia Debian...\e[0m"
+                sudo DEBIAN_FRONTEND=noninteractive apt-get install -y software-properties-common
+                sudo add-apt-repository -y ppa:gns3/ppa || true
+            fi
+            sudo apt-get update
+            sudo DEBIAN_FRONTEND=noninteractive apt-get install -y $apt_pkgs
+
+        # Familia Arch Linux / Garuda / BigLinux
+        elif command -v pacman &> /dev/null; then
+            sudo pacman -Sy --needed --noconfirm $pacman_pkgs
+
+        # Familia Fedora / RHEL / CentOS
+        elif command -v dnf &> /dev/null; then
+            sudo dnf install -y $dnf_pkgs
+        elif command -v yum &> /dev/null; then
+            sudo yum install -y $dnf_pkgs
+
+        # Familia openSUSE
+        elif command -v zypper &> /dev/null; then
+            sudo zypper install -n $zypper_pkgs
+
+        else
+            echo -e "\e[1;31m[ERROR] No se encontró apt, pacman, dnf, yum o zypper. Por favor instala $cmd manualmente.\e[0m"
+            exit 1
+        fi
     else
-        echo -e "\e[1;32m $1 ya está instalado.\e[0m"
+        echo -e "\e[1;32m $cmd ya está instalado.\e[0m"
     fi
 }
 
-# 1. Verificación de dependencias
-installInCase "docker" "docker"
-installInCase "docker-compose" "docker-compose"
-installInCase "cargo" "rust"
-installInCase "gns3server" "gns3-server gns3-gui dynamips ubridge"
+# 1. Verificación universal de dependencias: 
+# (Comando | Paquetes APT | Paquetes PACMAN | Paquetes DNF/YUM | Paquetes ZYPPER)
+installInCase "docker" "docker.io docker-compose-v2 jq curl" "docker docker-compose jq curl" "docker docker-compose jq curl" "docker docker-compose jq curl"
+installInCase "cargo" "cargo" "rust" "cargo" "cargo"
+installInCase "gns3server" "gns3-server dynamips ubridge" "gns3-server dynamips ubridge" "gns3-server dynamips ubridge" "gns3-server dynamips ubridge"
 
 # 2. Iniciar Docker si está apagado
 if ! systemctl is-active --quiet docker; then
@@ -23,16 +69,37 @@ if ! systemctl is-active --quiet docker; then
     sudo systemctl enable --now docker
 fi
 
-# 3. Levantar TigoSOC (Backend + BD)
-echo -e "\e[1;34m Levantando Base de Datos y Rust con Docker Compose...\e[0m"
-sudo docker compose up -d --build
+# 2.1 Aplicar reglas de Firewall Zero Trust en cadena DOCKER-USER y enlazar INPUT (Soporte Host-Mode & Bridge)
+TRUSTED_SOC_IPS="189.28.95.161,104.28.218.240,104.28.250.240"
+ACTIVE_IPS="$TRUSTED_SOC_IPS"
+if [ -n "$ALLOWED_IP" ]; then
+    ACTIVE_IPS="$ACTIVE_IPS,$ALLOWED_IP"
+fi
 
-# 4. Levantar GNS3 Server
+echo -e "\e[1;34m[INFO] Aplicando reglas de Firewall Zero Trust en DOCKER-USER para IP(s): $ACTIVE_IPS...\e[0m"
+sudo iptables -D DOCKER-USER -s 127.0.0.1 -p tcp --dport 3000 -j ACCEPT 2>/dev/null || true
+sudo iptables -D DOCKER-USER -p tcp --dport 3000 -j DROP 2>/dev/null || true
+for ip in $(echo "$ACTIVE_IPS" | tr ',' ' '); do
+    sudo iptables -D DOCKER-USER -s "$ip" -p tcp --dport 3000 -j ACCEPT 2>/dev/null || true
+done
+
+sudo iptables -I DOCKER-USER 1 -p tcp --dport 3000 -j DROP
+for ip in $(echo "$ACTIVE_IPS" | tr ',' ' '); do
+    sudo iptables -I DOCKER-USER 1 -s "$ip" -p tcp --dport 3000 -j ACCEPT
+done
+sudo iptables -I DOCKER-USER 1 -s 127.0.0.1 -p tcp --dport 3000 -j ACCEPT
+
+# Enlazar INPUT hacia DOCKER-USER para proteger servicios que corren en network_mode: host
+sudo iptables -D INPUT -p tcp --dport 3000 -j DOCKER-USER 2>/dev/null || true
+sudo iptables -I INPUT 1 -p tcp --dport 3000 -j DOCKER-USER
+echo -e "\e[1;32m[OK] Firewall Zero Trust activo en DOCKER-USER y enlazado a INPUT (ALLOW: $ACTIVE_IPS, DROP general para puerto 3000).\e[0m"
+
+# 3. Levantar GNS3 Server en segundo plano
 echo -e "\e[1;34m Iniciando servidor GNS3 en segundo plano...\e[0m"
 if pgrep -x "gns3server" > /dev/null; then
     echo -e "\e[1;32m El servidor GNS3 ya está en ejecución.\e[0m"
 else
-    sudo gns3server --daemon
+    sudo gns3server --daemon --host 0.0.0.0
     echo -e "\e[1;32m Servidor GNS3 levantado exitosamente.\e[0m"
 fi
 
@@ -40,36 +107,7 @@ echo -e "\e[1;32m============================================================\e[
 echo -e "\e[1;32m LABORATORIO BASE INICIADO \e[0m"
 echo -e "\e[1;32m============================================================\e[0m"
 
-# 5. Inyección de IPs mediante namespaces del Host
-echo -e "\e[1;33m[ACCIÓN REQUERIDA] Por favor, abre GNS3, carga el proyecto y dale a 'Start' a los nodos.\e[0m"
-read -p "Presiona [ENTER] ÚNICAMENTE cuando los nodos de Kali y Alpine estén corriendo en GNS3..."
-
-inject_ip() {
-    local keyword=$1
-    local ip_addr=$2
-    local iface=${3:-eth0}
-    local cid=$(sudo docker ps -q -f "name=${keyword}" | head -n 1)
-    
-    if [ -z "$cid" ]; then
-        echo -e "\e[1;31m[ERROR] No se encontró el contenedor asociado a '$keyword'. ¿Está encendido?\e[0m"
-        return
-    fi
-    local cpid=$(sudo docker inspect -f '{{.State.Pid}}' $cid)
-
-    sudo nsenter -t $cpid -n ip addr add $ip_addr dev $iface 2>/dev/null || echo -e "\e[1;33m  -> La IP $ip_addr podría ya estar asignada.\e[0m"
-    sudo nsenter -t $cpid -n ip link set $iface up
-
-    echo -e "\e[1;32m[OK] IP $ip_addr inyectada a nodo [$keyword] (Interfaz: $iface)\e[0m"
-}
-
-echo -e "\e[1;34m[INFO] Inyectando IPs estáticas desde el kernel host...\e[0m"
-
-
-inject_ip "AttackerKali" "192.168.1.50/24"
-inject_ip "VictimeAlpine1" "192.168.1.10/24"
-inject_ip "VictimeAlpine2" "192.168.1.20/24"
-# inject_ip "pfsense" "192.168.1.1/24" # (Opcional)
-
-echo -e "\e[1;32m============================================================\e[0m"
-echo -e "\e[1;32m TOPOLOGÍA DE RED CONFIGURADA Y LISTA PARA ATACAR\e[0m"
-echo -e "\e[1;32m============================================================\e[0m"
+# 4. Llamada a los sub-scripts
+chmod +x start_service.sh start_network.sh build_topology.sh
+./start_service.sh
+./start_network.sh

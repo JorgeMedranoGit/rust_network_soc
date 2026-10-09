@@ -404,3 +404,17 @@ pub struct EnrichedAlert {
     pub flags: Option<String>,
     pub feature_vector: Option<Value>,
 }
+
+// * * * 8. RESUMEN ESTADÍSTICO DE MÉTRICAS GLOBALES DEL SISTEMA * * *
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct SystemMetricsSummary {
+    pub total_threats: i64,
+    pub total_packets_processed: i64,
+    pub total_bytes_processed: i64,
+    pub monitored_nodes_count: i64,
+    pub forensic_logs_count: i64,
+    pub threats_by_category: std::collections::HashMap<String, i64>,
+}
+
