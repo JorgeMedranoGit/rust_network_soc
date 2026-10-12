@@ -2,15 +2,20 @@
 
 use leptos::*;
 
-use crate::components::{AlertsTable, BlastRadiusControl, SystemStatus};
+use crate::components::{
+    AlertsTable, BlastRadiusControl, MonitoringChart, RealtimeAlerts, SystemStatus,
+};
 use crate::models::{
-    get_initial_alerts, get_initial_metrics, get_initial_pending_mitigations,
-    AlertItem, PendingMitigation, Severity, SystemMetrics,
+    get_initial_alerts, get_initial_chart_data, get_initial_metrics,
+    get_initial_pending_mitigations, get_initial_realtime_events,
+    AlertItem, MetricDataPoint, PendingMitigation, RealtimeStreamEvent, Severity, SystemMetrics,
 };
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ActiveTab {
     Dashboard,
+    MonitoringCharts,
+    RealtimeStream,
     Alerts,
     BlastRadius,
 }
@@ -21,6 +26,8 @@ pub fn App() -> impl IntoView {
     let (metrics, set_metrics) = create_signal::<SystemMetrics>(get_initial_metrics());
     let (alerts, _set_alerts) = create_signal::<Vec<AlertItem>>(get_initial_alerts());
     let (pending_items, set_pending_items) = create_signal::<Vec<PendingMitigation>>(get_initial_pending_mitigations());
+    let (chart_data, set_chart_data) = create_signal::<Vec<MetricDataPoint>>(get_initial_chart_data());
+    let (stream_events, set_stream_events) = create_signal::<Vec<RealtimeStreamEvent>>(get_initial_realtime_events());
     let (selected_severity, set_selected_severity) = create_signal::<Option<Severity>>(None);
     let (active_tab, set_active_tab) = create_signal::<ActiveTab>(ActiveTab::Dashboard);
 
@@ -51,10 +58,22 @@ pub fn App() -> impl IntoView {
                         "📊 Panel de Control"
                     </button>
                     <button
+                        class=move || if active_tab.get() == ActiveTab::MonitoringCharts { "nav-btn active" } else { "nav-btn" }
+                        on:click=move |_| set_active_tab.set(ActiveTab::MonitoringCharts)
+                    >
+                        "📈 Gráficas de Monitoreo"
+                    </button>
+                    <button
+                        class=move || if active_tab.get() == ActiveTab::RealtimeStream { "nav-btn active" } else { "nav-btn" }
+                        on:click=move |_| set_active_tab.set(ActiveTab::RealtimeStream)
+                    >
+                        "⚡ Flujo en Vivo (Stream)"
+                    </button>
+                    <button
                         class=move || if active_tab.get() == ActiveTab::Alerts { "nav-btn active" } else { "nav-btn" }
                         on:click=move |_| set_active_tab.set(ActiveTab::Alerts)
                     >
-                        "🚨 Alertas de Seguridad"
+                        "🚨 Alertas"
                     </button>
                     <button
                         class=move || if active_tab.get() == ActiveTab::BlastRadius { "nav-btn active" } else { "nav-btn" }
@@ -81,6 +100,12 @@ pub fn App() -> impl IntoView {
                     ActiveTab::Dashboard => view! {
                         <div>
                             <SystemStatus metrics=metrics />
+                            <div style="margin-bottom: 1.5rem;">
+                                <MonitoringChart
+                                    chart_data=chart_data
+                                    set_chart_data=set_chart_data
+                                />
+                            </div>
                             <h2 style="font-size: 1.125rem; font-weight: 700; margin-bottom: 0.75rem; color: var(--ctp-text);">
                                 "Últimas Detecciones de Seguridad (Multi-Vendor)"
                             </h2>
@@ -88,6 +113,29 @@ pub fn App() -> impl IntoView {
                                 alerts=alerts
                                 selected_severity=selected_severity
                                 set_selected_severity=set_selected_severity
+                            />
+                        </div>
+                    }.into_view(),
+                    ActiveTab::MonitoringCharts => view! {
+                        <div>
+                            <h2 style="font-size: 1.25rem; font-weight: 700; margin-bottom: 1rem; color: var(--ctp-text);">
+                                "Telemetría en Tiempo Real y Métricas del Motor GBDT"
+                            </h2>
+                            <SystemStatus metrics=metrics />
+                            <MonitoringChart
+                                chart_data=chart_data
+                                set_chart_data=set_chart_data
+                            />
+                        </div>
+                    }.into_view(),
+                    ActiveTab::RealtimeStream => view! {
+                        <div>
+                            <h2 style="font-size: 1.25rem; font-weight: 700; margin-bottom: 1rem; color: var(--ctp-text);">
+                                "Flujo Continuo de Eventos Forenses y Alertas en Streaming"
+                            </h2>
+                            <RealtimeAlerts
+                                events=stream_events
+                                set_events=set_stream_events
                             />
                         </div>
                     }.into_view(),

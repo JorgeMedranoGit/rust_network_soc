@@ -197,3 +197,101 @@ pub fn get_initial_pending_mitigations() -> Vec<PendingMitigation> {
         }
     ]
 }
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct MetricDataPoint {
+    pub timestamp: String,
+    pub time_label: String,
+    pub packets_per_sec: f64,
+    pub latency_us: f64,
+    pub cpu_usage_pct: f64,
+    pub bandwidth_mbps: f64,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct RealtimeStreamEvent {
+    pub event_id: u64,
+    pub timestamp: String,
+    pub threat_category: String,
+    pub severity: Severity,
+    pub layer: String,
+    pub source_ip: String,
+    pub destination_ip: String,
+    pub protocol: String,
+    pub message: String,
+    pub mitigation_strategy: String,
+    pub blast_radius: String,
+}
+
+pub fn get_initial_chart_data() -> Vec<MetricDataPoint> {
+    vec![
+        MetricDataPoint { timestamp: "05:45:00".to_string(), time_label: "05:45".to_string(), packets_per_sec: 1420.0, latency_us: 2.4, cpu_usage_pct: 18.5, bandwidth_mbps: 11.2 },
+        MetricDataPoint { timestamp: "05:46:00".to_string(), time_label: "05:46".to_string(), packets_per_sec: 1650.0, latency_us: 2.6, cpu_usage_pct: 21.0, bandwidth_mbps: 13.5 },
+        MetricDataPoint { timestamp: "05:47:00".to_string(), time_label: "05:47".to_string(), packets_per_sec: 1530.0, latency_us: 2.3, cpu_usage_pct: 19.8, bandwidth_mbps: 12.0 },
+        MetricDataPoint { timestamp: "05:48:00".to_string(), time_label: "05:48".to_string(), packets_per_sec: 2100.0, latency_us: 3.1, cpu_usage_pct: 28.4, bandwidth_mbps: 17.8 },
+        MetricDataPoint { timestamp: "05:49:00".to_string(), time_label: "05:49".to_string(), packets_per_sec: 3850.0, latency_us: 4.8, cpu_usage_pct: 49.2, bandwidth_mbps: 34.6 },
+        MetricDataPoint { timestamp: "05:50:00".to_string(), time_label: "05:50".to_string(), packets_per_sec: 5200.0, latency_us: 6.9, cpu_usage_pct: 68.5, bandwidth_mbps: 48.0 },
+        MetricDataPoint { timestamp: "05:51:00".to_string(), time_label: "05:51".to_string(), packets_per_sec: 4900.0, latency_us: 5.8, cpu_usage_pct: 61.3, bandwidth_mbps: 42.1 },
+        MetricDataPoint { timestamp: "05:52:00".to_string(), time_label: "05:52".to_string(), packets_per_sec: 3200.0, latency_us: 3.9, cpu_usage_pct: 39.0, bandwidth_mbps: 26.5 },
+        MetricDataPoint { timestamp: "05:53:00".to_string(), time_label: "05:53".to_string(), packets_per_sec: 2400.0, latency_us: 3.0, cpu_usage_pct: 31.2, bandwidth_mbps: 19.4 },
+        MetricDataPoint { timestamp: "05:54:00".to_string(), time_label: "05:54".to_string(), packets_per_sec: 1980.0, latency_us: 2.7, cpu_usage_pct: 25.0, bandwidth_mbps: 15.8 },
+        MetricDataPoint { timestamp: "05:55:00".to_string(), time_label: "05:55".to_string(), packets_per_sec: 2150.0, latency_us: 2.8, cpu_usage_pct: 26.4, bandwidth_mbps: 16.9 },
+        MetricDataPoint { timestamp: "05:56:00".to_string(), time_label: "05:56".to_string(), packets_per_sec: 2300.0, latency_us: 2.9, cpu_usage_pct: 28.0, bandwidth_mbps: 18.2 },
+    ]
+}
+
+pub fn get_initial_realtime_events() -> Vec<RealtimeStreamEvent> {
+    vec![
+        RealtimeStreamEvent {
+            event_id: 1001,
+            timestamp: "06:01:42".to_string(),
+            threat_category: "DNS_C2_EXFILTRATION".to_string(),
+            severity: Severity::CRITICAL,
+            layer: "L7".to_string(),
+            source_ip: "192.168.1.50".to_string(),
+            destination_ip: "192.168.1.1".to_string(),
+            protocol: "UDP:53".to_string(),
+            message: "Peticiones recursivas anómalas a evil-c2.com detectadas por LightGBM (Score: 0.985)".to_string(),
+            mitigation_strategy: "DNS_SINKHOLE_L7 (PENDING_MANUAL)".to_string(),
+            blast_radius: "MASSIVE_NETWORK_WIDE".to_string(),
+        },
+        RealtimeStreamEvent {
+            event_id: 1002,
+            timestamp: "06:01:28".to_string(),
+            threat_category: "PORT_SCAN_BRUTEFORCE".to_string(),
+            severity: Severity::HIGH,
+            layer: "L3".to_string(),
+            source_ip: "192.168.100.50".to_string(),
+            destination_ip: "192.168.1.1".to_string(),
+            protocol: "TCP:SYN".to_string(),
+            message: "Escaneo perimetral agresivo de puertos bloqueado vía RESTCONF/YANG en NGFW".to_string(),
+            mitigation_strategy: "BLOCK_L3_NGFW_RESTCONF (AUTO)".to_string(),
+            blast_radius: "SINGULAR_AUTO".to_string(),
+        },
+        RealtimeStreamEvent {
+            event_id: 1003,
+            timestamp: "06:00:55".to_string(),
+            threat_category: "DDOS_SYN_FLOOD".to_string(),
+            severity: Severity::CRITICAL,
+            layer: "L4".to_string(),
+            source_ip: "192.168.100.99".to_string(),
+            destination_ip: "192.168.1.10".to_string(),
+            protocol: "TCP:80".to_string(),
+            message: "Inundación SYN masiva mitigada mediante Null Route L3 y filtro dinámico iptables".to_string(),
+            mitigation_strategy: "ACL_BLACKHOLE_L3_L4 (AUTO)".to_string(),
+            blast_radius: "SINGULAR_AUTO".to_string(),
+        },
+        RealtimeStreamEvent {
+            event_id: 1004,
+            timestamp: "06:00:12".to_string(),
+            threat_category: "L2_MAC_SPOOFING_ATTACK".to_string(),
+            layer: "L2".to_string(),
+            source_ip: "192.168.1.11".to_string(),
+            destination_ip: "192.168.1.50".to_string(),
+            protocol: "ARP".to_string(),
+            message: "Dispositivo no autenticado aislado en VLAN de cuarentena mediante RADIUS CoA UDP 3799".to_string(),
+            mitigation_strategy: "ISOLATE_L2_RADIUS_COA (AUTO)".to_string(),
+            blast_radius: "SINGULAR_AUTO".to_string(),
+        },
+    ]
+}
