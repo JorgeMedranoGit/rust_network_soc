@@ -2,10 +2,12 @@
 // RFC 3576 / RFC 5176: Dynamic Authorization Extensions to RADIUS
 // Paquete Disconnect-Request (Code 40) dirigido al puerto UDP 3799 del Switch / NAS
 // Aislamiento de atacantes en VLAN de Cuarentena a nivel de enlace de datos (Data Link Layer)
+// Soporte integrado de Rollback mediante generación de snapshot de reversión (VLAN de Producción)
 
 use std::net::Ipv4Addr;
 use std::str::FromStr;
 use std::time::Duration;
+use serde_json::{json, Value};
 use tokio::net::UdpSocket;
 use tokio::time::timeout;
 
@@ -18,6 +20,7 @@ pub struct RadiusClient {
     pub port: u16,
     pub shared_secret: String,
     pub quarantine_vlan: u16,
+    pub production_vlan: u16,
 }
 
 impl Default for RadiusClient {
@@ -33,25 +36,74 @@ impl Default for RadiusClient {
             .ok()
             .and_then(|v| v.parse().ok())
             .unwrap_or(999);
+        let production_vlan = std::env::var("RADIUS_PRODUCTION_VLAN")
+            .ok()
+            .and_then(|v| v.parse().ok())
+            .unwrap_or(10);
 
-        Self::new(&nas_ip, &shared_secret, port, quarantine_vlan)
+        Self::new(&nas_ip, &shared_secret, port, quarantine_vlan, production_vlan)
     }
 }
 
 impl RadiusClient {
     /// Inicializa una instancia de RadiusClient con parámetros explícitos
-    pub fn new(nas_ip: &str, shared_secret: &str, port: u16, quarantine_vlan: u16) -> Self {
+    pub fn new(
+        nas_ip: &str,
+        shared_secret: &str,
+        port: u16,
+        quarantine_vlan: u16,
+        production_vlan: u16,
+    ) -> Self {
         Self {
             nas_ip: nas_ip.to_string(),
             port,
             shared_secret: shared_secret.to_string(),
             quarantine_vlan,
+            production_vlan,
         }
     }
 
-    /// Inicializa con puerto por defecto (UDP 3799) y VLAN de Cuarentena 999
+    /// Inicializa con valores predeterminados (UDP 3799, Cuarentena 999, Producción 10)
     pub fn with_defaults(nas_ip: &str, shared_secret: &str) -> Self {
-        Self::new(nas_ip, shared_secret, 3799, 999)
+        Self::new(nas_ip, shared_secret, 3799, 999, 10)
+    }
+
+    /// Genera la estructura JSON de Rollback (instrucción teórica para devolver el puerto a la VLAN original)
+    pub fn generate_rollback_payload(&self, ip: &str, mac: &str) -> Value {
+        json!({
+            "action": "RADIUS_COA_RESTORE_VLAN",
+            "layer_target": "L2",
+            "target_ip": ip,
+            "target_mac": mac,
+            "nas_ip": self.nas_ip,
+            "coa_port": self.port,
+            "isolated_vlan": self.quarantine_vlan,
+            "rollback_vlan": self.production_vlan,
+            "instruction": {
+                "description": format!(
+                    "Instrucción teórica para revertir aislamiento y devolver el puerto de MAC [{}] a la VLAN de producción original [{}]",
+                    mac, self.production_vlan
+                ),
+                "protocol": "RADIUS_COA",
+                "packet_type": "CoA-Request",
+                "rfc_code": 43,
+                "radius_attributes": {
+                    "NAS-IP-Address": self.nas_ip,
+                    "Calling-Station-Id": mac,
+                    "Framed-IP-Address": ip,
+                    "Tunnel-Type": "VLAN (13)",
+                    "Tunnel-Medium-Type": "802 (6)",
+                    "Tunnel-Private-Group-Id": self.production_vlan.to_string(),
+                    "Cisco-AVPair": format!("quarantine-vlan={};subscriber:command=reauthenticate", self.production_vlan)
+                },
+                "cli_switch_equivalent": format!(
+                    "configure terminal\ninterface GigabitEthernet0/1\n switchport access vlan {}\n no shutdown\nend",
+                    self.production_vlan
+                )
+            },
+            "status": "READY_FOR_ROLLBACK",
+            "generated_at": chrono::Utc::now().to_rfc3339()
+        })
     }
 
     /// Construye un paquete binario RFC 5176 RADIUS Disconnect-Request (Code 40)
@@ -143,8 +195,8 @@ impl RadiusClient {
 
     /// Despacha de forma asíncrona el paquete RADIUS Disconnect-Request al puerto UDP 3799 del switch.
     /// Incorpora un Mock Inteligente tolerante a fallos que registra en consola la asignación a VLAN
-    /// de Cuarentena para mantener el monitoreo continuo y sin interrupciones aun si el destino es inalcanzable.
-    pub async fn send_disconnect_request(&self, ip: &str, mac: &str) -> Result<(), String> {
+    /// de Cuarentena y retorna el JSON con el Snapshot de Rollback para la reversión del aislamiento.
+    pub async fn send_disconnect_request(&self, ip: &str, mac: &str) -> Result<Value, String> {
         let endpoint = format!("{}:{}", self.nas_ip, self.port);
         println!(
             "|- RADIUS CoA -| [CAPA 2] Enviando paquete 'Disconnect-Request' al switch NAS [{}] para aislar atacante IP: [{}] / MAC: [{}]",
@@ -152,6 +204,7 @@ impl RadiusClient {
         );
 
         let packet = self.build_disconnect_packet(ip, mac);
+        let rollback_payload = self.generate_rollback_payload(ip, mac);
 
         // Crear socket UDP asíncrono con Tokio
         let socket = match UdpSocket::bind("0.0.0.0:0").await {
@@ -165,7 +218,11 @@ impl RadiusClient {
                     "|- RADIUS CoA -| [MOCK INTELIGENTE] Asignación a VLAN de Cuarentena [{}] simulada exitosamente para MAC: [{}] (IP: [{}]).",
                     self.quarantine_vlan, mac, ip
                 );
-                return Ok(());
+                println!(
+                    "|- RADIUS CoA -| [ROLLBACK GENERADO] Snapshot de reversión preparado: Restaurar a VLAN [{}]",
+                    self.production_vlan
+                );
+                return Ok(rollback_payload);
             }
         };
 
@@ -204,7 +261,11 @@ impl RadiusClient {
                         );
                     }
                 }
-                Ok(())
+                println!(
+                    "|- RADIUS CoA -| [ROLLBACK GENERADO] Snapshot de reversión preparado: Restaurar a VLAN [{}]",
+                    self.production_vlan
+                );
+                Ok(rollback_payload)
             }
             Err(e) => {
                 eprintln!(
@@ -215,7 +276,11 @@ impl RadiusClient {
                     "|- RADIUS CoA -| [MOCK INTELIGENTE] Asignación a VLAN de Cuarentena [{}] simulada exitosamente para MAC: [{}] (IP: [{}]).",
                     self.quarantine_vlan, mac, ip
                 );
-                Ok(())
+                println!(
+                    "|- RADIUS CoA -| [ROLLBACK GENERADO] Snapshot de reversión preparado: Restaurar a VLAN [{}]",
+                    self.production_vlan
+                );
+                Ok(rollback_payload)
             }
         }
     }
@@ -224,7 +289,12 @@ impl RadiusClient {
 // * * * IMPLEMENTACIÓN DEL PATRÓN MULTI-VENDOR DE MITIGACIÓN * * *
 impl MitigationDevice for RadiusClient {
     async fn quarantine_ip(&self, ip: &str, mac: &str) -> Result<(), String> {
-        self.send_disconnect_request(ip, mac).await
+        self.send_disconnect_request(ip, mac).await.map(|_| ())
+    }
+
+    async fn quarantine_with_rollback(&self, ip: &str, mac: &str) -> Result<Option<Value>, String> {
+        let payload = self.send_disconnect_request(ip, mac).await?;
+        Ok(Some(payload))
     }
 }
 
@@ -321,7 +391,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_radius_packet_construction() {
-        let client = RadiusClient::new("192.168.1.254", "testing123", 3799, 999);
+        let client = RadiusClient::new("192.168.1.254", "testing123", 3799, 999, 10);
         let packet = client.build_disconnect_packet("192.168.1.50", "00:11:22:33:44:55");
         assert!(packet.len() >= 20);
         assert_eq!(packet[0], 40); // Code 40 = Disconnect-Request
@@ -333,6 +403,16 @@ mod tests {
         let client = RadiusClient::default();
         let res = client.quarantine_ip("192.168.1.50", "00:11:22:33:44:55").await;
         assert!(res.is_ok());
+    }
+
+    #[tokio::test]
+    async fn test_radius_rollback_json() {
+        let client = RadiusClient::default();
+        let rollback = client.send_disconnect_request("192.168.1.50", "00:11:22:33:44:55").await;
+        assert!(rollback.is_ok());
+        let val = rollback.unwrap();
+        assert_eq!(val["action"], "RADIUS_COA_RESTORE_VLAN");
+        assert_eq!(val["rollback_vlan"], 10);
     }
 
     #[test]

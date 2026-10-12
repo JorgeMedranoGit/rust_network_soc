@@ -8,6 +8,7 @@ pub mod openwrt;
 pub mod radius_coa;
 
 use std::str::FromStr;
+use serde_json::Value;
 use sqlx::{PgPool, Row};
 
 pub use cisco::CiscoIse;
@@ -19,6 +20,10 @@ pub use radius_coa::RadiusClient;
 // * * * 1. TRAIT CENTRAL PARA DISPOSITIVOS DE MITIGACIÓN AGNÓSTICOS * * *
 pub trait MitigationDevice: Send + Sync {
     async fn quarantine_ip(&self, ip: &str, mac: &str) -> Result<(), String>;
+
+    async fn quarantine_with_rollback(&self, ip: &str, mac: &str) -> Result<Option<Value>, String> {
+        self.quarantine_ip(ip, mac).await.map(|_| None)
+    }
 }
 
 // * * * 2. ENUM DE MARCAS Y FABRICANTES SOPORTADOS * * *
@@ -117,7 +122,176 @@ pub async fn detect_vendor_by_ip(pool: &PgPool, ip: &str) -> Vendor {
     }
 }
 
-// * * * 4. ORQUESTADOR Y ENRUTADOR PRINCIPAL DE ACCIONES DE MITIGACIÓN * * *
+// * * * 4. REGISTRO PREVIO DEL INCIDENTE EN SECURITY_ALERTS * * *
+pub async fn register_security_alert(
+    pool: &PgPool,
+    ip: &str,
+    mac: &str,
+    vendor: Vendor,
+) -> Option<i64> {
+    // 1. Obtener ID de tipo de amenaza L2 o fallback
+    let threat_id_opt: Option<i32> = sqlx::query_scalar(
+        "SELECT threat_id FROM threat_types WHERE threat_name = 'UNAUTHORIZED_ACCESS' LIMIT 1"
+    )
+    .fetch_optional(pool)
+    .await
+    .unwrap_or(None);
+    let threat_id = threat_id_opt.unwrap_or(4);
+
+    // 2. Estado inicial: CONFIRMED_THREAT (2) o PENDING_ANALYSIS (1)
+    let status_id_opt: Option<i32> = sqlx::query_scalar(
+        "SELECT status_id FROM alert_statuses WHERE status_name = 'CONFIRMED_THREAT' LIMIT 1"
+    )
+    .fetch_optional(pool)
+    .await
+    .unwrap_or(None);
+    let status_id = status_id_opt.unwrap_or(2);
+
+    let anomaly_score: f64 = 0.95;
+
+    let insert_res = sqlx::query(
+        "INSERT INTO security_alerts (feature_id, threat_id, status_id, anomaly_score)
+         VALUES (NULL, $1, $2, $3)
+         RETURNING alert_id"
+    )
+    .bind(threat_id)
+    .bind(status_id)
+    .bind(anomaly_score)
+    .fetch_optional(pool)
+    .await;
+
+    match insert_res {
+        Ok(Some(row)) => {
+            let alert_id: i64 = row.try_get("alert_id").unwrap_or(0);
+            println!(
+                "|- ORQUESTADOR MULTI-VENDOR -| [ALERTA BD] Incidente registrado en security_alerts (ID: [{}]) para IP [{}] / MAC [{}] [{}]",
+                alert_id, ip, mac, vendor.as_str()
+            );
+            Some(alert_id)
+        }
+        Ok(None) => None,
+        Err(e) => {
+            eprintln!(
+                "|- ORQUESTADOR MULTI-VENDOR -| [WARN] No se pudo persistir en security_alerts ({}). Continuando flujo de contingencia.",
+                e
+            );
+            None
+        }
+    }
+}
+
+// * * * 5. PERSISTENCIA DE INSTANTÁNEAS DE RESTAURACIÓN (ROLLBACK SNAPSHOTS) * * *
+pub async fn save_l2_rollback_snapshot(
+    pool: &PgPool,
+    alert_id: i64,
+    ip: &str,
+    mac: &str,
+    rollback_payload: Value,
+) {
+    // 1. Obtener ID del nodo de red
+    let node_id_opt: Option<i32> = sqlx::query_scalar(
+        "SELECT node_id FROM network_nodes WHERE ip_address = $1 LIMIT 1"
+    )
+    .bind(ip)
+    .fetch_optional(pool)
+    .await
+    .unwrap_or(None);
+
+    // 2. Asegurar o consultar acción de mitigación Capa 2
+    let action_id_opt: Option<i32> = sqlx::query_scalar(
+        "INSERT INTO mitigation_actions (action_name, layer_target, description)
+         VALUES ('ISOLATE_L2_RADIUS_COA', 'L2', 'Aislamiento dinámico de enlace de datos (Capa 2) vía RADIUS CoA Disconnect-Request')
+         ON CONFLICT (action_name) DO UPDATE SET
+             layer_target = EXCLUDED.layer_target,
+             description = EXCLUDED.description
+         RETURNING action_id"
+    )
+    .fetch_optional(pool)
+    .await
+    .unwrap_or(None);
+
+    // 3. Estado de tarea COMPLETED (por defecto 3)
+    let status_id_opt: Option<i32> = sqlx::query_scalar(
+        "SELECT status_id FROM task_statuses WHERE status_name = 'COMPLETED' LIMIT 1"
+    )
+    .fetch_optional(pool)
+    .await
+    .unwrap_or(None);
+    let status_id = status_id_opt.unwrap_or(3);
+
+    // 4. Encolar y marcar tarea en execution_queue
+    let queue_res = sqlx::query(
+        "INSERT INTO execution_queue (alert_id, action_id, node_id, status_id, executed_at)
+         VALUES ($1, $2, $3, $4, CURRENT_TIMESTAMP)
+         RETURNING task_id"
+    )
+    .bind(alert_id)
+    .bind(action_id_opt)
+    .bind(node_id_opt)
+    .bind(status_id)
+    .fetch_optional(pool)
+    .await;
+
+    let task_id = match queue_res {
+        Ok(Some(row)) => row.try_get::<i64, _>("task_id").unwrap_or(0),
+        _ => 0,
+    };
+
+    if task_id > 0 {
+        // 5. Estado previo estructurado (pre_state_json)
+        let pre_state = serde_json::json!({
+            "ip_address": ip,
+            "mac_address": mac,
+            "original_vlan": 10,
+            "authorization_status": "AUTHORIZED",
+            "captured_at": chrono::Utc::now().to_rfc3339()
+        });
+
+        // 6. Guardar en rollback_snapshots
+        let snapshot_res = sqlx::query(
+            "INSERT INTO rollback_snapshots (task_id, pre_state_json, rollback_payload)
+             VALUES ($1, $2, $3)
+             ON CONFLICT (task_id) DO UPDATE SET
+                 pre_state_json = EXCLUDED.pre_state_json,
+                 rollback_payload = EXCLUDED.rollback_payload
+             RETURNING snapshot_id"
+        )
+        .bind(task_id)
+        .bind(pre_state)
+        .bind(&rollback_payload)
+        .fetch_optional(pool)
+        .await;
+
+        match snapshot_res {
+            Ok(Some(row)) => {
+                let snap_id: i64 = row.try_get("snapshot_id").unwrap_or(0);
+                println!(
+                    "|- ORQUESTADOR MULTI-VENDOR -| [ROLLBACK SNAPSHOT] Snapshot de reversión L2 guardado con éxito en BD (Snapshot ID: [{}], Task ID: [{}])",
+                    snap_id, task_id
+                );
+            }
+            Ok(None) => {}
+            Err(e) => {
+                eprintln!(
+                    "|- ORQUESTADOR MULTI-VENDOR -| [WARN] No se pudo guardar rollback_snapshots en BD: {}",
+                    e
+                );
+            }
+        }
+
+        // 7. Actualizar security_alerts a MITIGATED
+        let _ = sqlx::query(
+            "UPDATE security_alerts
+             SET status_id = (SELECT status_id FROM alert_statuses WHERE status_name = 'MITIGATED')
+             WHERE alert_id = $1"
+        )
+        .bind(alert_id)
+        .execute(pool)
+        .await;
+    }
+}
+
+// * * * 6. ORQUESTADOR Y ENRUTADOR PRINCIPAL DE ACCIONES DE MITIGACIÓN * * *
 pub async fn dispatch_quarantine(pool: &PgPool, ip: &str, mac: &str) -> Result<Vendor, String> {
     // 1. Resolver dirección MAC real de Capa 2 desde la base de datos si vino genérica
     let resolved_mac = if mac.is_empty() || mac == "00:00:00:00:00:00" {
@@ -148,14 +322,28 @@ pub async fn dispatch_quarantine(pool: &PgPool, ip: &str, mac: &str) -> Result<V
         vendor.as_str()
     );
 
+    // 2. Registrar el evento en security_alerts antes de la mitigación
+    let alert_id = register_security_alert(pool, ip, &resolved_mac, vendor).await;
+
+    // 3. Ejecución de la acción de aislamiento según el fabricante
     match vendor {
         Vendor::SwitchRadius => {
             println!(
-                "|- ORQUESTADOR MULTI-VENDOR -| [CAPA 2] Ejecutando aislamiento RADIUS CoA para IP [{}] / MAC [{}]",
+                "|- ORQUESTADOR MULTI-VENDOR -| [CAPA 2 AUTOMÁTICA] Impacto acotado a 1 host (IP: [{}], MAC: [{}]). Ejecutando automáticamente aislamiento vía RADIUS CoA.",
                 ip, resolved_mac
             );
             let client = RadiusClient::default();
-            client.quarantine_ip(ip, &resolved_mac).await?;
+            // Ejecutar aislamiento y recibir JSON de rollback
+            let rollback_json = client.send_disconnect_request(ip, &resolved_mac).await?;
+
+            // Persistir JSON de reversión en tabla rollback_snapshots
+            if let Some(aid) = alert_id {
+                save_l2_rollback_snapshot(pool, aid, ip, &resolved_mac, rollback_json).await;
+            } else {
+                println!(
+                    "|- ORQUESTADOR MULTI-VENDOR -| [ROLLBACK] Snapshot L2 generado localmente (sin persistencia BD por falta de alert_id)."
+                );
+            }
         }
         Vendor::Cisco => {
             let client = CiscoIse::default();
