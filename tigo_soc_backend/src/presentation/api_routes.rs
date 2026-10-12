@@ -34,7 +34,7 @@ pub struct AppState {
     pub fcm_notifier: Arc<FcmNotifier>,
 }
 
-// Soporte para extraer PgPool directamente mediante State(pool): State<PgPool>
+// * * * Soporte para extraer PgPool directamente mediante State(pool): State<PgPool> * * *
 impl FromRef<AppState> for PgPool {
     fn from_ref(state: &AppState) -> Self {
         state.pool.clone()
@@ -43,31 +43,28 @@ impl FromRef<AppState> for PgPool {
 
 // * * * CONFIGURACIÓN DEL ENRUTADOR PRINCIPAL DE LA API SOC * * *
 pub fn create_router(state: AppState) -> Router {
-    // Middleware CORS permisivo (cualquier origen, método y encabezado) para frontend/PWA
     let cors = CorsLayer::new()
         .allow_origin(Any)
         .allow_methods(Any)
         .allow_headers(Any);
 
     let mut router = Router::new()
-        // --- Endpoints Principales Solicitados (Actividad 10) ---
         .route("/health", get(health_check_handler))
         .route("/api/v1/alerts", get(get_alerts_handler))
         .route("/api/v1/metrics", get(get_metrics_summary_handler))
-        // --- Endpoints Forenses y de Telemetría Complementarios ---
+        // * * * Endpoints Forenses y de Telemetría Complementarios * * *
         .route("/api/v1/alerts/:id", get(get_alert_by_id_handler))
         .route("/api/v1/alerts/simulate-push", post(simulate_push_handler))
         .route("/api/v1/alerts/subscribe", post(subscribe_topic_handler))
         .route("/api/v1/telemetry/metrics", get(get_telemetry_metrics_handler))
         .route("/api/v1/telemetry/logs", get(get_logs_handler))
-        // --- Catálogos, Topología y Estado del Sistema ---
+        // * * * Catálogos, Topología y Estado del Sistema * * *
         .route("/api/v1/status", get(system_status_handler))
         .route("/api/v1/catalogs/device-types", get(get_device_types_handler))
         .route("/api/v1/inventory/nodes", get(get_nodes_handler))
         .route("/api/v1/ml/stats", get(get_ml_stats_handler))
         .route("/api/v1/ml/model-info", get(get_model_info_handler));
 
-    // Servicio opcional de archivos estáticos para la interfaz de incidentes
     let pwa_paths = ["../frontend", "frontend", "/app/frontend"];
     for p in pwa_paths {
         if std::path::Path::new(p).exists() {
@@ -77,7 +74,6 @@ pub fn create_router(state: AppState) -> Router {
         }
     }
 
-    // Inyectar middleware CORS, middleware Trace y estado compartido en el router
     router
         .layer(cors)
         .layer(TraceLayer::new_for_http())

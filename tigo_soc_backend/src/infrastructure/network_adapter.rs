@@ -11,14 +11,26 @@ use crate::domain::models::{
     TCP_FLAG_URG,
 };
 
+use std::sync::Arc;
+use crate::infrastructure::asset_discovery::AssetDiscoveryEngine;
+
 pub struct NetworkAdapter {
     pub interface_name: String,
+    pub asset_engine: Option<Arc<AssetDiscoveryEngine>>,
 }
 
 impl NetworkAdapter {
     pub fn new(interface_name: &str) -> Self {
         Self {
             interface_name: interface_name.to_string(),
+            asset_engine: None,
+        }
+    }
+
+    pub fn with_asset_discovery(interface_name: &str, asset_engine: Arc<AssetDiscoveryEngine>) -> Self {
+        Self {
+            interface_name: interface_name.to_string(),
+            asset_engine: Some(asset_engine),
         }
     }
 
@@ -26,6 +38,7 @@ impl NetworkAdapter {
     pub fn start_capture(&self, buffer_size: usize) -> mpsc::Receiver<NetworkEvent> {
         let (tx, rx) = mpsc::channel(buffer_size);
         let iface = self.interface_name.clone();
+        let asset_engine_opt = self.asset_engine.clone();
 
         println!(
             "|- INSTRUCCION -| Iniciando captura de red en la interfaz: '{}' (Patrón Productor-Consumidor)",
@@ -68,6 +81,9 @@ impl NetworkAdapter {
             loop {
                 match cap.next_packet() {
                     Ok(packet) => {
+                        if let Some(ref engine) = asset_engine_opt {
+                            inspect_asset_from_raw(packet.data, datalink, engine);
+                        }
                         if let Some(event) = parse_raw_packet(datalink, packet.data, packet.header.len as i32) {
                             if tx.blocking_send(event).is_err() {
                                 println!("|- INSTRUCCION -| Canal de telemetría cerrado. Deteniendo captura.");
@@ -265,3 +281,81 @@ fn extract_event(sliced: &SlicedPacket, packet_len: i32) -> Option<NetworkEvent>
         timestamp: Utc::now(),
     })
 }
+
+// * * * EXTRACCIÓN PASIVA DE PARES (IP, MAC) PARA DESCUBRIMIENTO DE ACTIVOS * * *
+fn inspect_asset_from_raw(data: &[u8], datalink: Linktype, engine: &AssetDiscoveryEngine) {
+    // 1. Linux Cooked Capture SLL / SLL2 (interfaz 'any': 113 o 276)
+    if (datalink.0 == 113 || datalink.0 == 276) && data.len() >= 36 {
+        let offset = if datalink.0 == 113 { 16 } else { 20 };
+        if data.len() > offset {
+            let src_mac = [data[6], data[7], data[8], data[9], data[10], data[11]];
+            let proto = u16::from_be_bytes([data[offset - 2], data[offset - 1]]);
+
+            if proto == 0x0800 && data.len() >= offset + 20 {
+                // IPv4: IP origen en offset + 12
+                let ip_bytes = &data[offset + 12..offset + 16];
+                let ip_str = format!("{}.{}.{}.{}", ip_bytes[0], ip_bytes[1], ip_bytes[2], ip_bytes[3]);
+                engine.observe_asset(&ip_str, src_mac);
+            } else if proto == 0x0806 && data.len() >= offset + 28 {
+                // ARP: Sender MAC en offset + 8, Sender IP en offset + 14
+                let sender_mac = [
+                    data[offset + 8],
+                    data[offset + 9],
+                    data[offset + 10],
+                    data[offset + 11],
+                    data[offset + 12],
+                    data[offset + 13],
+                ];
+                let sender_ip = &data[offset + 14..offset + 18];
+                let ip_str = format!("{}.{}.{}.{}", sender_ip[0], sender_ip[1], sender_ip[2], sender_ip[3]);
+                engine.observe_asset(&ip_str, sender_mac);
+            }
+        }
+    }
+
+    // 2. Ethernet estándar (Linktype 1)
+    if (datalink.0 == 1 || datalink.0 == 0) && data.len() >= 34 {
+        let offset = if datalink.0 == 0 { 4 } else { 0 };
+        if data.len() >= offset + 14 {
+            let eth = &data[offset..];
+            let src_mac = [eth[6], eth[7], eth[8], eth[9], eth[10], eth[11]];
+            let ether_type = u16::from_be_bytes([eth[12], eth[13]]);
+
+            if ether_type == 0x0800 && eth.len() >= 34 {
+                // IPv4
+                let ip_bytes = &eth[26..30];
+                let ip_str = format!("{}.{}.{}.{}", ip_bytes[0], ip_bytes[1], ip_bytes[2], ip_bytes[3]);
+                engine.observe_asset(&ip_str, src_mac);
+            } else if ether_type == 0x0806 && eth.len() >= 42 {
+                // ARP
+                let sender_mac = [eth[22], eth[23], eth[24], eth[25], eth[26], eth[27]];
+                let sender_ip = &eth[28..32];
+                let ip_str = format!("{}.{}.{}.{}", sender_ip[0], sender_ip[1], sender_ip[2], sender_ip[3]);
+                engine.observe_asset(&ip_str, sender_mac);
+            }
+        }
+    }
+
+    // 3. Decapsular túneles UDP ubridge (GNS3 sobre loopback)
+    if let Ok(sliced) = SlicedPacket::from_ethernet(data) {
+        if let Some(TransportSlice::Udp(udp)) = &sliced.transport {
+            let payload = udp.payload();
+            if payload.len() >= 34 {
+                let inner_mac = [payload[6], payload[7], payload[8], payload[9], payload[10], payload[11]];
+                let inner_type = u16::from_be_bytes([payload[12], payload[13]]);
+
+                if inner_type == 0x0800 && payload.len() >= 34 {
+                    let ip_bytes = &payload[26..30];
+                    let ip_str = format!("{}.{}.{}.{}", ip_bytes[0], ip_bytes[1], ip_bytes[2], ip_bytes[3]);
+                    engine.observe_asset(&ip_str, inner_mac);
+                } else if inner_type == 0x0806 && payload.len() >= 42 {
+                    let sender_mac = [payload[22], payload[23], payload[24], payload[25], payload[26], payload[27]];
+                    let sender_ip = &payload[28..32];
+                    let ip_str = format!("{}.{}.{}.{}", sender_ip[0], sender_ip[1], sender_ip[2], sender_ip[3]);
+                    engine.observe_asset(&ip_str, sender_mac);
+                }
+            }
+        }
+    }
+}
+

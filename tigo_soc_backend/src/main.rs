@@ -2,6 +2,7 @@
 
 mod domain;
 mod infrastructure;
+mod mitigation;
 mod presentation;
 
 use std::collections::{HashMap, VecDeque};
@@ -21,6 +22,7 @@ use domain::{
     threat_detector::ThreatDetector,
 };
 use infrastructure::{
+    asset_discovery::AssetDiscoveryEngine,
     db_connection,
     fcm_client::{FcmConfig, FcmNotifier},
     network_adapter::NetworkAdapter,
@@ -122,9 +124,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // * * * 5. CANAL DE TRANSMISIÓN DE EVENTOS EN TIEMPO REAL * * *
     let stream_handler = TelemetryStreamHandler::new(1024);
 
-    // * * * 6. INICIAR CAPTURA ASÍNCRONA DE RED (PATRÓN PRODUCTOR-CONSUMIDOR) * * *
+    // * * * 6. MOTOR DE DESCUBRIMIENTO PASIVO DE ACTIVOS (PASSIVE ASSET DISCOVERY & OUI) * * *
+    let (asset_engine, rx_assets) = AssetDiscoveryEngine::new(4096);
+    let asset_engine = Arc::new(asset_engine);
+    AssetDiscoveryEngine::spawn_db_persister(rx_assets, db_pool.clone());
+
+    // * * * 7. INICIAR CAPTURA ASÍNCRONA DE RED (PATRÓN PRODUCTOR-CONSUMIDOR) * * *
     let capture_iface = env::var("CAPTURE_INTERFACE").unwrap_or_else(|_| "any".to_string());
-    let adapter = NetworkAdapter::new(&capture_iface);
+    let adapter = NetworkAdapter::with_asset_discovery(&capture_iface, Arc::clone(&asset_engine));
     let mut rx_events = adapter.start_capture(65536);
     println!("|- INSTRUCCION -| [SNIFFER] Escuchando interfaz de red activa: [{}]", capture_iface);
 
@@ -144,6 +151,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let ip_cache_forensic = Arc::clone(&ip_cache);
     let fcm_forensic = Arc::clone(&fcm_notifier);
     let detector_opt = threat_detector.clone();
+    let pool_forensic = db_pool.clone();
 
     tokio::spawn(async move {
         if let Some(detector) = detector_opt {
@@ -254,6 +262,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                     let telemetry_db = Arc::clone(&telemetry_forensic);
                     let orch_db = Arc::clone(&orchestration_forensic);
                     let fcm_push = Arc::clone(&fcm_forensic);
+                    let pool_mitigation = pool_forensic.clone();
+                    let attack_src = src_str.clone();
                     let proto_str = event.protocol.as_str().to_string();
                     let flags_str = event.flags_to_string();
                     let psize = event.packet_size as i32;
@@ -302,6 +312,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                         // * * * ESTRATEGIA ZERO-DATA PUSH: NOTIFICACIÓN OPACA A FIREBASE (TOPIC: /topics/soc_alerts) * * *
                         if let Err(e) = fcm_push.send_opaque_alert(alert_id, &threat_sev, &threat_name).await {
                             eprintln!("|- INSTRUCCION -| [FCM ERROR] Falló el envío del webhook Push: {}", e);
+                        }
+
+                        // * * * ORQUESTACIÓN DE MITIGACIÓN MULTI-VENDOR EN CUARENTENA (CONSULTANDO BD) * * *
+                        if let Err(e) = mitigation::dispatch_quarantine(&pool_mitigation, &attack_src, "00:00:00:00:00:00").await {
+                            eprintln!("|- INSTRUCCION -| [MITIGACIÓN ERROR] Falló la acción de cuarentena: {}", e);
                         }
                     });
                 }
@@ -493,22 +508,22 @@ async fn seed_initial_inventory(
     let get_pid = |name: &str| protocols.iter().find(|p| p.protocol_name == name).and_then(|p| p.protocol_id);
 
     let nodes = [
-        ("AttackerKali", "192.168.100.50", get_tid("ATTACKER_KALI"), get_pid("SSH")),
-        ("VictimeAlpine1", "192.168.1.11", get_tid("WORKSTATION_VICTIM"), get_pid("SSH")),
-        ("VictimeAlpine2", "192.168.1.12", get_tid("WORKSTATION_VICTIM"), get_pid("SSH")),
-        ("VictimeAlpine3", "192.168.1.13", get_tid("WORKSTATION_VICTIM"), get_pid("SSH")),
-        ("VictimeAlpine4", "192.168.1.14", get_tid("WORKSTATION_VICTIM"), get_pid("SSH")),
-        ("VictimeAlpine5", "192.168.1.15", get_tid("WORKSTATION_VICTIM"), get_pid("SSH")),
-        ("VictimeAlpine6", "192.168.1.16", get_tid("WORKSTATION_VICTIM"), get_pid("SSH")),
-        ("VictimeAlpine7", "192.168.1.17", get_tid("WORKSTATION_VICTIM"), get_pid("SSH")),
-        ("VictimeAlpine8", "192.168.1.18", get_tid("WORKSTATION_VICTIM"), get_pid("SSH")),
-        ("VictimeAlpine9", "192.168.1.19", get_tid("WORKSTATION_VICTIM"), get_pid("SSH")),
-        ("pfSense_Gateway", "192.168.1.1", get_tid("FIREWALL_PERIMETER"), get_pid("SSH")),
-        ("Router_Core_L3", "192.168.1.254", get_tid("ROUTER_CORE_L3"), get_pid("SSH")),
+        ("AttackerKali", "192.168.100.50", get_tid("ATTACKER_KALI"), get_pid("SSH"), Some("00:00:0c:aa:bb:cc"), Some("Cisco ISE")),
+        ("VictimeAlpine1", "192.168.1.11", get_tid("WORKSTATION_VICTIM"), get_pid("SSH"), Some("02:42:ac:11:00:0b"), Some("GNS3 Alpine")),
+        ("VictimeAlpine2", "192.168.1.12", get_tid("WORKSTATION_VICTIM"), get_pid("SSH"), Some("02:42:ac:11:00:0c"), Some("GNS3 Alpine")),
+        ("VictimeAlpine3", "192.168.1.13", get_tid("WORKSTATION_VICTIM"), get_pid("SSH"), Some("02:42:ac:11:00:0d"), Some("GNS3 Alpine")),
+        ("VictimeAlpine4", "192.168.1.14", get_tid("WORKSTATION_VICTIM"), get_pid("SSH"), Some("02:42:ac:11:00:0e"), Some("GNS3 Alpine")),
+        ("VictimeAlpine5", "192.168.1.15", get_tid("WORKSTATION_VICTIM"), get_pid("SSH"), Some("02:42:ac:11:00:0f"), Some("GNS3 Alpine")),
+        ("VictimeAlpine6", "192.168.1.16", get_tid("WORKSTATION_VICTIM"), get_pid("SSH"), Some("02:42:ac:11:00:10"), Some("GNS3 Alpine")),
+        ("VictimeAlpine7", "192.168.1.17", get_tid("WORKSTATION_VICTIM"), get_pid("SSH"), Some("02:42:ac:11:00:11"), Some("GNS3 Alpine")),
+        ("VictimeAlpine8", "192.168.1.18", get_tid("WORKSTATION_VICTIM"), get_pid("SSH"), Some("02:42:ac:11:00:12"), Some("GNS3 Alpine")),
+        ("VictimeAlpine9", "192.168.1.19", get_tid("WORKSTATION_VICTIM"), get_pid("SSH"), Some("02:42:ac:11:00:13"), Some("GNS3 Alpine")),
+        ("pfSense_Gateway", "192.168.1.1", get_tid("FIREWALL_PERIMETER"), get_pid("SSH"), Some("00:18:0a:33:44:55"), Some("OpenWrt")),
+        ("Router_Core_L3", "192.168.1.254", get_tid("ROUTER_CORE_L3"), get_pid("SSH"), Some("00:0c:42:66:77:88"), Some("MikroTik RouterOS")),
     ];
 
-    for (hostname, ip, type_id, proto_id) in nodes {
-        let _ = inventory.create_node(hostname, ip, type_id, proto_id).await;
+    for (hostname, ip, type_id, proto_id, mac, vendor) in nodes {
+        let _ = inventory.create_node_with_vendor(hostname, ip, type_id, proto_id, mac, vendor).await;
     }
 }
 

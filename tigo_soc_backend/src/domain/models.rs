@@ -99,6 +99,8 @@ pub struct NetworkNode {
     pub ip_address: String,
     pub type_id: Option<i32>,
     pub protocol_id: Option<i32>,
+    pub mac_address: Option<String>,
+    pub vendor: Option<String>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, FromRow)]

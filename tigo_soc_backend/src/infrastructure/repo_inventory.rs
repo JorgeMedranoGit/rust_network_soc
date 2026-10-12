@@ -21,19 +21,35 @@ impl InventoryRepository {
         type_id: Option<i32>,
         protocol_id: Option<i32>,
     ) -> Result<i32, Error> {
+        self.create_node_with_vendor(hostname, ip_address, type_id, protocol_id, None, None).await
+    }
+
+    pub async fn create_node_with_vendor(
+        &self,
+        hostname: &str,
+        ip_address: &str,
+        type_id: Option<i32>,
+        protocol_id: Option<i32>,
+        mac_address: Option<&str>,
+        vendor: Option<&str>,
+    ) -> Result<i32, Error> {
         let row = sqlx::query(
-            "INSERT INTO network_nodes (hostname, ip_address, type_id, protocol_id)
-             VALUES ($1, $2, $3, $4)
+            "INSERT INTO network_nodes (hostname, ip_address, type_id, protocol_id, mac_address, vendor)
+             VALUES ($1, $2, $3, $4, $5, $6)
              ON CONFLICT (hostname) DO UPDATE SET
                  ip_address = EXCLUDED.ip_address,
                  type_id = EXCLUDED.type_id,
-                 protocol_id = EXCLUDED.protocol_id
+                 protocol_id = EXCLUDED.protocol_id,
+                 mac_address = COALESCE(EXCLUDED.mac_address, network_nodes.mac_address),
+                 vendor = COALESCE(EXCLUDED.vendor, network_nodes.vendor)
              RETURNING node_id"
         )
         .bind(hostname)
         .bind(ip_address)
         .bind(type_id)
         .bind(protocol_id)
+        .bind(mac_address)
+        .bind(vendor)
         .fetch_one(&self.pool)
         .await?;
 
@@ -43,7 +59,7 @@ impl InventoryRepository {
     // * * * OBTENER LISTADO COMPLETO DE NODOS * * *
     pub async fn get_nodes(&self) -> Result<Vec<NetworkNode>, Error> {
         sqlx::query_as::<_, NetworkNode>(
-            "SELECT node_id, hostname, ip_address, type_id, protocol_id FROM network_nodes ORDER BY node_id ASC"
+            "SELECT node_id, hostname, ip_address, type_id, protocol_id, mac_address, vendor FROM network_nodes ORDER BY node_id ASC"
         )
         .fetch_all(&self.pool)
         .await
@@ -52,7 +68,7 @@ impl InventoryRepository {
     // * * * BUSCAR NODO POR DIRECCIÓN IP * * *
     pub async fn get_node_by_ip(&self, ip_address: &str) -> Result<Option<NetworkNode>, Error> {
         sqlx::query_as::<_, NetworkNode>(
-            "SELECT node_id, hostname, ip_address, type_id, protocol_id FROM network_nodes WHERE ip_address = $1"
+            "SELECT node_id, hostname, ip_address, type_id, protocol_id, mac_address, vendor FROM network_nodes WHERE ip_address = $1"
         )
         .bind(ip_address)
         .fetch_optional(&self.pool)
@@ -62,7 +78,7 @@ impl InventoryRepository {
     // * * * BUSCAR NODO POR IDENTIFICADOR ÚNICO * * *
     pub async fn get_node_by_id(&self, node_id: i32) -> Result<Option<NetworkNode>, Error> {
         sqlx::query_as::<_, NetworkNode>(
-            "SELECT node_id, hostname, ip_address, type_id, protocol_id FROM network_nodes WHERE node_id = $1"
+            "SELECT node_id, hostname, ip_address, type_id, protocol_id, mac_address, vendor FROM network_nodes WHERE node_id = $1"
         )
         .bind(node_id)
         .fetch_optional(&self.pool)

@@ -72,7 +72,9 @@ CREATE TABLE network_nodes (
     hostname VARCHAR(100) UNIQUE NOT NULL,
     ip_address VARCHAR(45) UNIQUE NOT NULL,
     type_id INT REFERENCES device_types(type_id) ON DELETE RESTRICT,
-    protocol_id INT REFERENCES mgmt_protocols(protocol_id) ON DELETE RESTRICT
+    protocol_id INT REFERENCES mgmt_protocols(protocol_id) ON DELETE RESTRICT,
+    mac_address VARCHAR(50),
+    vendor VARCHAR(50)
 );
 
 -- * * * MÉTRICAS AGREGADAS PERIÓDICAS PARA VOLÚMENES MASIVOS SIN SATURAR DISCO * * *
