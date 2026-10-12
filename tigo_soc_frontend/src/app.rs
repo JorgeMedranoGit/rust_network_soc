@@ -3,12 +3,14 @@
 use leptos::*;
 
 use crate::components::{
-    AlertsTable, BlastRadiusControl, MonitoringChart, RealtimeAlerts, SystemStatus,
+    AlertsTable, BlastRadiusControl, MonitoringChart, RealtimeAlerts, SystemStatus, UserManagement,
 };
 use crate::models::{
     get_initial_alerts, get_initial_chart_data, get_initial_metrics,
     get_initial_pending_mitigations, get_initial_realtime_events,
-    AlertItem, MetricDataPoint, PendingMitigation, RealtimeStreamEvent, Severity, SystemMetrics,
+    get_initial_security_config, get_initial_session, get_initial_users,
+    AlertItem, GlobalSecurityConfig, MetricDataPoint, PendingMitigation,
+    RealtimeStreamEvent, RoleType, Severity, SocUser, SystemMetrics, UserSessionState,
 };
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -18,6 +20,7 @@ pub enum ActiveTab {
     RealtimeStream,
     Alerts,
     BlastRadius,
+    UserManagement,
 }
 
 #[component]
@@ -31,6 +34,11 @@ pub fn App() -> impl IntoView {
     let (selected_severity, set_selected_severity) = create_signal::<Option<Severity>>(None);
     let (active_tab, set_active_tab) = create_signal::<ActiveTab>(ActiveTab::Dashboard);
 
+    // Estados reactivos de gestión de usuarios, sesiones y RBAC
+    let (users_list, set_users_list) = create_signal::<Vec<SocUser>>(get_initial_users());
+    let (session, set_session) = create_signal::<UserSessionState>(get_initial_session());
+    let (security_config, set_security_config) = create_signal::<GlobalSecurityConfig>(get_initial_security_config());
+
     // Efecto para sincronizar la métrica de mitigaciones pendientes cuando el usuario interactúa
     create_effect(move |_| {
         let count = pending_items.get().len() as u64;
@@ -38,6 +46,18 @@ pub fn App() -> impl IntoView {
             m.pending_manual = count;
         });
     });
+
+    // Selector rápido de usuario para demostración de perfiles y RBAC
+    let handle_switch_user = move |user_id_str: String| {
+        if let Ok(uid) = user_id_str.parse::<i32>() {
+            if let Some(target_user) = users_list.get().into_iter().find(|u| u.user_id == uid) {
+                set_session.update(|s| {
+                    s.current_user = target_user;
+                    s.last_reauth_timestamp = 0.0; // Requiere re-auth al cambiar de usuario
+                });
+            }
+        }
+    };
 
     view! {
         <div class="soc-app">
@@ -84,9 +104,36 @@ pub fn App() -> impl IntoView {
                             {move || pending_items.get().len().to_string()}
                         </span>
                     </button>
+                    <button
+                        class=move || if active_tab.get() == ActiveTab::UserManagement { "nav-btn active" } else { "nav-btn" }
+                        on:click=move |_| set_active_tab.set(ActiveTab::UserManagement)
+                    >
+                        "👥 Usuarios & RBAC"
+                    </button>
                 </nav>
 
                 <div class="soc-header-status">
+                    // Selector rápido de perfil activo para pruebas RBAC
+                    <div style="display: flex; align-items: center; gap: 0.4rem;">
+                        <span style="font-size: 0.75rem; color: var(--ctp-subtext0);">"Perfil:"</span>
+                        <select
+                            class="form-control"
+                            style="padding: 0.2rem 0.5rem; font-size: 0.75rem; width: auto; background-color: var(--ctp-crust);"
+                            on:change=move |ev| handle_switch_user(event_target_value(&ev))
+                        >
+                            {move || {
+                                users_list.get().into_iter().map(|u| {
+                                    let is_sel = u.user_id == session.get().current_user.user_id;
+                                    view! {
+                                        <option value=u.user_id.to_string() selected=is_sel>
+                                            {format!("{} ({})", u.username, u.role.display_name())}
+                                        </option>
+                                    }
+                                }).collect_view()
+                            }}
+                        </select>
+                    </div>
+
                     <div class="status-badge online">
                         <span class="status-dot"></span>
                         <span>"SISTEMA EN LÍNEA"</span>
@@ -159,6 +206,24 @@ pub fn App() -> impl IntoView {
                             <BlastRadiusControl
                                 pending_items=pending_items
                                 set_pending_items=set_pending_items
+                                session=session
+                                set_session=set_session
+                                security_config=security_config
+                            />
+                        </div>
+                    }.into_view(),
+                    ActiveTab::UserManagement => view! {
+                        <div>
+                            <h2 style="font-size: 1.25rem; font-weight: 700; margin-bottom: 1rem; color: var(--ctp-text);">
+                                "Administración de Usuarios, Control de Acceso (RBAC) y Seguridad Zero-Trust"
+                            </h2>
+                            <UserManagement
+                                users=users_list
+                                set_users=set_users_list
+                                session=session
+                                set_session=set_session
+                                security_config=security_config
+                                set_security_config=set_security_config
                             />
                         </div>
                     }.into_view(),

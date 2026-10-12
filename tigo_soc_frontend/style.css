@@ -840,3 +840,158 @@ body {
     font-size: 0.875rem;
 }
 
+/* ==============================================================================
+ * GESTIÓN DE USUARIOS, ROLES RBAC Y RE-AUTENTICACIÓN ESTRICTA
+ * ============================================================================== */
+
+.user-mgmt-container {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.rbac-card {
+    background-color: var(--ctp-mantle);
+    border: 1px solid var(--ctp-surface0);
+    border-radius: 10px;
+    padding: 1.25rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.rbac-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    border-bottom: 1px solid var(--ctp-surface0);
+    padding-bottom: 0.75rem;
+}
+
+.rbac-card-body {
+    display: flex;
+    flex-direction: column;
+}
+
+/* Badges de Roles RBAC */
+.badge-role {
+    display: inline-block;
+    padding: 0.2rem 0.6rem;
+    border-radius: 4px;
+    font-size: 0.6875rem;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+}
+
+.badge-role-admin {
+    background-color: rgba(203, 166, 247, 0.2);
+    color: var(--ctp-mauve);
+    border: 1px solid rgba(203, 166, 247, 0.4);
+}
+
+.badge-role-operator {
+    background-color: rgba(137, 180, 250, 0.2);
+    color: var(--ctp-blue);
+    border: 1px solid rgba(137, 180, 250, 0.4);
+}
+
+.badge-role-auditor {
+    background-color: rgba(249, 226, 175, 0.2);
+    color: var(--ctp-yellow);
+    border: 1px solid rgba(249, 226, 175, 0.4);
+}
+
+.badge-role-l1 {
+    background-color: rgba(148, 226, 213, 0.2);
+    color: var(--ctp-teal);
+    border: 1px solid rgba(148, 226, 213, 0.4);
+}
+
+/* Formularios */
+.form-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    align-items: flex-end;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    flex: 1;
+    min-width: 200px;
+}
+
+.form-label {
+    font-size: 0.78rem;
+    color: var(--ctp-subtext0);
+    font-weight: 600;
+}
+
+.form-control {
+    background-color: var(--ctp-base);
+    border: 1px solid var(--ctp-surface0);
+    color: var(--ctp-text);
+    padding: 0.45rem 0.75rem;
+    border-radius: 6px;
+    font-size: 0.84rem;
+    outline: none;
+    transition: border-color 0.2s ease;
+}
+
+.form-control:focus {
+    border-color: var(--ctp-blue);
+}
+
+/* Cajas de Políticas y Matriz */
+.policy-box {
+    background-color: var(--ctp-base);
+    border: 1px solid var(--ctp-surface0);
+    border-radius: 8px;
+    padding: 1rem;
+}
+
+/* Alertas de Notificación */
+.alert-box {
+    padding: 0.75rem 1rem;
+    border-radius: 8px;
+    font-size: 0.875rem;
+    animation: fadeIn 0.3s ease;
+}
+
+.alert-success {
+    background-color: rgba(166, 227, 161, 0.15);
+    border: 1px solid var(--ctp-green);
+    color: var(--ctp-green);
+}
+
+.alert-danger {
+    background-color: rgba(243, 139, 168, 0.15);
+    border: 1px solid var(--ctp-red);
+    color: var(--ctp-red);
+}
+
+/* Modal de Re-autenticación */
+.reauth-modal {
+    max-width: 520px;
+    border-color: var(--ctp-peach);
+}
+
+.reauth-header {
+    background: linear-gradient(90deg, rgba(250, 179, 135, 0.1), transparent);
+}
+
+.reauth-warning-banner {
+    background-color: rgba(250, 179, 135, 0.1);
+    border: 1px solid rgba(250, 179, 135, 0.3);
+    border-radius: 8px;
+    padding: 0.85rem;
+    margin-bottom: 1rem;
+}
+
+

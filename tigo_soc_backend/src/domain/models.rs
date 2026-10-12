@@ -80,6 +80,86 @@ pub struct SysUser {
 
 #[derive(Serialize, Deserialize, Debug, Clone, FromRow)]
 #[serde(rename_all = "camelCase")]
+pub struct UserWithRole {
+    pub user_id: i32,
+    pub username: String,
+    pub role_id: Option<i32>,
+    pub role_name: Option<String>,
+    pub role_description: Option<String>,
+    pub created_at: Option<DateTime<Utc>>,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone, FromRow)]
+#[serde(rename_all = "camelCase")]
+pub struct UserSession {
+    pub session_id: String,
+    pub user_id: i32,
+    pub created_at: Option<DateTime<Utc>>,
+    pub expires_at: DateTime<Utc>,
+    pub last_activity: Option<DateTime<Utc>>,
+    pub last_reauth_at: Option<DateTime<Utc>>,
+    pub is_revoked: bool,
+    pub ip_address: Option<String>,
+    pub user_agent: Option<String>,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct CreateUserDto {
+    pub username: String,
+    pub password: String,
+    pub role_id: i32,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct UpdateUserRoleDto {
+    pub role_id: i32,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct LoginDto {
+    pub username: String,
+    pub password: String,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct LoginResponseDto {
+    pub session_token: String,
+    pub user_id: i32,
+    pub username: String,
+    pub role_id: Option<i32>,
+    pub role_name: String,
+    pub expires_at: DateTime<Utc>,
+    pub critical_timeout_secs: i64,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct ReauthDto {
+    pub password: String,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct ReauthResponseDto {
+    pub verified: bool,
+    pub reauth_timestamp: DateTime<Utc>,
+    pub valid_until: DateTime<Utc>,
+    pub timeout_seconds: i64,
+    pub message: String,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct CriticalTimeoutConfigDto {
+    pub timeout_seconds: i64,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone, FromRow)]
+#[serde(rename_all = "camelCase")]
 pub struct SystemParameter {
     pub param_id: Option<i32>,
     pub param_key: String,

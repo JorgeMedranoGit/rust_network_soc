@@ -7,6 +7,8 @@ pub mod repo_orchestration;
 pub mod repo_telemetry;
 pub mod fcm_client;
 pub mod asset_discovery;
+pub mod security;
+pub mod repo_users;
 
 #[allow(unused_imports)]
 pub use repo_catalogs as catalog;
@@ -16,3 +18,6 @@ pub use repo_inventory as inventory;
 pub use repo_orchestration as repository;
 #[allow(unused_imports)]
 pub use repo_telemetry as telemetry;
+#[allow(unused_imports)]
+pub use repo_users as users;
+

@@ -295,3 +295,117 @@ pub fn get_initial_realtime_events() -> Vec<RealtimeStreamEvent> {
         },
     ]
 }
+
+// * * * 4. CONTROL DE ACCESO BASADO EN ROLES (RBAC), USUARIOS Y SESIONES * * *
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum RoleType {
+    Admin,       // Administrador general del SOC
+    SocOperator, // Operador SOC - Ejecución de mitigaciones y rollback
+    Auditor,     // Auditor - Solo lectura forense y telemetría
+    AnalystL1,   // Analista L1 - Triaje inicial
+}
+
+impl RoleType {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            RoleType::Admin => "ADMINISTRADOR",
+            RoleType::SocOperator => "OPERADOR_SOC",
+            RoleType::Auditor => "AUDITOR",
+            RoleType::AnalystL1 => "ANALISTA_L1",
+        }
+    }
+
+    pub fn display_name(&self) -> &'static str {
+        match self {
+            RoleType::Admin => "Administrador General",
+            RoleType::SocOperator => "Operador SOC",
+            RoleType::Auditor => "Auditor de Seguridad",
+            RoleType::AnalystL1 => "Analista L1 (Triaje)",
+        }
+    }
+
+    pub fn can_manage_users(&self) -> bool {
+        matches!(self, RoleType::Admin)
+    }
+
+    pub fn can_execute_mitigations(&self) -> bool {
+        matches!(self, RoleType::Admin | RoleType::SocOperator)
+    }
+
+    pub fn is_read_only(&self) -> bool {
+        matches!(self, RoleType::Auditor)
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct SocUser {
+    pub user_id: i32,
+    pub username: String,
+    pub role: RoleType,
+    pub created_at: String,
+    pub is_active: bool,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct UserSessionState {
+    pub current_user: SocUser,
+    pub session_token: String,
+    pub expires_at: String,
+    pub last_reauth_timestamp: f64,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct GlobalSecurityConfig {
+    pub critical_action_timeout_secs: u64,
+}
+
+pub fn get_initial_users() -> Vec<SocUser> {
+    vec![
+        SocUser {
+            user_id: 1,
+            username: "admin_soc".to_string(),
+            role: RoleType::Admin,
+            created_at: "2026-10-12 00:00:00".to_string(),
+            is_active: true,
+        },
+        SocUser {
+            user_id: 2,
+            username: "operador_red".to_string(),
+            role: RoleType::SocOperator,
+            created_at: "2026-10-12 01:15:30".to_string(),
+            is_active: true,
+        },
+        SocUser {
+            user_id: 3,
+            username: "auditor_seguridad".to_string(),
+            role: RoleType::Auditor,
+            created_at: "2026-10-12 02:30:10".to_string(),
+            is_active: true,
+        },
+        SocUser {
+            user_id: 4,
+            username: "analista_triaje".to_string(),
+            role: RoleType::AnalystL1,
+            created_at: "2026-10-12 03:45:00".to_string(),
+            is_active: true,
+        },
+    ]
+}
+
+pub fn get_initial_security_config() -> GlobalSecurityConfig {
+    GlobalSecurityConfig {
+        critical_action_timeout_secs: 300,
+    }
+}
+
+pub fn get_initial_session() -> UserSessionState {
+    let users = get_initial_users();
+    UserSessionState {
+        current_user: users[0].clone(),
+        session_token: "d9e4a7b2c1f08e54a938c71b02d64f891a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d".to_string(),
+        expires_at: "24h (Server-Backed Opaque Session)".to_string(),
+        last_reauth_timestamp: 0.0,
+    }
+}
+

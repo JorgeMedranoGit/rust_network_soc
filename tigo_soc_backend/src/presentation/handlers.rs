@@ -3,20 +3,28 @@
 use std::sync::Arc;
 use axum::{
     extract::{Path, State},
-    http::StatusCode,
+    http::{HeaderMap, StatusCode},
     response::IntoResponse,
     Json,
 };
+use chrono::{Duration, Utc};
 use serde::Deserialize;
 use serde_json::json;
 
+use crate::domain::models::{
+    CreateUserDto, CriticalTimeoutConfigDto, LoginDto, LoginResponseDto, ReauthDto,
+    ReauthResponseDto, UpdateUserRoleDto,
+};
 use crate::infrastructure::{
     repo_catalogs::CatalogsRepository,
     repo_inventory::InventoryRepository,
     repo_orchestration::OrchestrationRepository,
     repo_telemetry::TelemetryRepository,
+    repo_users::UsersRepository,
+    security,
 };
 use crate::presentation::api_routes::AppState;
+
 
 // * * * 1. ENDPOINT LIGERO DE SALUD (HEALTH CHECK) * * *
 // Devuelve HTTP 200 y JSON {"status": "online", "service": "Tigo SOC API"}
@@ -282,3 +290,448 @@ pub async fn get_model_info_handler() -> impl IntoResponse {
         })),
     )
 }
+
+// * * * 9. AUTENTICACIÓN, SESIONES SEGURAS EN SERVIDOR Y RE-AUTENTICACIÓN RBAC * * *
+
+fn extract_session_token(headers: &HeaderMap) -> Option<String> {
+    if let Some(auth_header) = headers.get("Authorization") {
+        if let Ok(auth_str) = auth_header.to_str() {
+            if auth_str.starts_with("Bearer ") {
+                return Some(auth_str[7..].trim().to_string());
+            }
+        }
+    }
+    if let Some(custom) = headers.get("X-Session-Token") {
+        if let Ok(s) = custom.to_str() {
+            return Some(s.trim().to_string());
+        }
+    }
+    None
+}
+
+/// Inicio de sesión seguro: valida credenciales y genera token opaco en PostgreSQL (user_sessions)
+pub async fn login_handler(
+    State(state): State<AppState>,
+    Json(payload): Json<LoginDto>,
+) -> impl IntoResponse {
+    let repo = UsersRepository::new(state.pool.clone());
+    let user_opt = match repo.get_user_by_username(&payload.username).await {
+        Ok(u) => u,
+        Err(e) => {
+            return (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(json!({ "error": format!("Error en base de datos: {}", e) })),
+            );
+        }
+    };
+
+    let user = match user_opt {
+        Some(u) => u,
+        None => {
+            return (
+                StatusCode::UNAUTHORIZED,
+                Json(json!({ "error": "Credenciales inválidas" })),
+            );
+        }
+    };
+
+    if !security::verify_password(&payload.password, &user.password_hash) {
+        return (
+            StatusCode::UNAUTHORIZED,
+            Json(json!({ "error": "Credenciales inválidas" })),
+        );
+    }
+
+    let user_id = user.user_id.unwrap_or(1);
+    let session_token = security::generate_opaque_session_token();
+    let ttl_seconds = 86400; // 24 horas
+
+    let user_details = repo.get_user_by_id(user_id).await.ok().flatten();
+    let role_name = user_details
+        .and_then(|u| u.role_name)
+        .unwrap_or_else(|| "SOC_OPERATOR".to_string());
+
+    let session = match repo
+        .create_session(&session_token, user_id, ttl_seconds, None, None)
+        .await
+    {
+        Ok(s) => s,
+        Err(e) => {
+            return (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(json!({ "error": format!("Fallo al registrar sesión: {}", e) })),
+            );
+        }
+    };
+
+    let critical_timeout = repo.get_critical_timeout_secs().await.unwrap_or(300);
+
+    let response = LoginResponseDto {
+        session_token: session.session_id,
+        user_id,
+        username: user.username,
+        role_id: user.role_id,
+        role_name,
+        expires_at: session.expires_at,
+        critical_timeout_secs: critical_timeout,
+    };
+
+    (StatusCode::OK, Json(json!(response)))
+}
+
+/// Cierre de sesión y revocación inmediata del token de sesión en el servidor
+pub async fn logout_handler(
+    State(state): State<AppState>,
+    headers: HeaderMap,
+) -> impl IntoResponse {
+    let token = match extract_session_token(&headers) {
+        Some(t) => t,
+        None => {
+            return (
+                StatusCode::BAD_REQUEST,
+                Json(json!({ "error": "Cabecera de sesión ausente" })),
+            );
+        }
+    };
+
+    let repo = UsersRepository::new(state.pool);
+    match repo.revoke_session(&token).await {
+        Ok(_) => (
+            StatusCode::OK,
+            Json(json!({ "status": "success", "message": "Sesión revocada exitosamente" })),
+        ),
+        Err(e) => (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(json!({ "error": e.to_string() })),
+        ),
+    }
+}
+
+/// Valida la vigencia de la sesión actual y actualiza el timestamp de última actividad
+pub async fn get_session_handler(
+    State(state): State<AppState>,
+    headers: HeaderMap,
+) -> impl IntoResponse {
+    let token = match extract_session_token(&headers) {
+        Some(t) => t,
+        None => {
+            return (
+                StatusCode::UNAUTHORIZED,
+                Json(json!({ "error": "Token de sesión no proporcionado" })),
+            );
+        }
+    };
+
+    let repo = UsersRepository::new(state.pool);
+    match repo.get_valid_session(&token).await {
+        Ok(Some(session)) => {
+            let _ = repo.touch_session(&token).await;
+            let user_info = repo.get_user_by_id(session.user_id).await.ok().flatten();
+            let critical_timeout = repo.get_critical_timeout_secs().await.unwrap_or(300);
+            let reauth_valid = repo.is_reauth_valid(&token).await.unwrap_or(false);
+
+            (
+                StatusCode::OK,
+                Json(json!({
+                    "valid": true,
+                    "sessionId": session.session_id,
+                    "userId": session.user_id,
+                    "user": user_info,
+                    "expiresAt": session.expires_at,
+                    "lastActivity": session.last_activity,
+                    "lastReauthAt": session.last_reauth_at,
+                    "reauthValid": reauth_valid,
+                    "criticalTimeoutSeconds": critical_timeout
+                })),
+            )
+        }
+        Ok(None) => (
+            StatusCode::UNAUTHORIZED,
+            Json(json!({ "valid": false, "error": "Sesión inválida o expirada" })),
+        ),
+        Err(e) => (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(json!({ "error": e.to_string() })),
+        ),
+    }
+}
+
+/// Re-autenticación estricta por contraseña requerida para mitigación o rollback
+pub async fn reauth_handler(
+    State(state): State<AppState>,
+    headers: HeaderMap,
+    Json(payload): Json<ReauthDto>,
+) -> impl IntoResponse {
+    let token = match extract_session_token(&headers) {
+        Some(t) => t,
+        None => {
+            return (
+                StatusCode::UNAUTHORIZED,
+                Json(json!({ "error": "Token de sesión requerido para re-autenticación" })),
+            );
+        }
+    };
+
+    let repo = UsersRepository::new(state.pool);
+    let session = match repo.get_valid_session(&token).await {
+        Ok(Some(s)) => s,
+        Ok(None) => {
+            return (
+                StatusCode::UNAUTHORIZED,
+                Json(json!({ "error": "Sesión expirada. Inicie sesión nuevamente." })),
+            );
+        }
+        Err(e) => {
+            return (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(json!({ "error": e.to_string() })),
+            );
+        }
+    };
+
+    let user = match repo.get_user_by_id(session.user_id).await {
+        Ok(Some(u)) => u,
+        _ => {
+            return (
+                StatusCode::UNAUTHORIZED,
+                Json(json!({ "error": "Usuario no encontrado" })),
+            );
+        }
+    };
+
+    let db_user = match repo.get_user_by_username(&user.username).await {
+        Ok(Some(u)) => u,
+        _ => {
+            return (
+                StatusCode::UNAUTHORIZED,
+                Json(json!({ "error": "Error al recuperar credenciales de usuario" })),
+            );
+        }
+    };
+
+    if !security::verify_password(&payload.password, &db_user.password_hash) {
+        return (
+            StatusCode::UNAUTHORIZED,
+            Json(json!({
+                "verified": false,
+                "error": "Contraseña de re-autenticación incorrecta. Acción crítica bloqueada."
+            })),
+        );
+    }
+
+    if let Err(e) = repo.update_reauth_timestamp(&token).await {
+        return (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(json!({ "error": format!("Fallo al actualizar timestamp de re-autenticación: {}", e) })),
+        );
+    }
+
+    let timeout_secs = repo.get_critical_timeout_secs().await.unwrap_or(300);
+    let now = Utc::now();
+    let valid_until = now + Duration::seconds(timeout_secs);
+
+    let resp = ReauthResponseDto {
+        verified: true,
+        reauth_timestamp: now,
+        valid_until,
+        timeout_seconds: timeout_secs,
+        message: "Re-autenticación exitosa. Acciones críticas autorizadas.".to_string(),
+    };
+
+    (StatusCode::OK, Json(json!(resp)))
+}
+
+// * * * 10. CRUD DE USUARIOS Y ASIGNACIÓN DE ROLES (RBAC) * * *
+
+pub async fn get_users_handler(State(state): State<AppState>) -> impl IntoResponse {
+    let repo = UsersRepository::new(state.pool);
+    match repo.get_users_with_roles().await {
+        Ok(users) => (StatusCode::OK, Json(json!({ "users": users }))),
+        Err(e) => (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(json!({ "error": e.to_string() })),
+        ),
+    }
+}
+
+pub async fn create_user_handler(
+    State(state): State<AppState>,
+    Json(payload): Json<CreateUserDto>,
+) -> impl IntoResponse {
+    if payload.username.trim().is_empty() || payload.password.trim().is_empty() {
+        return (
+            StatusCode::BAD_REQUEST,
+            Json(json!({ "error": "El nombre de usuario y la contraseña no pueden estar vacíos" })),
+        );
+    }
+
+    let repo = UsersRepository::new(state.pool);
+    if let Ok(Some(_)) = repo.get_user_by_username(&payload.username).await {
+        return (
+            StatusCode::CONFLICT,
+            Json(json!({ "error": format!("El usuario '{}' ya existe en el sistema", payload.username) })),
+        );
+    }
+
+    let password_hash = security::hash_password(&payload.password);
+    match repo
+        .create_user(&payload.username, &password_hash, payload.role_id)
+        .await
+    {
+        Ok(created) => (
+            StatusCode::CREATED,
+            Json(json!({
+                "status": "success",
+                "message": "Usuario registrado exitosamente",
+                "user": created
+            })),
+        ),
+        Err(e) => (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(json!({ "error": e.to_string() })),
+        ),
+    }
+}
+
+pub async fn update_user_role_handler(
+    State(state): State<AppState>,
+    Path(id): Path<i32>,
+    Json(payload): Json<UpdateUserRoleDto>,
+) -> impl IntoResponse {
+    let repo = UsersRepository::new(state.pool);
+    match repo.update_user_role(id, payload.role_id).await {
+        Ok(_) => (
+            StatusCode::OK,
+            Json(json!({
+                "status": "success",
+                "message": format!("Rol de usuario #{} actualizado a rol #{}", id, payload.role_id)
+            })),
+        ),
+        Err(e) => (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(json!({ "error": e.to_string() })),
+        ),
+    }
+}
+
+pub async fn delete_user_handler(
+    State(state): State<AppState>,
+    Path(id): Path<i32>,
+) -> impl IntoResponse {
+    let repo = UsersRepository::new(state.pool);
+    match repo.delete_user(id).await {
+        Ok(_) => (
+            StatusCode::OK,
+            Json(json!({
+                "status": "success",
+                "message": format!("Usuario #{} eliminado", id)
+            })),
+        ),
+        Err(e) => (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(json!({ "error": e.to_string() })),
+        ),
+    }
+}
+
+pub async fn get_roles_handler(State(state): State<AppState>) -> impl IntoResponse {
+    let repo = CatalogsRepository::new(state.pool);
+    match repo.get_roles().await {
+        Ok(roles) => (StatusCode::OK, Json(json!({ "roles": roles }))),
+        Err(e) => (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(json!({ "error": e.to_string() })),
+        ),
+    }
+}
+
+// * * * 11. CONFIGURACIÓN DEL TIMEOUT GLOBAL DE ACCIONES CRÍTICAS * * *
+
+pub async fn get_critical_timeout_handler(State(state): State<AppState>) -> impl IntoResponse {
+    let repo = UsersRepository::new(state.pool);
+    match repo.get_critical_timeout_secs().await {
+        Ok(seconds) => (
+            StatusCode::OK,
+            Json(json!({ "timeoutSeconds": seconds })),
+        ),
+        Err(e) => (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(json!({ "error": e.to_string() })),
+        ),
+    }
+}
+
+pub async fn update_critical_timeout_handler(
+    State(state): State<AppState>,
+    Json(payload): Json<CriticalTimeoutConfigDto>,
+) -> impl IntoResponse {
+    if payload.timeout_seconds < 10 {
+        return (
+            StatusCode::BAD_REQUEST,
+            Json(json!({ "error": "El timeout mínimo permitido es de 10 segundos" })),
+        );
+    }
+
+    let repo = UsersRepository::new(state.pool);
+    match repo.set_critical_timeout_secs(payload.timeout_seconds, None).await {
+        Ok(_) => (
+            StatusCode::OK,
+            Json(json!({
+                "status": "success",
+                "message": format!("Timeout global de acciones críticas configurado en {} segundos", payload.timeout_seconds),
+                "timeoutSeconds": payload.timeout_seconds
+            })),
+        ),
+        Err(e) => (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(json!({ "error": e.to_string() })),
+        ),
+    }
+}
+
+/// Endpoint de validación previa antes de despachar comandos de mitigación o rollback
+pub async fn validate_critical_action_handler(
+    State(state): State<AppState>,
+    headers: HeaderMap,
+) -> impl IntoResponse {
+    let token = match extract_session_token(&headers) {
+        Some(t) => t,
+        None => {
+            return (
+                StatusCode::UNAUTHORIZED,
+                Json(json!({
+                    "authorized": false,
+                    "error": "UNAUTHENTICATED",
+                    "message": "Token de sesión en servidor requerido"
+                })),
+            );
+        }
+    };
+
+    let repo = UsersRepository::new(state.pool);
+    match repo.is_reauth_valid(&token).await {
+        Ok(true) => (
+            StatusCode::OK,
+            Json(json!({
+                "authorized": true,
+                "message": "Re-autenticación válida. Comando de mitigación/rollback autorizado para ejecución."
+            })),
+        ),
+        Ok(false) => (
+            StatusCode::FORBIDDEN,
+            Json(json!({
+                "authorized": false,
+                "error": "REAUTH_REQUIRED",
+                "message": "Timeout de inactividad de acciones críticas expirado. Re-autenticación por contraseña requerida."
+            })),
+        ),
+        Err(e) => (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(json!({
+                "authorized": false,
+                "error": e.to_string()
+            })),
+        ),
+    }
+}
+

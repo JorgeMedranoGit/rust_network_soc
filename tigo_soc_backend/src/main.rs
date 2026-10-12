@@ -30,6 +30,8 @@ use infrastructure::{
     repo_inventory::InventoryRepository,
     repo_orchestration::OrchestrationRepository,
     repo_telemetry::TelemetryRepository,
+    repo_users::UsersRepository,
+    security,
 };
 use presentation::{
     api_routes::{create_router, AppState},
@@ -98,6 +100,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let inventory = InventoryRepository::new(db_pool.clone());
     seed_initial_inventory(&inventory, &catalogs).await;
+
+    seed_initial_rbac_and_users(&db_pool).await;
 
     // * * * 3. CARGA DE CACHÉ DE TOPOLOGÍA EN MEMORIA RAM (O(1) RESOLUTION) * * *
     let ip_cache = Arc::new(load_ip_cache(&inventory).await);
@@ -576,7 +580,9 @@ async fn seed_initial_catalogs(repo: &CatalogsRepository) {
 
     let roles = [
         ("SOC_ADMIN", Some("Administrador general del SOC")),
-        ("SOC_ANALYST_L1", Some("Analista L1 - Monitoreo y triaje")),
+        ("SOC_OPERATOR", Some("Operador SOC - Ejecución de mitigaciones y rollback")),
+        ("SOC_AUDITOR", Some("Auditor - Solo lectura forense y telemetría")),
+        ("SOC_ANALYST_L1", Some("Analista L1 - Triaje inicial y monitoreo")),
         ("SOC_ANALYST_L2", Some("Analista L2 - Respuesta a incidentes")),
     ];
     for (name, desc) in roles {
@@ -585,3 +591,45 @@ async fn seed_initial_catalogs(repo: &CatalogsRepository) {
 
     println!("|- INSTRUCCION -| [INIT] Catálogos base sincronizados correctamente.");
 }
+
+// * * * SEMBRADO DE TABLA DE SESIONES SEGURAS, RBAC Y USUARIO ADMIN INICIAL * * *
+async fn seed_initial_rbac_and_users(pool: &sqlx::PgPool) {
+    println!("|- INSTRUCCION -| [INIT] Verificando tablas de sesiones seguras y usuarios iniciales...");
+
+    // Asegurar tabla user_sessions si aún no ha sido migrada
+    let _ = sqlx::query(
+        r#"
+        CREATE TABLE IF NOT EXISTS user_sessions (
+            session_id VARCHAR(64) PRIMARY KEY,
+            user_id INT NOT NULL REFERENCES sys_users(user_id) ON DELETE CASCADE,
+            created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+            expires_at TIMESTAMP WITH TIME ZONE NOT NULL,
+            last_activity TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+            last_reauth_at TIMESTAMP WITH TIME ZONE,
+            is_revoked BOOLEAN DEFAULT FALSE,
+            ip_address VARCHAR(45),
+            user_agent TEXT
+        );
+        "#
+    )
+    .execute(pool)
+    .await;
+
+    let users_repo = UsersRepository::new(pool.clone());
+    let catalogs_repo = CatalogsRepository::new(pool.clone());
+
+    // Asegurar parámetro configurable de timeout crítico (300 segundos por defecto)
+    let _ = users_repo.set_critical_timeout_secs(300, None).await;
+
+    // Si no existen usuarios en el sistema, sembrar usuario administrador inicial
+    if let Ok(users) = users_repo.get_users_with_roles().await {
+        if users.is_empty() {
+            let roles = catalogs_repo.get_roles().await.unwrap_or_default();
+            let admin_role_id = roles.iter().find(|r| r.role_name == "SOC_ADMIN").and_then(|r| r.role_id).unwrap_or(1);
+            let password_hash = security::hash_password("AdminSOC2026!");
+            let _ = users_repo.create_user("admin_soc", &password_hash, admin_role_id).await;
+            println!("|- INSTRUCCION -| [INIT] Usuario administrador inicial 'admin_soc' creado exitosamente.");
+        }
+    }
+}
+

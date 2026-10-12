@@ -3,7 +3,7 @@
 use std::sync::Arc;
 use axum::{
     extract::FromRef,
-    routing::{get, post},
+    routing::{delete, get, post, put},
     Router,
 };
 use sqlx::PgPool;
@@ -15,11 +15,14 @@ use crate::domain::threat_detector::ThreatDetector;
 use crate::infrastructure::fcm_client::FcmNotifier;
 use crate::presentation::{
     handlers::{
-        get_alert_by_id_handler, get_alerts_handler, get_device_types_handler,
-        get_logs_handler, get_metrics_summary_handler, get_ml_stats_handler,
-        get_model_info_handler, get_nodes_handler, get_telemetry_metrics_handler,
-        health_check_handler, simulate_push_handler, subscribe_topic_handler,
-        system_status_handler,
+        create_user_handler, delete_user_handler, get_alert_by_id_handler, get_alerts_handler,
+        get_critical_timeout_handler, get_device_types_handler, get_logs_handler,
+        get_metrics_summary_handler, get_ml_stats_handler, get_model_info_handler,
+        get_nodes_handler, get_roles_handler, get_session_handler, get_telemetry_metrics_handler,
+        get_users_handler, health_check_handler, login_handler, logout_handler, reauth_handler,
+        simulate_push_handler, subscribe_topic_handler, system_status_handler,
+        update_critical_timeout_handler, update_user_role_handler,
+        validate_critical_action_handler,
     },
     telemetry_stream::TelemetryStreamHandler,
 };
@@ -63,7 +66,21 @@ pub fn create_router(state: AppState) -> Router {
         .route("/api/v1/catalogs/device-types", get(get_device_types_handler))
         .route("/api/v1/inventory/nodes", get(get_nodes_handler))
         .route("/api/v1/ml/stats", get(get_ml_stats_handler))
-        .route("/api/v1/ml/model-info", get(get_model_info_handler));
+        .route("/api/v1/ml/model-info", get(get_model_info_handler))
+        // * * * Autenticación y Sesiones Seguras en Servidor * * *
+        .route("/api/v1/auth/login", post(login_handler))
+        .route("/api/v1/auth/logout", post(logout_handler))
+        .route("/api/v1/auth/session", get(get_session_handler))
+        .route("/api/v1/auth/reauth", post(reauth_handler))
+        .route("/api/v1/auth/validate-critical", post(validate_critical_action_handler))
+        // * * * CRUD de Usuarios y Roles (RBAC) * * *
+        .route("/api/v1/users", get(get_users_handler).post(create_user_handler))
+        .route("/api/v1/users/:id/role", put(update_user_role_handler))
+        .route("/api/v1/users/:id", delete(delete_user_handler))
+        .route("/api/v1/roles", get(get_roles_handler))
+        // * * * Configuración Global de Timeout para Acciones Críticas * * *
+        .route("/api/v1/config/critical-timeout", get(get_critical_timeout_handler).put(update_critical_timeout_handler));
+
 
     let pwa_paths = ["../frontend", "frontend", "/app/frontend"];
     for p in pwa_paths {
