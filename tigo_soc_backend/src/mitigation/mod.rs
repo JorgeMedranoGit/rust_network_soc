@@ -1,6 +1,7 @@
 // * * * MÓDULO DE MITIGACIÓN MULTI-VENDOR Y ARQUITECTURA AGNÓSTICA DE HARDWARE * * *
 #![allow(async_fn_in_trait, dead_code)]
 
+pub mod acl_blackhole;
 pub mod cisco;
 pub mod dns_sinkhole;
 pub mod gns3;
@@ -13,6 +14,7 @@ use std::str::FromStr;
 use serde_json::Value;
 use sqlx::{PgPool, Row};
 
+pub use acl_blackhole::AclBlackhole;
 pub use cisco::CiscoIse;
 pub use dns_sinkhole::DnsSinkhole;
 pub use gns3::Gns3Alpine;
@@ -36,6 +38,7 @@ pub enum Vendor {
     SwitchRadius,
     NGFW,
     DnsSinkhole,
+    AclBlackhole,
     Cisco,
     GNS3,
     OpenWrt,
@@ -49,6 +52,7 @@ impl Vendor {
             Vendor::SwitchRadius => "Switch RADIUS CoA (Capa 2)",
             Vendor::NGFW => "NGFW RESTCONF (Perimetral)",
             Vendor::DnsSinkhole => "DNS Sinkholing (Capa 7)",
+            Vendor::AclBlackhole => "ACL Dinámica & Blackholing (Capas 3 y 4)",
             Vendor::Cisco => "Cisco ISE",
             Vendor::GNS3 => "GNS3 Alpine",
             Vendor::OpenWrt => "OpenWrt",
@@ -67,6 +71,8 @@ impl FromStr for Vendor {
             Ok(Vendor::SwitchRadius)
         } else if lower.contains("sinkhole") || lower.contains("dns") {
             Ok(Vendor::DnsSinkhole)
+        } else if lower.contains("blackhole") || lower.contains("null") || lower.contains("acl") {
+            Ok(Vendor::AclBlackhole)
         } else if lower.contains("ngfw") || lower.contains("restconf") || lower.contains("fortigate") || lower.contains("paloalto") {
             Ok(Vendor::NGFW)
         } else if lower.contains("cisco") {
@@ -171,6 +177,7 @@ pub async fn register_security_alert(
 ) -> Option<i64> {
     // 1. Obtener ID de tipo de amenaza según contexto o usar UNAUTHORIZED_ACCESS por defecto
     let threat_name = match vendor {
+        Vendor::AclBlackhole => "DDOS_SYN_FLOOD",
         Vendor::DnsSinkhole => "DATA_EXFILTRATION",
         Vendor::NGFW => "PORT_SCAN",
         Vendor::SwitchRadius => "UNAUTHORIZED_ACCESS",
@@ -189,6 +196,8 @@ pub async fn register_security_alert(
         None => {
             if vendor == Vendor::DnsSinkhole {
                 1
+            } else if vendor == Vendor::AclBlackhole {
+                3
             } else {
                 4
             }
@@ -206,6 +215,7 @@ pub async fn register_security_alert(
 
     let anomaly_score: f64 = match vendor {
         Vendor::DnsSinkhole => 0.98,
+        Vendor::AclBlackhole => 0.96,
         _ => 0.95,
     };
 
@@ -505,6 +515,7 @@ pub async fn dispatch_quarantine(pool: &PgPool, ip: &str, mac: &str) -> Result<V
         && vendor != Vendor::MikroTik
         && vendor != Vendor::NGFW
         && vendor != Vendor::DnsSinkhole
+        && vendor != Vendor::AclBlackhole
     {
         println!(
             "|- ORQUESTADOR MULTI-VENDOR -| [CAPA 2 PRIORITARIA] Nodo IP [{}] localizado en topología local. Priorizando aislamiento L2 (RADIUS CoA) sobre perimetral L3.",
@@ -527,6 +538,22 @@ pub async fn dispatch_quarantine(pool: &PgPool, ip: &str, mac: &str) -> Result<V
 
     // 3. Ejecución de la acción de mitigación según el fabricante y evaluación de Blast Radius
     match vendor {
+        Vendor::AclBlackhole => {
+            println!(
+                "|- ORQUESTADOR MULTI-VENDOR -| [CAPAS 3 Y 4 AUTOMÁTICA] Blast Radius singular (Host IP: [{}]). Ejecutando Blackholing (Null Route) y ACL dinámicas.",
+                ip
+            );
+            let client = AclBlackhole::default();
+            let rollback_json = client.apply_full_mitigation(ip, &resolved_mac).await?;
+
+            if let Some(aid) = alert_id {
+                save_rollback_snapshot(pool, aid, ip, &resolved_mac, "L3_L4", "ACL_BLACKHOLE_DYNAMIC_INJECTION", rollback_json).await;
+            } else {
+                println!(
+                    "|- ORQUESTADOR MULTI-VENDOR -| [ROLLBACK] Snapshot ACL/Blackhole generado localmente (sin persistencia BD por falta de alert_id)."
+                );
+            }
+        }
         Vendor::DnsSinkhole => {
             println!(
                 "|- ORQUESTADOR MULTI-VENDOR -| [BLAST RADIUS EVALUADO: IMPACTO MASIVO] Mitigación Capa 7 (DNS Sinkholing) afecta globalmente la resolución de la red."
@@ -639,6 +666,10 @@ mod tests {
         assert_eq!(Vendor::from_str("DnsSinkhole"), Ok(Vendor::DnsSinkhole));
         assert_eq!(Vendor::from_str("sinkhole"), Ok(Vendor::DnsSinkhole));
         assert_eq!(Vendor::from_str("dns"), Ok(Vendor::DnsSinkhole));
+        assert_eq!(Vendor::from_str("AclBlackhole"), Ok(Vendor::AclBlackhole));
+        assert_eq!(Vendor::from_str("blackhole"), Ok(Vendor::AclBlackhole));
+        assert_eq!(Vendor::from_str("nullroute"), Ok(Vendor::AclBlackhole));
+        assert_eq!(Vendor::from_str("acl"), Ok(Vendor::AclBlackhole));
         assert_eq!(Vendor::from_str("Cisco ISE"), Ok(Vendor::Cisco));
         assert_eq!(Vendor::from_str("cisco"), Ok(Vendor::Cisco));
         assert_eq!(Vendor::from_str("MikroTik RouterOS"), Ok(Vendor::MikroTik));
@@ -652,6 +683,7 @@ mod tests {
     #[test]
     fn test_blast_radius_evaluation() {
         assert_eq!(evaluate_blast_radius(Vendor::DnsSinkhole), BlastRadius::MassiveManual);
+        assert_eq!(evaluate_blast_radius(Vendor::AclBlackhole), BlastRadius::SingularAuto);
         assert_eq!(evaluate_blast_radius(Vendor::SwitchRadius), BlastRadius::SingularAuto);
         assert_eq!(evaluate_blast_radius(Vendor::NGFW), BlastRadius::SingularAuto);
         assert_eq!(evaluate_blast_radius(Vendor::Cisco), BlastRadius::SingularAuto);
@@ -709,6 +741,18 @@ mod tests {
 
             let res_dns = dispatch_quarantine(&pool, "192.168.100.200", "00:11:22:33:44:88").await;
             assert_eq!(res_dns, Ok(Vendor::DnsSinkhole));
+
+            // Asegurar nodo ACL & Blackholing de prueba
+            let _ = sqlx::query(
+                "INSERT INTO network_nodes (hostname, ip_address, vendor)
+                 VALUES ('TestAclBlackhole', '192.168.100.210', 'AclBlackhole')
+                 ON CONFLICT (ip_address) DO UPDATE SET vendor = 'AclBlackhole'"
+            )
+            .execute(&pool)
+            .await;
+
+            let res_blackhole = dispatch_quarantine(&pool, "192.168.100.210", "00:11:22:33:44:77").await;
+            assert_eq!(res_blackhole, Ok(Vendor::AclBlackhole));
         }
     }
 }
