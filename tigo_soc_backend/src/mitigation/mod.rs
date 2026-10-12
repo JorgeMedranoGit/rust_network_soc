@@ -2,6 +2,7 @@
 #![allow(async_fn_in_trait, dead_code)]
 
 pub mod cisco;
+pub mod dns_sinkhole;
 pub mod gns3;
 pub mod mikrotik;
 pub mod ngfw_restconf;
@@ -13,6 +14,7 @@ use serde_json::Value;
 use sqlx::{PgPool, Row};
 
 pub use cisco::CiscoIse;
+pub use dns_sinkhole::DnsSinkhole;
 pub use gns3::Gns3Alpine;
 pub use mikrotik::MikroTikRouter;
 pub use ngfw_restconf::NgfwClient;
@@ -33,6 +35,7 @@ pub trait MitigationDevice: Send + Sync {
 pub enum Vendor {
     SwitchRadius,
     NGFW,
+    DnsSinkhole,
     Cisco,
     GNS3,
     OpenWrt,
@@ -45,6 +48,7 @@ impl Vendor {
         match self {
             Vendor::SwitchRadius => "Switch RADIUS CoA (Capa 2)",
             Vendor::NGFW => "NGFW RESTCONF (Perimetral)",
+            Vendor::DnsSinkhole => "DNS Sinkholing (Capa 7)",
             Vendor::Cisco => "Cisco ISE",
             Vendor::GNS3 => "GNS3 Alpine",
             Vendor::OpenWrt => "OpenWrt",
@@ -61,6 +65,8 @@ impl FromStr for Vendor {
         let lower = s.to_lowercase();
         if lower.contains("radius") || lower.contains("coa") {
             Ok(Vendor::SwitchRadius)
+        } else if lower.contains("sinkhole") || lower.contains("dns") {
+            Ok(Vendor::DnsSinkhole)
         } else if lower.contains("ngfw") || lower.contains("restconf") || lower.contains("fortigate") || lower.contains("paloalto") {
             Ok(Vendor::NGFW)
         } else if lower.contains("cisco") {
@@ -76,6 +82,34 @@ impl FromStr for Vendor {
         } else {
             Ok(Vendor::Unknown)
         }
+    }
+}
+
+// * * * EVALUACIÓN DE RADIO DE IMPACTO (BLAST RADIUS) * * *
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum BlastRadius {
+    /// Afecta a un solo host (ej. L2 RADIUS aislando MAC/puerto o NGFW bloqueando IP externa singular).
+    /// Ejecución completamente automática.
+    SingularAuto,
+    /// Afecta a múltiples clientes o a toda la red corporativa (ej. L7 DNS Sinkholing afectando resolución de toda la red).
+    /// La acción NO se ejecuta automáticamente y pasa a revisión manual con estado PENDING_MANUAL.
+    MassiveManual,
+}
+
+impl BlastRadius {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            BlastRadius::SingularAuto => "SINGULAR_AUTO",
+            BlastRadius::MassiveManual => "MASSIVE_MANUAL",
+        }
+    }
+}
+
+/// Evalúa el Blast Radius de la acción según el fabricante y la capa de red impactada
+pub fn evaluate_blast_radius(vendor: Vendor) -> BlastRadius {
+    match vendor {
+        Vendor::DnsSinkhole => BlastRadius::MassiveManual,
+        _ => BlastRadius::SingularAuto,
     }
 }
 
@@ -137,6 +171,7 @@ pub async fn register_security_alert(
 ) -> Option<i64> {
     // 1. Obtener ID de tipo de amenaza según contexto o usar UNAUTHORIZED_ACCESS por defecto
     let threat_name = match vendor {
+        Vendor::DnsSinkhole => "DATA_EXFILTRATION",
         Vendor::NGFW => "PORT_SCAN",
         Vendor::SwitchRadius => "UNAUTHORIZED_ACCESS",
         _ => "UNAUTHORIZED_ACCESS",
@@ -149,7 +184,16 @@ pub async fn register_security_alert(
     .fetch_optional(pool)
     .await
     .unwrap_or(None);
-    let threat_id = threat_id_opt.unwrap_or(4);
+    let threat_id = match threat_id_opt {
+        Some(tid) => tid,
+        None => {
+            if vendor == Vendor::DnsSinkhole {
+                1
+            } else {
+                4
+            }
+        }
+    };
 
     // 2. Estado inicial: CONFIRMED_THREAT (2) o PENDING_ANALYSIS (1)
     let status_id_opt: Option<i32> = sqlx::query_scalar(
@@ -160,7 +204,10 @@ pub async fn register_security_alert(
     .unwrap_or(None);
     let status_id = status_id_opt.unwrap_or(2);
 
-    let anomaly_score: f64 = 0.95;
+    let anomaly_score: f64 = match vendor {
+        Vendor::DnsSinkhole => 0.98,
+        _ => 0.95,
+    };
 
     let insert_res = sqlx::query(
         "INSERT INTO security_alerts (feature_id, threat_id, status_id, anomaly_score)
@@ -321,7 +368,125 @@ pub async fn save_l2_rollback_snapshot(
     save_rollback_snapshot(pool, alert_id, ip, mac, "L2", "ISOLATE_L2_RADIUS_COA", rollback_payload).await;
 }
 
-// * * * 6. ORQUESTADOR Y ENRUTADOR PRINCIPAL DE ACCIONES DE MITIGACIÓN * * *
+// * * * 6. ENCOLADO DE MITIGACIÓN MANUAL POR BLAST RADIUS (IMPACTO MASIVO EN TODA LA RED) * * *
+pub async fn queue_pending_manual_mitigation(
+    pool: &PgPool,
+    alert_id: i64,
+    ip: &str,
+    mac: &str,
+    layer_target: &str,
+    action_name: &str,
+    rollback_payload: Value,
+) -> Option<i64> {
+    // 1. Obtener ID del nodo de red
+    let node_id_opt: Option<i32> = sqlx::query_scalar(
+        "SELECT node_id FROM network_nodes WHERE ip_address = $1 LIMIT 1"
+    )
+    .bind(ip)
+    .fetch_optional(pool)
+    .await
+    .unwrap_or(None);
+
+    // 2. Asegurar o consultar acción de mitigación correspondiente
+    let action_desc = format!(
+        "Mitigación orquestada en {} mediante {} (Blast Radius: Impacto Masivo / Detención Manual)",
+        layer_target, action_name
+    );
+    let action_id_opt: Option<i32> = sqlx::query_scalar(
+        "INSERT INTO mitigation_actions (action_name, layer_target, description)
+         VALUES ($1, $2, $3)
+         ON CONFLICT (action_name) DO UPDATE SET
+             layer_target = EXCLUDED.layer_target,
+             description = EXCLUDED.description
+         RETURNING action_id"
+    )
+    .bind(action_name)
+    .bind(layer_target)
+    .bind(&action_desc)
+    .fetch_optional(pool)
+    .await
+    .unwrap_or(None);
+
+    // 3. Asegurar estado PENDING_MANUAL en task_statuses
+    let status_id_opt: Option<i32> = sqlx::query_scalar(
+        "INSERT INTO task_statuses (status_name) VALUES ('PENDING_MANUAL')
+         ON CONFLICT (status_name) DO UPDATE SET status_name = EXCLUDED.status_name
+         RETURNING status_id"
+    )
+    .fetch_optional(pool)
+    .await
+    .unwrap_or(None);
+    let status_id = status_id_opt.unwrap_or(1);
+
+    // 4. Encolar tarea en execution_queue con estado PENDING_MANUAL (executed_at = NULL por requerir autorización manual)
+    let queue_res = sqlx::query(
+        "INSERT INTO execution_queue (alert_id, action_id, node_id, status_id, queued_at, executed_at)
+         VALUES ($1, $2, $3, $4, CURRENT_TIMESTAMP, NULL)
+         RETURNING task_id"
+    )
+    .bind(alert_id)
+    .bind(action_id_opt)
+    .bind(node_id_opt)
+    .bind(status_id)
+    .fetch_optional(pool)
+    .await;
+
+    let task_id = match queue_res {
+        Ok(Some(row)) => row.try_get::<i64, _>("task_id").unwrap_or(0),
+        _ => 0,
+    };
+
+    if task_id > 0 {
+        // 5. Estado previo estructurado (pre_state_json)
+        let pre_state = serde_json::json!({
+            "ip_address": ip,
+            "mac_address": mac,
+            "layer_target": layer_target,
+            "blast_radius": "MASSIVE_NETWORK_WIDE",
+            "execution_mode": "PENDING_MANUAL",
+            "authorization_status": "AWAITING_OPERATOR_APPROVAL",
+            "captured_at": chrono::Utc::now().to_rfc3339()
+        });
+
+        // 6. Guardar en rollback_snapshots
+        let snapshot_res = sqlx::query(
+            "INSERT INTO rollback_snapshots (task_id, pre_state_json, rollback_payload)
+             VALUES ($1, $2, $3)
+             ON CONFLICT (task_id) DO UPDATE SET
+                 pre_state_json = EXCLUDED.pre_state_json,
+                 rollback_payload = EXCLUDED.rollback_payload
+             RETURNING snapshot_id"
+        )
+        .bind(task_id)
+        .bind(pre_state)
+        .bind(&rollback_payload)
+        .fetch_optional(pool)
+        .await;
+
+        match snapshot_res {
+            Ok(Some(row)) => {
+                let snap_id: i64 = row.try_get("snapshot_id").unwrap_or(0);
+                println!(
+                    "|- ORQUESTADOR MULTI-VENDOR -| [BLAST RADIUS SNAPSHOT] Snapshot de reversión {} guardado con éxito en BD (Snapshot ID: [{}], Task ID: [{}], Estado: PENDING_MANUAL)",
+                    layer_target, snap_id, task_id
+                );
+            }
+            Ok(None) => {}
+            Err(e) => {
+                eprintln!(
+                    "|- ORQUESTADOR MULTI-VENDOR -| [WARN] No se pudo guardar rollback_snapshots en BD para mitigación manual: {}",
+                    e
+                );
+            }
+        }
+
+        Some(task_id)
+    } else {
+        None
+    }
+}
+
+// * * * 7. ORQUESTADOR Y ENRUTADOR PRINCIPAL DE ACCIONES DE MITIGACIÓN * * *
 pub async fn dispatch_quarantine(pool: &PgPool, ip: &str, mac: &str) -> Result<Vendor, String> {
     // 1. Resolver dirección MAC real de Capa 2 desde la base de datos si vino genérica
     let resolved_mac = if mac.is_empty() || mac == "00:00:00:00:00:00" {
@@ -333,12 +498,13 @@ pub async fn dispatch_quarantine(pool: &PgPool, ip: &str, mac: &str) -> Result<V
     let mut vendor = detect_vendor_by_ip(pool, ip).await;
 
     // Priorizar aislamiento de Capa 2 vía RADIUS cuando se detecte un nodo en la topología local,
-    // usándolo antes de recurrir a políticas perimetrales de Capa 3.
+    // usándolo antes de recurrir a políticas perimetrales de Capa 3, excepto si es DNS Sinkhole o NGFW específico.
     if (vendor == Vendor::Unknown || is_local_topology(ip))
         && vendor != Vendor::Cisco
         && vendor != Vendor::OpenWrt
         && vendor != Vendor::MikroTik
         && vendor != Vendor::NGFW
+        && vendor != Vendor::DnsSinkhole
     {
         println!(
             "|- ORQUESTADOR MULTI-VENDOR -| [CAPA 2 PRIORITARIA] Nodo IP [{}] localizado en topología local. Priorizando aislamiento L2 (RADIUS CoA) sobre perimetral L3.",
@@ -347,17 +513,51 @@ pub async fn dispatch_quarantine(pool: &PgPool, ip: &str, mac: &str) -> Result<V
         vendor = Vendor::SwitchRadius;
     }
 
+    let blast_radius = evaluate_blast_radius(vendor);
+
     println!(
-        "|- ORQUESTADOR MULTI-VENDOR -| Fabricante / Estrategia seleccionada para IP [{}]: [{}]",
+        "|- ORQUESTADOR MULTI-VENDOR -| Fabricante / Estrategia seleccionada para IP [{}]: [{}] | Blast Radius: [{}]",
         ip,
-        vendor.as_str()
+        vendor.as_str(),
+        blast_radius.as_str()
     );
 
     // 2. Registrar el evento en security_alerts antes de la mitigación
     let alert_id = register_security_alert(pool, ip, &resolved_mac, vendor).await;
 
-    // 3. Ejecución de la acción de mitigación según el fabricante
+    // 3. Ejecución de la acción de mitigación según el fabricante y evaluación de Blast Radius
     match vendor {
+        Vendor::DnsSinkhole => {
+            println!(
+                "|- ORQUESTADOR MULTI-VENDOR -| [BLAST RADIUS EVALUADO: IMPACTO MASIVO] Mitigación Capa 7 (DNS Sinkholing) afecta globalmente la resolución de la red."
+            );
+            println!(
+                "|- ORQUESTADOR MULTI-VENDOR -| [DETENCIÓN POR BLAST RADIUS] Acción NO ejecutada automáticamente para prevenir denegación de servicio colateral."
+            );
+            println!(
+                "|- ORQUESTADOR MULTI-VENDOR -| [ENCOLANDO ACCIÓN MANUAL] Registrando en execution_queue como 'PENDING_MANUAL' y generando Rollback JSON."
+            );
+            let client = DnsSinkhole::default();
+            let rollback_json = client.generate_rollback_payload(ip, &resolved_mac);
+
+            if let Some(aid) = alert_id {
+                queue_pending_manual_mitigation(
+                    pool,
+                    aid,
+                    ip,
+                    &resolved_mac,
+                    "L7",
+                    "DNS_SINKHOLE_L7_INTERCEPTION",
+                    rollback_json,
+                )
+                .await;
+            } else {
+                println!(
+                    "|- ORQUESTADOR MULTI-VENDOR -| [ROLLBACK] Snapshot L7 DNS generado localmente (sin persistencia BD por falta de alert_id): {}",
+                    rollback_json
+                );
+            }
+        }
         Vendor::SwitchRadius => {
             println!(
                 "|- ORQUESTADOR MULTI-VENDOR -| [CAPA 2 AUTOMÁTICA] Impacto acotado a 1 host (IP: [{}], MAC: [{}]). Ejecutando automáticamente aislamiento vía RADIUS CoA.",
@@ -434,6 +634,11 @@ mod tests {
         assert_eq!(Vendor::from_str("RESTCONF"), Ok(Vendor::NGFW));
         assert_eq!(Vendor::from_str("FortiGate"), Ok(Vendor::NGFW));
         assert_eq!(Vendor::from_str("PaloAlto"), Ok(Vendor::NGFW));
+        assert_eq!(Vendor::from_str("DNS Sinkhole"), Ok(Vendor::DnsSinkhole));
+        assert_eq!(Vendor::from_str("dns_sinkhole"), Ok(Vendor::DnsSinkhole));
+        assert_eq!(Vendor::from_str("DnsSinkhole"), Ok(Vendor::DnsSinkhole));
+        assert_eq!(Vendor::from_str("sinkhole"), Ok(Vendor::DnsSinkhole));
+        assert_eq!(Vendor::from_str("dns"), Ok(Vendor::DnsSinkhole));
         assert_eq!(Vendor::from_str("Cisco ISE"), Ok(Vendor::Cisco));
         assert_eq!(Vendor::from_str("cisco"), Ok(Vendor::Cisco));
         assert_eq!(Vendor::from_str("MikroTik RouterOS"), Ok(Vendor::MikroTik));
@@ -442,6 +647,14 @@ mod tests {
         assert_eq!(Vendor::from_str("GNS3 Alpine"), Ok(Vendor::GNS3));
         assert_eq!(Vendor::from_str("Docker"), Ok(Vendor::GNS3));
         assert_eq!(Vendor::from_str("Invalido"), Ok(Vendor::Unknown));
+    }
+
+    #[test]
+    fn test_blast_radius_evaluation() {
+        assert_eq!(evaluate_blast_radius(Vendor::DnsSinkhole), BlastRadius::MassiveManual);
+        assert_eq!(evaluate_blast_radius(Vendor::SwitchRadius), BlastRadius::SingularAuto);
+        assert_eq!(evaluate_blast_radius(Vendor::NGFW), BlastRadius::SingularAuto);
+        assert_eq!(evaluate_blast_radius(Vendor::Cisco), BlastRadius::SingularAuto);
     }
 
     #[tokio::test]
@@ -484,6 +697,18 @@ mod tests {
 
             let res_ngfw = dispatch_quarantine(&pool, "192.168.100.1", "00:11:22:33:44:99").await;
             assert_eq!(res_ngfw, Ok(Vendor::NGFW));
+
+            // Asegurar nodo DNS Sinkhole de prueba
+            let _ = sqlx::query(
+                "INSERT INTO network_nodes (hostname, ip_address, vendor)
+                 VALUES ('TestDnsSinkhole', '192.168.100.200', 'DNS Sinkhole')
+                 ON CONFLICT (ip_address) DO UPDATE SET vendor = 'DNS Sinkhole'"
+            )
+            .execute(&pool)
+            .await;
+
+            let res_dns = dispatch_quarantine(&pool, "192.168.100.200", "00:11:22:33:44:88").await;
+            assert_eq!(res_dns, Ok(Vendor::DnsSinkhole));
         }
     }
 }

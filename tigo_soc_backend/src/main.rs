@@ -557,13 +557,14 @@ async fn seed_initial_catalogs(repo: &CatalogsRepository) {
         let _ = repo.create_alert_status(st).await;
     }
 
-    let task_statuses = ["QUEUED", "EXECUTING", "COMPLETED", "FAILED", "ROLLED_BACK"];
+    let task_statuses = ["QUEUED", "EXECUTING", "COMPLETED", "FAILED", "ROLLED_BACK", "PENDING_MANUAL"];
     for ts in task_statuses {
         let _ = repo.create_task_status(ts).await;
     }
 
     let threat_types = [
         ("DATA_EXFILTRATION", 5),
+        ("DNS_C2_EXFILTRATION", 5),
         ("PORT_SCAN", 2),
         ("DDOS_SYN_FLOOD", 4),
         ("UNAUTHORIZED_ACCESS", 3),
