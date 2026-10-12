@@ -4,6 +4,7 @@
 pub mod cisco;
 pub mod gns3;
 pub mod mikrotik;
+pub mod ngfw_restconf;
 pub mod openwrt;
 pub mod radius_coa;
 
@@ -14,6 +15,7 @@ use sqlx::{PgPool, Row};
 pub use cisco::CiscoIse;
 pub use gns3::Gns3Alpine;
 pub use mikrotik::MikroTikRouter;
+pub use ngfw_restconf::NgfwClient;
 pub use openwrt::OpenWrtRouter;
 pub use radius_coa::RadiusClient;
 
@@ -30,6 +32,7 @@ pub trait MitigationDevice: Send + Sync {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Vendor {
     SwitchRadius,
+    NGFW,
     Cisco,
     GNS3,
     OpenWrt,
@@ -41,6 +44,7 @@ impl Vendor {
     pub fn as_str(&self) -> &'static str {
         match self {
             Vendor::SwitchRadius => "Switch RADIUS CoA (Capa 2)",
+            Vendor::NGFW => "NGFW RESTCONF (Perimetral)",
             Vendor::Cisco => "Cisco ISE",
             Vendor::GNS3 => "GNS3 Alpine",
             Vendor::OpenWrt => "OpenWrt",
@@ -57,6 +61,8 @@ impl FromStr for Vendor {
         let lower = s.to_lowercase();
         if lower.contains("radius") || lower.contains("coa") {
             Ok(Vendor::SwitchRadius)
+        } else if lower.contains("ngfw") || lower.contains("restconf") || lower.contains("fortigate") || lower.contains("paloalto") {
+            Ok(Vendor::NGFW)
         } else if lower.contains("cisco") {
             Ok(Vendor::Cisco)
         } else if lower.contains("mikrotik") || lower.contains("routerboard") {
@@ -129,10 +135,17 @@ pub async fn register_security_alert(
     mac: &str,
     vendor: Vendor,
 ) -> Option<i64> {
-    // 1. Obtener ID de tipo de amenaza L2 o fallback
+    // 1. Obtener ID de tipo de amenaza según contexto o usar UNAUTHORIZED_ACCESS por defecto
+    let threat_name = match vendor {
+        Vendor::NGFW => "PORT_SCAN",
+        Vendor::SwitchRadius => "UNAUTHORIZED_ACCESS",
+        _ => "UNAUTHORIZED_ACCESS",
+    };
+
     let threat_id_opt: Option<i32> = sqlx::query_scalar(
-        "SELECT threat_id FROM threat_types WHERE threat_name = 'UNAUTHORIZED_ACCESS' LIMIT 1"
+        "SELECT threat_id FROM threat_types WHERE threat_name = $1 LIMIT 1"
     )
+    .bind(threat_name)
     .fetch_optional(pool)
     .await
     .unwrap_or(None);
@@ -181,11 +194,13 @@ pub async fn register_security_alert(
 }
 
 // * * * 5. PERSISTENCIA DE INSTANTÁNEAS DE RESTAURACIÓN (ROLLBACK SNAPSHOTS) * * *
-pub async fn save_l2_rollback_snapshot(
+pub async fn save_rollback_snapshot(
     pool: &PgPool,
     alert_id: i64,
     ip: &str,
     mac: &str,
+    layer_target: &str,
+    action_name: &str,
     rollback_payload: Value,
 ) {
     // 1. Obtener ID del nodo de red
@@ -197,15 +212,19 @@ pub async fn save_l2_rollback_snapshot(
     .await
     .unwrap_or(None);
 
-    // 2. Asegurar o consultar acción de mitigación Capa 2
+    // 2. Asegurar o consultar acción de mitigación correspondiente
+    let action_desc = format!("Mitigación orquestada en {} mediante {}", layer_target, action_name);
     let action_id_opt: Option<i32> = sqlx::query_scalar(
         "INSERT INTO mitigation_actions (action_name, layer_target, description)
-         VALUES ('ISOLATE_L2_RADIUS_COA', 'L2', 'Aislamiento dinámico de enlace de datos (Capa 2) vía RADIUS CoA Disconnect-Request')
+         VALUES ($1, $2, $3)
          ON CONFLICT (action_name) DO UPDATE SET
              layer_target = EXCLUDED.layer_target,
              description = EXCLUDED.description
          RETURNING action_id"
     )
+    .bind(action_name)
+    .bind(layer_target)
+    .bind(&action_desc)
     .fetch_optional(pool)
     .await
     .unwrap_or(None);
@@ -219,7 +238,7 @@ pub async fn save_l2_rollback_snapshot(
     .unwrap_or(None);
     let status_id = status_id_opt.unwrap_or(3);
 
-    // 4. Encolar y marcar tarea en execution_queue
+    // 4. Encolar y registrar tarea ejecutada en execution_queue
     let queue_res = sqlx::query(
         "INSERT INTO execution_queue (alert_id, action_id, node_id, status_id, executed_at)
          VALUES ($1, $2, $3, $4, CURRENT_TIMESTAMP)
@@ -242,8 +261,8 @@ pub async fn save_l2_rollback_snapshot(
         let pre_state = serde_json::json!({
             "ip_address": ip,
             "mac_address": mac,
-            "original_vlan": 10,
-            "authorization_status": "AUTHORIZED",
+            "layer_target": layer_target,
+            "authorization_status": "UNRESTRICTED",
             "captured_at": chrono::Utc::now().to_rfc3339()
         });
 
@@ -266,8 +285,8 @@ pub async fn save_l2_rollback_snapshot(
             Ok(Some(row)) => {
                 let snap_id: i64 = row.try_get("snapshot_id").unwrap_or(0);
                 println!(
-                    "|- ORQUESTADOR MULTI-VENDOR -| [ROLLBACK SNAPSHOT] Snapshot de reversión L2 guardado con éxito en BD (Snapshot ID: [{}], Task ID: [{}])",
-                    snap_id, task_id
+                    "|- ORQUESTADOR MULTI-VENDOR -| [ROLLBACK SNAPSHOT] Snapshot de reversión {} guardado con éxito en BD (Snapshot ID: [{}], Task ID: [{}])",
+                    layer_target, snap_id, task_id
                 );
             }
             Ok(None) => {}
@@ -291,6 +310,17 @@ pub async fn save_l2_rollback_snapshot(
     }
 }
 
+/// Función auxiliar de compatibilidad para rollback L2
+pub async fn save_l2_rollback_snapshot(
+    pool: &PgPool,
+    alert_id: i64,
+    ip: &str,
+    mac: &str,
+    rollback_payload: Value,
+) {
+    save_rollback_snapshot(pool, alert_id, ip, mac, "L2", "ISOLATE_L2_RADIUS_COA", rollback_payload).await;
+}
+
 // * * * 6. ORQUESTADOR Y ENRUTADOR PRINCIPAL DE ACCIONES DE MITIGACIÓN * * *
 pub async fn dispatch_quarantine(pool: &PgPool, ip: &str, mac: &str) -> Result<Vendor, String> {
     // 1. Resolver dirección MAC real de Capa 2 desde la base de datos si vino genérica
@@ -308,6 +338,7 @@ pub async fn dispatch_quarantine(pool: &PgPool, ip: &str, mac: &str) -> Result<V
         && vendor != Vendor::Cisco
         && vendor != Vendor::OpenWrt
         && vendor != Vendor::MikroTik
+        && vendor != Vendor::NGFW
     {
         println!(
             "|- ORQUESTADOR MULTI-VENDOR -| [CAPA 2 PRIORITARIA] Nodo IP [{}] localizado en topología local. Priorizando aislamiento L2 (RADIUS CoA) sobre perimetral L3.",
@@ -325,7 +356,7 @@ pub async fn dispatch_quarantine(pool: &PgPool, ip: &str, mac: &str) -> Result<V
     // 2. Registrar el evento en security_alerts antes de la mitigación
     let alert_id = register_security_alert(pool, ip, &resolved_mac, vendor).await;
 
-    // 3. Ejecución de la acción de aislamiento según el fabricante
+    // 3. Ejecución de la acción de mitigación según el fabricante
     match vendor {
         Vendor::SwitchRadius => {
             println!(
@@ -333,15 +364,29 @@ pub async fn dispatch_quarantine(pool: &PgPool, ip: &str, mac: &str) -> Result<V
                 ip, resolved_mac
             );
             let client = RadiusClient::default();
-            // Ejecutar aislamiento y recibir JSON de rollback
             let rollback_json = client.send_disconnect_request(ip, &resolved_mac).await?;
 
-            // Persistir JSON de reversión en tabla rollback_snapshots
             if let Some(aid) = alert_id {
-                save_l2_rollback_snapshot(pool, aid, ip, &resolved_mac, rollback_json).await;
+                save_rollback_snapshot(pool, aid, ip, &resolved_mac, "L2", "ISOLATE_L2_RADIUS_COA", rollback_json).await;
             } else {
                 println!(
                     "|- ORQUESTADOR MULTI-VENDOR -| [ROLLBACK] Snapshot L2 generado localmente (sin persistencia BD por falta de alert_id)."
+                );
+            }
+        }
+        Vendor::NGFW => {
+            println!(
+                "|- ORQUESTADOR MULTI-VENDOR -| [PERIMETRAL AUTOMÁTICO] Blast Radius singular (1 IP atacante: [{}]). Ejecutando automáticamente bloqueo RESTCONF/YANG.",
+                ip
+            );
+            let client = NgfwClient::default();
+            let rollback_json = client.block_ip(ip, &resolved_mac).await?;
+
+            if let Some(aid) = alert_id {
+                save_rollback_snapshot(pool, aid, ip, &resolved_mac, "L3", "BLOCK_L3_NGFW_RESTCONF", rollback_json).await;
+            } else {
+                println!(
+                    "|- ORQUESTADOR MULTI-VENDOR -| [ROLLBACK] Snapshot NGFW generado localmente (sin persistencia BD por falta de alert_id)."
                 );
             }
         }
@@ -385,6 +430,10 @@ mod tests {
         assert_eq!(Vendor::from_str("radius"), Ok(Vendor::SwitchRadius));
         assert_eq!(Vendor::from_str("radius_coa"), Ok(Vendor::SwitchRadius));
         assert_eq!(Vendor::from_str("switch"), Ok(Vendor::SwitchRadius));
+        assert_eq!(Vendor::from_str("NGFW"), Ok(Vendor::NGFW));
+        assert_eq!(Vendor::from_str("RESTCONF"), Ok(Vendor::NGFW));
+        assert_eq!(Vendor::from_str("FortiGate"), Ok(Vendor::NGFW));
+        assert_eq!(Vendor::from_str("PaloAlto"), Ok(Vendor::NGFW));
         assert_eq!(Vendor::from_str("Cisco ISE"), Ok(Vendor::Cisco));
         assert_eq!(Vendor::from_str("cisco"), Ok(Vendor::Cisco));
         assert_eq!(Vendor::from_str("MikroTik RouterOS"), Ok(Vendor::MikroTik));
@@ -423,6 +472,18 @@ mod tests {
 
             let res_radius = dispatch_quarantine(&pool, "192.168.1.50", "00:11:22:33:44:55").await;
             assert_eq!(res_radius, Ok(Vendor::SwitchRadius));
+
+            // Asegurar nodo NGFW RESTCONF de prueba
+            let _ = sqlx::query(
+                "INSERT INTO network_nodes (hostname, ip_address, vendor)
+                 VALUES ('TestNgfw', '192.168.100.1', 'NGFW')
+                 ON CONFLICT (ip_address) DO UPDATE SET vendor = 'NGFW'"
+            )
+            .execute(&pool)
+            .await;
+
+            let res_ngfw = dispatch_quarantine(&pool, "192.168.100.1", "00:11:22:33:44:99").await;
+            assert_eq!(res_ngfw, Ok(Vendor::NGFW));
         }
     }
 }
