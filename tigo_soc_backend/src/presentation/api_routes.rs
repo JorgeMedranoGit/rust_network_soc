@@ -85,8 +85,10 @@ pub fn create_router(state: AppState) -> Router {
     let pwa_paths = ["../frontend", "frontend", "/app/frontend"];
     for p in pwa_paths {
         if std::path::Path::new(p).exists() {
-            println!("|- INSTRUCCION -| [PWA] Montando interfaz PWA en ruta estática: /pwa desde [{}]", p);
-            router = router.nest_service("/pwa", ServeDir::new(p));
+            println!("|- INSTRUCCION -| [FRONTEND UNIFICADO] Montando consola SPA Leptos WASM en puerto 3000 desde [{}]", p);
+            router = router
+                .nest_service("/pwa", ServeDir::new(p))
+                .fallback_service(ServeDir::new(p));
             break;
         }
     }
