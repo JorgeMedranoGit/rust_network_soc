@@ -176,3 +176,123 @@ CREATE TABLE system_audit_logs (
     target_id BIGINT,
     timestamp TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
+
+-- * * * 6. DATOS SEMILLA (SEED DATA) INICIALES DEL SISTEMA * * *
+
+-- Catálogos de tipos de dispositivos
+INSERT INTO device_types (type_name) VALUES
+    ('ROUTER_CORE_L3'),
+    ('FIREWALL_PERIMETER'),
+    ('SWITCH_DISTRIBUTION'),
+    ('WORKSTATION_VICTIM'),
+    ('ATTACKER_KALI')
+ON CONFLICT (type_name) DO NOTHING;
+
+-- Catálogos de protocolos de administración
+INSERT INTO mgmt_protocols (protocol_name) VALUES
+    ('SSH'),
+    ('NETCONF'),
+    ('RESTCONF'),
+    ('SNMP')
+ON CONFLICT (protocol_name) DO NOTHING;
+
+-- Estados de alertas forenses
+INSERT INTO alert_statuses (status_name) VALUES
+    ('PENDING_ANALYSIS'),
+    ('CONFIRMED_THREAT'),
+    ('FALSE_POSITIVE'),
+    ('MITIGATED')
+ON CONFLICT (status_name) DO NOTHING;
+
+-- Estados de tareas de mitigación
+INSERT INTO task_statuses (status_name) VALUES
+    ('QUEUED'),
+    ('EXECUTING'),
+    ('COMPLETED'),
+    ('FAILED'),
+    ('ROLLED_BACK'),
+    ('PENDING_MANUAL')
+ON CONFLICT (status_name) DO NOTHING;
+
+-- Catálogo de amenazas y severidades
+INSERT INTO threat_types (threat_name, severity_level) VALUES
+    ('DATA_EXFILTRATION', 5),
+    ('DNS_C2_EXFILTRATION', 5),
+    ('PORT_SCAN', 2),
+    ('DDOS_SYN_FLOOD', 4),
+    ('UNAUTHORIZED_ACCESS', 3),
+    ('ICMP_FLOOD', 3),
+    ('MAC_SPOOFING', 4)
+ON CONFLICT (threat_name) DO NOTHING;
+
+-- Acciones de mitigación multi-vendor
+INSERT INTO mitigation_actions (action_name, layer_target, description) VALUES
+    ('ISOLATE_L2_RADIUS_COA', 'L2', 'Aislamiento de host o cambio a VLAN de cuarentena mediante RADIUS CoA UDP 3799'),
+    ('ACL_BLACKHOLE_L3_L4', 'L3', 'Descarte perimetral inmediato de IP y puertos vía iptables Null Route'),
+    ('DNS_SINKHOLE_L7', 'L7', 'Redirección controlada de peticiones DNS hacia IP de Sinkhole seguro')
+ON CONFLICT (action_name) DO NOTHING;
+
+-- Roles del sistema (RBAC Zero-Trust)
+INSERT INTO roles (role_name, description) VALUES
+    ('SOC_ADMIN', 'Administrador general del SOC con privilegios totales'),
+    ('SOC_OPERATOR', 'Operador SOC - Aprobación de mitigaciones masivas y rollback'),
+    ('SOC_AUDITOR', 'Auditor de Seguridad - Solo lectura e inspección forense'),
+    ('SOC_ANALYST_L1', 'Analista L1 - Triaje inicial y monitoreo en streaming'),
+    ('SOC_ANALYST_L2', 'Analista L2 - Respuesta a incidentes y análisis profundo')
+ON CONFLICT (role_name) DO NOTHING;
+
+-- Permisos granulares
+INSERT INTO permissions (permission_name, description) VALUES
+    ('USER_MANAGE', 'Creación y administración de usuarios RBAC'),
+    ('MITIGATE_EXECUTE', 'Aprobación y despacho de directivas de mitigación'),
+    ('ROLLBACK_EXECUTE', 'Ejecución de directivas inversas de reversión'),
+    ('READ_ONLY', 'Lectura e inspección de alertas, telemetría y reportes')
+ON CONFLICT (permission_name) DO NOTHING;
+
+-- Asignación de permisos por rol
+INSERT INTO role_permissions (role_id, permission_id)
+SELECT r.role_id, p.permission_id
+FROM roles r, permissions p
+WHERE r.role_name = 'SOC_ADMIN'
+ON CONFLICT (role_id, permission_id) DO NOTHING;
+
+INSERT INTO role_permissions (role_id, permission_id)
+SELECT r.role_id, p.permission_id
+FROM roles r, permissions p
+WHERE r.role_name = 'SOC_OPERATOR' AND p.permission_name IN ('MITIGATE_EXECUTE', 'ROLLBACK_EXECUTE', 'READ_ONLY')
+ON CONFLICT (role_id, permission_id) DO NOTHING;
+
+INSERT INTO role_permissions (role_id, permission_id)
+SELECT r.role_id, p.permission_id
+FROM roles r, permissions p
+WHERE r.role_name IN ('SOC_AUDITOR', 'SOC_ANALYST_L1', 'SOC_ANALYST_L2') AND p.permission_name = 'READ_ONLY'
+ON CONFLICT (role_id, permission_id) DO NOTHING;
+
+-- Parámetros del sistema (Timeout crítico de 300 segundos = 5 minutos)
+INSERT INTO system_parameters (param_key, param_value, description) VALUES
+    ('critical_action_timeout_secs', '300', 'Ventana máxima de inactividad antes de exigir re-autenticación por contraseña para acciones críticas')
+ON CONFLICT (param_key) DO NOTHING;
+
+-- Usuarios iniciales del sistema (Contraseña por defecto: admin)
+INSERT INTO sys_users (username, password_hash, role_id) VALUES
+    ('admin_soc', 'admin', (SELECT role_id FROM roles WHERE role_name = 'SOC_ADMIN')),
+    ('operador_red', 'admin', (SELECT role_id FROM roles WHERE role_name = 'SOC_OPERATOR')),
+    ('auditor_seguridad', 'admin', (SELECT role_id FROM roles WHERE role_name = 'SOC_AUDITOR')),
+    ('analista_triaje', 'admin', (SELECT role_id FROM roles WHERE role_name = 'SOC_ANALYST_L1'))
+ON CONFLICT (username) DO NOTHING;
+
+-- Nodos de la topología de red GNS3 / Tigo Business Bolivia
+INSERT INTO network_nodes (hostname, ip_address, type_id, protocol_id, mac_address, vendor) VALUES
+    ('AttackerKali', '192.168.100.50', (SELECT type_id FROM device_types WHERE type_name = 'ATTACKER_KALI'), (SELECT protocol_id FROM mgmt_protocols WHERE protocol_name = 'SSH'), '00:00:0c:aa:bb:cc', 'Cisco ISE'),
+    ('VictimeAlpine1', '192.168.1.11', (SELECT type_id FROM device_types WHERE type_name = 'WORKSTATION_VICTIM'), (SELECT protocol_id FROM mgmt_protocols WHERE protocol_name = 'SSH'), '02:42:ac:11:00:0b', 'GNS3 Alpine'),
+    ('VictimeAlpine2', '192.168.1.12', (SELECT type_id FROM device_types WHERE type_name = 'WORKSTATION_VICTIM'), (SELECT protocol_id FROM mgmt_protocols WHERE protocol_name = 'SSH'), '02:42:ac:11:00:0c', 'GNS3 Alpine'),
+    ('VictimeAlpine3', '192.168.1.13', (SELECT type_id FROM device_types WHERE type_name = 'WORKSTATION_VICTIM'), (SELECT protocol_id FROM mgmt_protocols WHERE protocol_name = 'SSH'), '02:42:ac:11:00:0d', 'GNS3 Alpine'),
+    ('VictimeAlpine4', '192.168.1.14', (SELECT type_id FROM device_types WHERE type_name = 'WORKSTATION_VICTIM'), (SELECT protocol_id FROM mgmt_protocols WHERE protocol_name = 'SSH'), '02:42:ac:11:00:0e', 'GNS3 Alpine'),
+    ('VictimeAlpine5', '192.168.1.15', (SELECT type_id FROM device_types WHERE type_name = 'WORKSTATION_VICTIM'), (SELECT protocol_id FROM mgmt_protocols WHERE protocol_name = 'SSH'), '02:42:ac:11:00:0f', 'GNS3 Alpine'),
+    ('VictimeAlpine6', '192.168.1.16', (SELECT type_id FROM device_types WHERE type_name = 'WORKSTATION_VICTIM'), (SELECT protocol_id FROM mgmt_protocols WHERE protocol_name = 'SSH'), '02:42:ac:11:00:10', 'GNS3 Alpine'),
+    ('VictimeAlpine7', '192.168.1.17', (SELECT type_id FROM device_types WHERE type_name = 'WORKSTATION_VICTIM'), (SELECT protocol_id FROM mgmt_protocols WHERE protocol_name = 'SSH'), '02:42:ac:11:00:11', 'GNS3 Alpine'),
+    ('VictimeAlpine8', '192.168.1.18', (SELECT type_id FROM device_types WHERE type_name = 'WORKSTATION_VICTIM'), (SELECT protocol_id FROM mgmt_protocols WHERE protocol_name = 'SSH'), '02:42:ac:11:00:12', 'GNS3 Alpine'),
+    ('VictimeAlpine9', '192.168.1.19', (SELECT type_id FROM device_types WHERE type_name = 'WORKSTATION_VICTIM'), (SELECT protocol_id FROM mgmt_protocols WHERE protocol_name = 'SSH'), '02:42:ac:11:00:13', 'GNS3 Alpine'),
+    ('pfSense_Gateway', '192.168.1.1', (SELECT type_id FROM device_types WHERE type_name = 'FIREWALL_PERIMETER'), (SELECT protocol_id FROM mgmt_protocols WHERE protocol_name = 'SSH'), '00:18:0a:33:44:55', 'OpenWrt'),
+    ('Router_Core_L3', '192.168.1.254', (SELECT type_id FROM device_types WHERE type_name = 'ROUTER_CORE_L3'), (SELECT protocol_id FROM mgmt_protocols WHERE protocol_name = 'SSH'), '00:0c:42:66:77:88', 'MikroTik RouterOS')
+ON CONFLICT (hostname) DO NOTHING;

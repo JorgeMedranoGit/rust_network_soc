@@ -24,11 +24,17 @@ fi
 if [ ! -f "service-account.json" ]; then
     if [ -f "tigo_soc_backend/service-account.json" ]; then
         cp tigo_soc_backend/service-account.json service-account.json
+    elif [ -f "service-account.example.json" ]; then
+        cp service-account.example.json service-account.json
     fi
 fi
 
 if [ ! -f "tigo_soc_backend/service-account.json" ]; then
-    echo -e "\e[1;33m[AVISO] No se encontró service-account.json. Las alertas Push podrían fallar.\e[0m"
+    if [ -f "service-account.json" ]; then
+        cp service-account.json tigo_soc_backend/service-account.json
+    elif [ -f "service-account.example.json" ]; then
+        cp service-account.example.json tigo_soc_backend/service-account.json
+    fi
 fi
 
 # Detectar comando docker compose compatible (v2 plugin o v1 standalone)
