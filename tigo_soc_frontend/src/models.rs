@@ -285,6 +285,7 @@ pub fn get_initial_realtime_events() -> Vec<RealtimeStreamEvent> {
             event_id: 1004,
             timestamp: "06:00:12".to_string(),
             threat_category: "L2_MAC_SPOOFING_ATTACK".to_string(),
+            severity: Severity::HIGH,
             layer: "L2".to_string(),
             source_ip: "192.168.1.11".to_string(),
             destination_ip: "192.168.1.50".to_string(),
@@ -306,6 +307,7 @@ pub enum RoleType {
     AnalystL1,   // Analista L1 - Triaje inicial
 }
 
+#[allow(dead_code)]
 impl RoleType {
     pub fn as_str(&self) -> &'static str {
         match self {
