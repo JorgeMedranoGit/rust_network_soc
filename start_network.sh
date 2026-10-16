@@ -15,18 +15,20 @@ else
     echo -e "\e[1;32m[INFO] Imagen local 'kali-soc-tools' ya disponible.\e[0m"
 fi
 
-# 2. Iniciar GNS3 si es necesario
-if ! pgrep -x "gns3server" > /dev/null; then
-    sudo gns3server --daemon
-    echo -e "\e[1;33m[INFO] Esperando a que el servidor GNS3 inicie (API 3080)...\e[0m"
-    sleep 5
+# 2. Iniciar GNS3 si está disponible en el sistema
+if command -v gns3server &> /dev/null; then
+    if ! pgrep -x "gns3server" > /dev/null; then
+        sudo gns3server --daemon --host 0.0.0.0 || true
+        echo -e "\e[1;33m[INFO] Esperando a que el servidor GNS3 inicie (API 3080)...\e[0m"
+        sleep 5
+    fi
 fi
 
-# 3. Construir topología en GNS3
+# 3. Construir topología en GNS3 o Docker nativo
 chmod +x build_topology.sh
 ./build_topology.sh
 
-echo -e "\e[1;33m[INFO] Esperando 5 segundos a que GNS3 consolide los contenedores en Docker...\e[0m"
+echo -e "\e[1;33m[INFO] Esperando 5 segundos a que se consoliden los contenedores en Docker...\e[0m"
 sleep 5
 
 # Buscar directamente en Docker por el nombre amigable de GNS3

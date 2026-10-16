@@ -3,17 +3,44 @@ set -e
 
 echo -e "\e[1;34m[INFO] Levantando Base de Datos y Motor Rust...\e[0m"
 
-# Validar credenciales antes de levantar
+# Auto-recuperación de .env si no existe
 if [ ! -f "tigo_soc_backend/.env" ]; then
-    echo -e "\e[1;31m[ERROR] Falta el archivo .env en tigo_soc_backend/. Descárgalo desde Drive antes de continuar.\e[0m"
-    exit 1
+    if [ -f ".env" ]; then
+        cp .env tigo_soc_backend/.env
+    elif [ -f ".env.example" ]; then
+        cp .env.example tigo_soc_backend/.env
+        cp .env.example .env
+    fi
+fi
+
+if [ ! -f ".env" ]; then
+    if [ -f "tigo_soc_backend/.env" ]; then
+        cp tigo_soc_backend/.env .env
+    elif [ -f ".env.example" ]; then
+        cp .env.example .env
+    fi
+fi
+
+if [ ! -f "service-account.json" ]; then
+    if [ -f "tigo_soc_backend/service-account.json" ]; then
+        cp tigo_soc_backend/service-account.json service-account.json
+    fi
 fi
 
 if [ ! -f "tigo_soc_backend/service-account.json" ]; then
     echo -e "\e[1;33m[AVISO] No se encontró service-account.json. Las alertas Push podrían fallar.\e[0m"
 fi
 
+# Detectar comando docker compose compatible (v2 plugin o v1 standalone)
+if sudo docker compose version &>/dev/null; then
+    DOCKER_COMPOSE_CMD="sudo docker compose"
+elif command -v docker-compose &>/dev/null; then
+    DOCKER_COMPOSE_CMD="sudo docker-compose"
+else
+    DOCKER_COMPOSE_CMD="sudo docker compose"
+fi
+
 # Levantar TigoSOC (Backend + BD) con Docker Compose
-sudo docker compose -f docker-compose.yml up -d
+$DOCKER_COMPOSE_CMD -f docker-compose.yml up -d
 
 echo -e "\e[1;32m[OK] Servicios SOC (Rust + PostgreSQL + PWA) ejecutándose.\e[0m"
