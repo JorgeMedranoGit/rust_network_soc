@@ -1,0 +1,88 @@
+@startuml
+
+skinparam backgroundColor #1E1E2E
+skinparam defaultFontName Arial
+skinparam defaultFontColor #CDD6F4
+skinparam defaultFontSize 10
+skinparam roundcorner 8
+skinparam shadowing false
+skinparam nodesep 40
+skinparam ranksep 45
+skinparam arrow {
+    Color #89B4FA
+    FontColor #A6ADC8
+    FontSize 9
+}
+
+skinparam sequence {
+    LifeLineBorderColor #89B4FA
+    LifeLineBackgroundColor #181825
+    ParticipantBorderColor #89B4FA
+    ParticipantBackgroundColor #313244
+    ParticipantFontColor #CDD6F4
+    GroupBackgroundColor #181825
+    GroupBorderColor #89B4FA
+    GroupFontColor #CDD6F4
+    BoxBackgroundColor #181825
+    BoxBorderColor #CBA6F7
+    BoxFontColor #CDD6F4
+}
+
+
+autonumber "<b>[00]</b>"
+
+actor "Analista del SOC\n(Navegador Web)" as Browser
+participant "Nginx Reverse Proxy\n(TLS Termination & Static Host)" as Nginx
+participant "Leptos WASM Core\n(tigo_soc_frontend.wasm)" as WASM
+participant "Backend Axum REST\n(API Gateway & Auth)" as AxumAPI
+participant "Canal WebSocket\n(Tokio Broadcast Stream)" as WSChannel
+database "PostgreSQL 15\n(system_audit_logs)" as DB
+
+Browser -> Nginx : [01] GET / (Carga inicial de aplicación SPA)
+activate Nginx
+Nginx --> Browser : [02] 200 OK (HTML Shell + index.js loader)
+deactivate Nginx
+
+Browser -> Nginx : [03] GET /pkg/tigo_soc_frontend_bg.wasm
+activate Nginx
+Nginx --> Browser : [04] 200 OK (Módulo binario WebAssembly precompilado)
+deactivate Nginx
+
+Browser -> WASM : [05] WebAssembly.instantiateStreaming() & mount_to_body()
+activate WASM
+WASM -> WASM : [06] Inicializar Signals reactivos: metrics, alerts, stream_events, session
+WASM --> Browser : [07] Renderizar DOM reactivo (LoginView / DashboardView)
+deactivate WASM
+
+Browser -> WASM : [08] Analista envía credenciales 2FA TOTP
+activate WASM
+WASM -> AxumAPI : [09] POST /api/auth/login { username, password, totp }
+activate AxumAPI
+AxumAPI -> AxumAPI : [10] Verificar Argon2id hash & TOTP HMAC
+AxumAPI --> WASM : [11] 200 OK { token, role: "SOC_L2", user_id: 3 }
+deactivate AxumAPI
+WASM -> WASM : [12] set_is_authenticated.set(true) -> Montar DashboardView
+
+WASM -> WSChannel : [13] Conectar WebSocket: /api/telemetry/ws?token=...
+activate WSChannel
+WSChannel --> WASM : [14] 101 Switching Protocols (Handshake WebSocket establecido)
+
+loop Transmisión continua a velocidad de red (60 FPS)
+    WSChannel -> WASM : [15] Push Binary/JSON Frame { pps: 52100, anomaly_score: 0.94 }
+    WASM -> WASM : [16] set_metrics.update() -> Trigger Fine-Grained Reactive DOM Update
+    WASM --> Browser : [17] Repintar canvas de topología 3D y gráficos sin recargar página
+end
+
+Browser -> WASM : [18] Click en "Aislar Nodo Crítico" (Acción de Mitigación)
+WASM -> AxumAPI : [19] POST /api/mitigate { alert_id: 104, action_type: "ISOLATE" }
+activate AxumAPI
+AxumAPI -> DB : [20] INSERT INTO system_audit_logs (user_id, action, target_table)
+DB --> AxumAPI : [21] Ok(sys_audit_id: 772)
+AxumAPI --> WASM : [22] 200 OK { status: "QUEUED", rollback_seconds: 300 }
+deactivate AxumAPI
+
+WASM -> WASM : [23] Iniciar cuenta regresiva reactiva de 300s en BlastRadiusControl
+WASM --> Browser : [24] Notificación Toast flotante: "Nodo Aislado. Rollback disponible."
+deactivate WASM
+
+@enduml

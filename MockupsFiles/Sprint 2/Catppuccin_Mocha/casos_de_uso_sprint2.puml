@@ -1,0 +1,69 @@
+@startuml
+
+skinparam backgroundColor #1E1E2E
+skinparam defaultFontName Arial
+skinparam defaultFontColor #CDD6F4
+skinparam defaultFontSize 10
+skinparam roundcorner 8
+skinparam shadowing false
+skinparam nodesep 40
+skinparam ranksep 45
+skinparam arrow {
+    Color #89B4FA
+    FontColor #A6ADC8
+    FontSize 9
+}
+
+skinparam package {
+    BackgroundColor #181825
+    BorderColor #CBA6F7
+    FontColor #CDD6F4
+    FontStyle bold
+    BorderThickness 1.2
+}
+skinparam rectangle {
+    BackgroundColor #11111B
+    BorderColor #89B4FA
+    FontColor #CDD6F4
+    BorderThickness 1.5
+}
+skinparam usecase {
+    BackgroundColor #313244
+    BorderColor #89B4FA
+    FontColor #CDD6F4
+    BorderThickness 1.2
+}
+skinparam actor {
+    BackgroundColor #CBA6F7
+    BorderColor #89B4FA
+    FontColor #89B4FA
+    FontStyle bold
+}
+
+
+left to right direction
+
+actor "Analista del SOC\n(Operador NDR)" as Analista
+actor "Motor de Inferencia\n(LightGBM Core)" as Motor << Sistema >>
+
+rectangle "Sprint 2: Motor Analítico LightGBM & CRISP-DM" {
+    usecase "CU2.1: Ingerir Lotes de Flujos de Red" as CU2_1
+    usecase "CU2.2: Extraer 23 Features con Polars SIMD" as CU2_2
+    usecase "CU2.3: Ejecutar Inferencia de Exfiltración (< 1ms)" as CU2_3
+    usecase "CU2.4: Monitorear Latencias de Inferencia (us)" as CU2_4
+    usecase "CU2.5: Consultar Curvas ROC/PR y Confusión" as CU2_5
+    usecase "CU2.6: Inspeccionar Importancia XAI (SHAP / Gain)" as CU2_6
+    usecase "CU2.7: Validar Modelo K-Fold (k=5)" as CU2_7
+}
+
+Analista --> CU2_4
+Analista --> CU2_5
+Analista --> CU2_6
+Analista --> CU2_7
+
+Motor --> CU2_1
+CU2_1 ..> CU2_2 : <<include>>
+CU2_2 ..> CU2_3 : <<include>>
+CU2_3 ..> CU2_4 : <<trigger>>
+
+@enduml

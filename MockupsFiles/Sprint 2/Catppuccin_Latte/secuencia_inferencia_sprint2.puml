@@ -1,0 +1,79 @@
+@startuml
+
+skinparam backgroundColor #EFF1F5
+skinparam defaultFontName Arial
+skinparam defaultFontColor #4C4F69
+skinparam defaultFontSize 10
+skinparam roundcorner 8
+skinparam shadowing false
+skinparam nodesep 40
+skinparam ranksep 45
+skinparam arrow {
+    Color #1E66F5
+    FontColor #6C6F85
+    FontSize 9
+}
+
+skinparam sequence {
+    LifeLineBorderColor #1E66F5
+    LifeLineBackgroundColor #E6E9EF
+    ParticipantBorderColor #1E66F5
+    ParticipantBackgroundColor #FFFFFF
+    ParticipantFontColor #4C4F69
+    GroupBackgroundColor #E6E9EF
+    GroupBorderColor #1E66F5
+    GroupFontColor #4C4F69
+    BoxBackgroundColor #E6E9EF
+    BoxBorderColor #8839EF
+    BoxFontColor #4C4F69
+}
+
+
+autonumber "<b>[00]</b>"
+
+participant "NetworkAdapter\n(Buffer de Red)" as Net
+participant "PolarsFeatureEngine\n(SIMD Vectorized)" as Polars
+participant "ThreatDetector\n(BoosterWrapper)" as ML
+participant "LightGBM C-API\n(Libre de GIL)" as C_API
+participant "TelemetryRepository\n(SQLx Pool)" as Repo
+database "PostgreSQL 15\n(feature_store)" as DB
+
+Net -> Polars: extract_features_columnar(&[NetworkEvent])
+activate Polars
+note over Polars
+  Procesamiento columnar en RAM:
+  Calcula 23 features en < 500 us
+  (Entropy, TTL std, TCP flags, DNS rates)
+end note
+Polars --> Net: Result<(ExtractedFeatures, latency_us)>
+deactivate Polars
+
+Net -> ML: evaluate_anomaly(&ExtractedFeatures)
+activate ML
+ML -> C_API: BoosterPredictForMat(features_slice)
+activate C_API
+note over C_API
+  Inferencia nativa en Rust:
+  ~0.08 ms (Sin bloqueos de GIL de Python)
+end note
+C_API --> ML: anomaly_probability: f32 (0.0..1.0)
+deactivate C_API
+
+ML -> ML: update_realtime_metrics(latency_us, probability)
+
+alt ¿Probabilidad >= anomaly_threshold (0.85)?
+    ML -> Repo: create_security_alert(feature_id, threat_id, probability)
+    activate Repo
+    Repo -> DB: INSERT INTO security_alerts (score, detected_at)\nVALUES ($1, NOW())
+    activate DB
+    DB --> Repo: alert_id: i64
+    deactivate DB
+    Repo --> ML: Ok(alert_id)
+    deactivate Repo
+    ML --> Net: ThreatEvaluation { is_anomaly: true, score, alert_id }
+else Tráfico Legítimo
+    ML --> Net: ThreatEvaluation { is_anomaly: false, score, alert_id: None }
+end
+deactivate ML
+
+@enduml

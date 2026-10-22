@@ -1,0 +1,140 @@
+@startuml
+skinparam backgroundColor #1E1E2E
+skinparam defaultFontName Arial
+skinparam defaultFontColor #CDD6F4
+skinparam defaultFontSize 10
+skinparam roundcorner 8
+skinparam shadowing false
+skinparam nodesep 40
+skinparam ranksep 45
+
+skinparam package {
+    BackgroundColor #181825
+    BorderColor #CBA6F7
+    FontColor #CDD6F4
+    FontStyle bold
+    BorderThickness 1.2
+}
+
+skinparam rectangle {
+    BackgroundColor #11111B
+    BorderColor #89B4FA
+    FontColor #CDD6F4
+    BorderThickness 1.5
+}
+
+skinparam usecase {
+    BackgroundColor #313244
+    BorderColor #89B4FA
+    FontColor #CDD6F4
+    BorderThickness 1.2
+}
+
+skinparam actor {
+    BackgroundColor #CBA6F7
+    BorderColor #89B4FA
+    FontColor #89B4FA
+    FontStyle bold
+}
+
+skinparam arrow {
+    Color #89B4FA
+    FontColor #A6ADC8
+    FontSize 9
+}
+
+left to right direction
+
+' Actores Humanos ordenados verticalmente a la izquierda
+actor "Analista SOC L1\n(Triaje)" as L1
+actor "Ingeniero SOC L2\n(Mitigación)" as L2
+actor "Administrador SOC\n(Gobernanza)" as Admin
+
+L1 <|-- L2
+L2 <|-- Admin
+L1 -[hidden]down-> L2
+L2 -[hidden]down-> Admin
+
+' Sistemas Externos ordenados verticalmente a la derecha
+actor "Red Carrier\nAS27839 / eBPF" as Carrier << Sistema >>
+actor "Controlador\nCisco ISE" as ISE << Sistema >>
+actor "Firewall NGFW\nRESTCONF" as NGFW << Sistema >>
+
+Carrier -[hidden]down-> ISE
+ISE -[hidden]down-> NGFW
+
+rectangle "Sistema Web NDR Tigo Business (Sprint 0)" as Sistema {
+
+    package "Módulo 1: Gobernanza Zero-Trust & RBAC" as M1 {
+        usecase "CU01: Login 2FA & Rate Limiting" as CU01
+        usecase "CU02: Rotación de Contraseña" as CU02
+        usecase "CU03: Gestión de Roles RBAC" as CU03
+        usecase "CU04: Re-autenticación Crítica" as CU04
+    }
+
+    package "Módulo 2: Motor LightGBM & CRISP-DM" as M2 {
+        usecase "CU05: Extracción 23 Features (Polars)" as CU05
+        usecase "CU06: Clasificación con LightGBM" as CU06
+        usecase "CU07: Métricas XAI & Confusión" as CU07
+    }
+
+    package "Módulo 3: Telemetría eBPF & Topología" as M3 {
+        usecase "CU08: Captura a Velocidad de Cable" as CU08
+        usecase "CU09: Streaming en Vivo WebSockets" as CU09
+        usecase "CU10: Grafo de Red AS27839" as CU10
+    }
+
+    package "Módulo 4: Mitigación & Blast Radius" as M4 {
+        usecase "CU11: Auditoría Alertas SHA-256" as CU11
+        usecase "CU12: Autorizar Mitigación Masiva" as CU12
+        usecase "CU13: Cuarentena L2 (RADIUS CoA)" as CU13
+        usecase "CU14: BGP Blackhole L3/L4" as CU14
+        usecase "CU15: DNS Sinkhole L7" as CU15
+        usecase "CU16: Rollback Preventivo 300s" as CU16
+        usecase "CU17: Sandbox Aislada VLAN 999" as CU17
+    }
+
+    package "Módulo 5: Consolidación Leptos" as M5 {
+        usecase "CU18: Conmutar Modo Claro/Oscuro" as CU18
+        usecase "CU19: Auditoría Inmutable del Sistema" as CU19
+    }
+
+    M1 -[hidden]down-> M2
+    M2 -[hidden]down-> M5
+    M3 -[hidden]down-> M4
+}
+
+' Conexiones de actores humanos hacia la izquierda de los módulos
+L1 --> CU01
+L1 --> CU02
+L1 --> CU07
+L1 --> CU09
+L1 --> CU10
+L1 --> CU11
+L1 --> CU18
+
+L2 --> CU04
+L2 --> CU12
+L2 --> CU16
+L2 --> CU17
+
+Admin --> CU03
+Admin --> CU19
+
+' Relaciones internas del sistema
+CU08 ..> CU05 : <<include>>
+CU05 ..> CU06 : <<include>>
+CU06 ..> CU11 : <<trigger>>
+CU12 ..> CU04 : <<include>>
+
+CU12 ..> CU13 : <<extend>>
+CU12 ..> CU14 : <<extend>>
+CU12 ..> CU15 : <<extend>>
+
+' Conexiones hacia sistemas externos a la derecha
+Carrier --> CU08
+CU13 --> ISE
+CU14 --> NGFW
+CU15 --> Carrier
+
+@enduml

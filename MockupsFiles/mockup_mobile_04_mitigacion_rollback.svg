@@ -1,0 +1,84 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="390" height="844" viewBox="0 0 390 844">
+  <!-- Fondo y Chasis de Smartphone -->
+  <rect width="390" height="844" rx="44" fill="#080C14" stroke="#2D3B54" stroke-width="4"/>
+  
+  <!-- Barra de Estado Móvil (16:54, 5G, Batería 94%) -->
+  <g transform="translate(0, 0)">
+    <!-- Notch / Dynamic Island -->
+    <rect x="135" y="10" width="120" height="26" rx="13" fill="#03060B"/>
+    <circle cx="230" cy="23" r="5" fill="#111B2C"/>
+    
+    <text x="36" y="28" fill="#F8FAFC" font-family="'SF Mono', 'Fira Code', 'Roboto Mono', Consolas, monospace" font-size="13" font-weight="700">16:54</text>
+    <text x="314" y="28" fill="#94A3B8" font-family="'SF Mono', 'Fira Code', 'Roboto Mono', Consolas, monospace" font-size="12">5G</text>
+    <!-- Batería -->
+    <rect x="338" y="18" width="22" height="12" rx="2" fill="none" stroke="#94A3B8" stroke-width="1.5"/>
+    <rect x="340" y="20" width="15" height="8" rx="1" fill="#16A34A"/>
+    <rect x="361" y="22" width="2" height="4" fill="#94A3B8"/>
+  </g>
+
+  <!-- CONTENIDO DE LA PANTALLA MÓVIL -->
+  
+  <!-- Fondo Atenuado -->
+  <rect width="390" height="844" fill="#04070D" opacity="0.88"/>
+
+  <!-- Hoja Inferior Táctil (Bottom Sheet Modal - Ergonomía Móvil Nativa) -->
+  <g transform="translate(0, 240)">
+    <!-- Panel del Bottom Sheet (Radio superior 20px) -->
+    <path d="M 0 20 Q 0 0 20 0 L 370 0 Q 390 0 390 20 L 390 604 L 0 604 Z" fill="#0F172A" stroke="#DC2626" stroke-width="2"/>
+    
+    <!-- Manija de Arrastre (Drag Handle) -->
+    <rect x="165" y="12" width="60" height="4" rx="2" fill="#334155"/>
+
+    <!-- Encabezado de la Hoja -->
+    <text x="24" y="44" fill="#FCA5A5" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif" font-size="16" font-weight="700">Confirmar Acción Crítica</text>
+    <text x="24" y="62" fill="#64748B" font-family="'SF Mono', 'Fira Code', 'Roboto Mono', Consolas, monospace" font-size="11">DIRECTIVA: ACL_BLACKHOLE_L3_L4</text>
+
+    <g transform="translate(24, 84)">
+      <!-- Detalle Técnico del Comando -->
+      <rect width="342" height="64" rx="6" fill="#080C14" stroke="#334155" stroke-width="1"/>
+      <text x="14" y="24" fill="#16A34A" font-family="'SF Mono', 'Fira Code', 'Roboto Mono', Consolas, monospace" font-size="11">iptables -I DOCKER-USER</text>
+      <text x="14" y="42" fill="#F8FAFC" font-family="'SF Mono', 'Fira Code', 'Roboto Mono', Consolas, monospace" font-size="11">-s 192.168.100.50 -j DROP</text>
+
+      <!-- Re-autenticación Crítica -->
+      <text x="0" y="88" fill="#D97706" font-family="'SF Mono', 'Fira Code', 'Roboto Mono', Consolas, monospace" font-size="11" font-weight="700">RE-AUTENTICACIÓN REQUERIDA (300s)</text>
+      <text x="0" y="106" fill="#94A3B8" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif" font-size="11">Ingrese su contraseña para aplicar la regla:</text>
+
+      <rect x="0" y="118" width="342" height="48" rx="6" fill="#080C14" stroke="#0284C7" stroke-width="2"/>
+      <text x="16" y="148" fill="#F8FAFC" font-family="'SF Mono', 'Fira Code', 'Roboto Mono', Consolas, monospace" font-size="16" letter-spacing="4">••••••••••••</text>
+
+      <!-- Teclado Numérico / PIN Simplificado de Pantalla Táctil -->
+      <g transform="translate(0, 180)">
+        <!-- Fila 1 -->
+        <rect x="0" y="0" width="106" height="44" rx="6" fill="#1E293B"/>
+        <text x="53" y="28" fill="#F8FAFC" font-family="'SF Mono', 'Fira Code', 'Roboto Mono', Consolas, monospace" font-size="16" text-anchor="middle">1</text>
+        <rect x="118" y="0" width="106" height="44" rx="6" fill="#1E293B"/>
+        <text x="171" y="28" fill="#F8FAFC" font-family="'SF Mono', 'Fira Code', 'Roboto Mono', Consolas, monospace" font-size="16" text-anchor="middle">2</text>
+        <rect x="236" y="0" width="106" height="44" rx="6" fill="#1E293B"/>
+        <text x="289" y="28" fill="#F8FAFC" font-family="'SF Mono', 'Fira Code', 'Roboto Mono', Consolas, monospace" font-size="16" text-anchor="middle">3</text>
+
+        <!-- Fila 2 -->
+        <rect x="0" y="52" width="106" height="44" rx="6" fill="#1E293B"/>
+        <text x="53" y="80" fill="#F8FAFC" font-family="'SF Mono', 'Fira Code', 'Roboto Mono', Consolas, monospace" font-size="16" text-anchor="middle">4</text>
+        <rect x="118" y="52" width="106" height="44" rx="6" fill="#1E293B"/>
+        <text x="171" y="80" fill="#F8FAFC" font-family="'SF Mono', 'Fira Code', 'Roboto Mono', Consolas, monospace" font-size="16" text-anchor="middle">5</text>
+        <rect x="236" y="52" width="106" height="44" rx="6" fill="#1E293B"/>
+        <text x="289" y="80" fill="#F8FAFC" font-family="'SF Mono', 'Fira Code', 'Roboto Mono', Consolas, monospace" font-size="16" text-anchor="middle">6</text>
+      </g>
+
+      <!-- Botones de Acción Móvil -->
+      <g transform="translate(0, 310)">
+        <!-- Cancelar -->
+        <rect x="0" y="0" width="110" height="48" rx="6" fill="#1E293B" stroke="#334155" stroke-width="1"/>
+        <text x="55" y="30" fill="#94A3B8" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif" font-size="13" font-weight="600" text-anchor="middle">CANCELAR</text>
+
+        <!-- Deslizar / Confirmar (Protección contra doble tap) -->
+        <rect x="122" y="0" width="220" height="48" rx="6" fill="#DC2626"/>
+        <text x="232" y="30" fill="#FFFFFF" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif" font-size="13" font-weight="700" text-anchor="middle">APLICAR BLOQUEO L3</text>
+      </g>
+    </g>
+  </g>
+
+
+  <!-- Barra de Inicio Inferior (Home Indicator de iOS/Android) -->
+  <rect x="125" y="828" width="140" height="5" rx="2.5" fill="#64748B"/>
+</svg>

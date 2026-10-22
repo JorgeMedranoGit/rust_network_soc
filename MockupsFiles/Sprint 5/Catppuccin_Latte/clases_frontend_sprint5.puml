@@ -1,0 +1,123 @@
+@startuml
+
+skinparam backgroundColor #EFF1F5
+skinparam defaultFontName Arial
+skinparam defaultFontColor #4C4F69
+skinparam defaultFontSize 10
+skinparam roundcorner 8
+skinparam shadowing false
+skinparam nodesep 40
+skinparam ranksep 45
+skinparam arrow {
+    Color #1E66F5
+    FontColor #6C6F85
+    FontSize 9
+}
+
+skinparam package {
+    BackgroundColor #E6E9EF
+    BorderColor #8839EF
+    FontColor #4C4F69
+    FontStyle bold
+    BorderThickness 1.2
+}
+skinparam class {
+    BackgroundColor #FFFFFF
+    BorderColor #1E66F5
+    FontColor #4C4F69
+    HeaderBackgroundColor #E6E9EF
+    BorderThickness 1.2
+}
+
+
+package "Arquitectura Frontend SPA Reactiva (Leptos Rust WASM)" {
+    class App {
+        + ReadSignal<SystemMetrics> metrics
+        + WriteSignal<SystemMetrics> set_metrics
+        + ReadSignal<Vec<AlertItem>> alerts
+        + ReadSignal<Vec<PendingMitigation>> pending_items
+        + ReadSignal<ActiveTab> active_tab
+        + ReadSignal<UserSessionState> session
+        + ReadSignal<bool> is_authenticated
+        -- Funciones --
+        + new(): impl IntoView
+        + handle_switch_user(user_id_str: String): void
+        + on_login_success(): void
+    }
+
+    class LoginView {
+        - ReadSignal<String> username
+        - ReadSignal<String> password
+        - ReadSignal<String> totp_code
+        - ReadSignal<Option<String>> error_msg
+        -- Funciones --
+        + render(): impl IntoView
+        + submit_login(): void
+        + validate_totp_length(): bool
+    }
+
+    class SystemStatus {
+        - ReadSignal<SystemMetrics> metrics
+        -- Funciones --
+        + render(): impl IntoView
+        + format_mttd(mttd_ms: f64): String
+        + format_throughput(bytes_per_sec: u64): String
+        + get_defense_readiness_color(): String
+    }
+
+    class Topology3D {
+        - ReadSignal<Vec<NetworkNodeDto>> nodes
+        - ReadSignal<Option<i32>> selected_node_id
+        -- Funciones --
+        + render(): impl IntoView
+        + render_three_js_canvas(): void
+        + on_node_click(node_id: i32): void
+        + highlight_exfiltrating_node(node_id: i32): void
+    }
+
+    class MonitoringChart {
+        - ReadSignal<Vec<MetricDataPoint>> chart_data
+        -- Funciones --
+        + render(): impl IntoView
+        + draw_svg_latency_curve(): impl IntoView
+        + draw_roc_pr_benchmark(): impl IntoView
+    }
+
+    class AlertsTable {
+        - ReadSignal<Vec<AlertItem>> alerts
+        - ReadSignal<Option<Severity>> filter_severity
+        -- Funciones --
+        + render(): impl IntoView
+        + filter_by_severity(sev: Severity): void
+        + trigger_quick_mitigation(alert_id: u64): void
+        + inspect_feature_vector(alert_id: u64): void
+    }
+
+    class BlastRadiusControl {
+        - ReadSignal<Vec<PendingMitigation>> pending_items
+        - ReadSignal<f64> countdown_timer
+        -- Funciones --
+        + render(): impl IntoView
+        + confirm_reauth_and_execute(task_id: u64): void
+        + trigger_emergency_rollback(task_id: u64): void
+    }
+
+    class UserManagement {
+        - ReadSignal<Vec<SocUser>> users
+        - ReadSignal<GlobalSecurityConfig> security_config
+        -- Funciones --
+        + render(): impl IntoView
+        + update_rbac_role(user_id: i32, new_role: RoleType): void
+        + revoke_session(session_id: &str): void
+    }
+}
+
+App *-- LoginView
+App *-- SystemStatus
+App *-- Topology3D
+App *-- MonitoringChart
+App *-- AlertsTable
+App *-- BlastRadiusControl
+App *-- UserManagement
+
+@enduml

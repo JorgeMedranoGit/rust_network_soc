@@ -1,0 +1,128 @@
+@startuml
+
+skinparam backgroundColor #1E1E2E
+skinparam defaultFontName Arial
+skinparam defaultFontColor #CDD6F4
+skinparam defaultFontSize 10
+skinparam roundcorner 8
+skinparam shadowing false
+skinparam nodesep 40
+skinparam ranksep 45
+skinparam arrow {
+    Color #89B4FA
+    FontColor #A6ADC8
+    FontSize 9
+}
+
+skinparam node {
+    BackgroundColor #181825
+    BorderColor #89B4FA
+    FontColor #CDD6F4
+    FontStyle bold
+    BorderThickness 1.2
+}
+skinparam component {
+    BackgroundColor #313244
+    BorderColor #94E2D5
+    FontColor #CDD6F4
+    BorderThickness 1.2
+}
+skinparam artifact {
+    BackgroundColor #313244
+    BorderColor #CBA6F7
+    FontColor #CDD6F4
+    BorderThickness 1.2
+}
+skinparam database {
+    BackgroundColor #313244
+    BorderColor #89B4FA
+    FontColor #CDD6F4
+    BorderThickness 1.2
+}
+skinparam folder {
+    BackgroundColor #181825
+    BorderColor #A6ADC8
+    FontColor #CDD6F4
+    BorderThickness 1.2
+}
+skinparam file {
+    BackgroundColor #313244
+    BorderColor #89B4FA
+    FontColor #CDD6F4
+    BorderThickness 1.2
+}
+skinparam cloud {
+    BackgroundColor #181825
+    BorderColor #89B4FA
+    FontColor #CDD6F4
+    BorderThickness 1.2
+}
+
+
+node "Red de Transporte y Borde Tigo (AS27839)" as AS27839 {
+    component [Router BGP Edge / Cisco ASR 9000] as BGPRouter
+    component [Switch Core Distribución 10GbE] as CoreSwitch
+    component [TAP Óptico / Puerto SPAN] as TapSpan
+    BGPRouter -down-> CoreSwitch
+    CoreSwitch -down-> TapSpan : Copia en espejo\nde tráfico carrier
+}
+
+node "Servidor Sonda de Captura Hardware\n(Ubuntu Linux 22.04 LTS / RT Kernel)" as ProbeServer {
+    component [NIC Intel X520-DA2 10GbE SFP+] as NIC
+    component [Driver eBPF/XDP de Alta Velocidad] as XDP
+    component [Sonda Rust NetworkAdapter] as SondaRust
+    NIC -down-> XDP
+    XDP -down-> SondaRust : Ring Buffer Zero-Copy
+}
+TapSpan -down-> NIC : Fibra Óptica 10G
+
+node "Cluster de Aplicación Tigo SOC\n(Docker Swarm / Bare Metal Enterprise)" as AppCluster {
+    package "Contenedor Frontend & Proxy Inverso" {
+        component [Nginx 1.25 Reverse Proxy] as NginxProxy
+        file "tigo_soc_frontend.wasm\n(WASM Compilado)" as WasmStatic
+        NginxProxy -down-> WasmStatic
+    }
+
+    package "Contenedor Backend Axum Rust" {
+        component [Axum REST API & WebSocket Gateway] as AxumGateway
+        component [Tokio Async Multi-threaded Runtime] as TokioRT
+        component [Orquestador de Mitigación Multivector] as OrqWorker
+        AxumGateway -down-> TokioRT
+        TokioRT -down-> OrqWorker
+    }
+
+    package "Motor de Machine Learning Nativo" {
+        file "lib_lightgbm.so\n(Librería C++ C-API)" as LightGBMShared
+        artifact "best_model_kfold.txt\n(Modelo Árboles GOSS/EFB)" as ModelArtifact
+        component [ThreatDetector Wrapper Rust] as ThreatDet
+        ThreatDet -down-> LightGBMShared
+        ThreatDet -down-> ModelArtifact
+    }
+
+    package "Persistencia de Datos y Sesiones" {
+        database "PostgreSQL 15 Enterprise\n(Esquema BCNF: 21 Tablas + JSONB)" as PostgresDB
+        database "Redis 7 In-Memory Cache\n(Sesiones y Rate Limiting)" as RedisCache
+    }
+}
+
+node "Terminales de Acceso Operativo SOC" as Clients {
+    node "Workstation de Analista SOC (Oficina Central)" as Workstation {
+        component [Navegador Web Chrome/Firefox\n(Leptos WASM Client 60 FPS)] as WasmBrowser
+    }
+    node "Tablet / Dispositivo Móvil Corporativo Tigo" as Mobile {
+        component [Navegador Móvil PWA\n(Responsive Touch SOC View)] as MobilePwa
+    }
+}
+
+SondaRust -down-> AxumGateway : Transmisión streaming de tráfico (gRPC/Unix Socket)
+AxumGateway -down-> ThreatDet : Inferencia sub-milisegundo (< 1 ms)
+AxumGateway -down-> PostgresDB : SQLx Pool (CRUD Relacional)
+AxumGateway -down-> RedisCache : Verificación tokens y rate limit
+OrqWorker -up-> BGPRouter : Inyección BGP Blackhole / SSH
+OrqWorker -up-> CoreSwitch : RADIUS CoA / VLAN Isolation
+
+NginxProxy -left-> AxumGateway : Proxy Pass /api & /ws
+WasmBrowser -up-> NginxProxy : HTTPS / WSS Seguro (TLS 1.3)
+MobilePwa -up-> NginxProxy : HTTPS / WSS Seguro (TLS 1.3)
+
+@enduml

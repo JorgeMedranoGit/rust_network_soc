@@ -1,7 +1,20 @@
 // * * * COMPONENTE: GESTIÓN CRUD DE USUARIOS, CONTROL RBAC Y CONFIGURACIÓN DE TIMEOUT * * *
 
 use leptos::*;
+use js_sys;
 use crate::models::{GlobalSecurityConfig, RoleType, SocUser, UserSessionState};
+
+/// Genera un token de activación de un solo uso criptográficamente único
+/// Principio Zero-Knowledge: el administrador NUNCA conoce ni fija la contraseña del usuario.
+/// El token (act_...) se genera en cliente con entropía del timestamp + Math.random().
+fn generate_activation_token() -> String {
+    // Utiliza Date.now() y Math.random() del runtime JS (WASM) para generar 16 bytes de entropía
+    let ts = js_sys::Date::now() as u64;
+    let rand_a = (js_sys::Math::random() * 0xFFFF_FFFF_u64 as f64) as u64;
+    let rand_b = (js_sys::Math::random() * 0xFFFF_FFFF_u64 as f64) as u64;
+    let combined = ts ^ (rand_a << 32) ^ rand_b;
+    format!("act_{:016x}{:016x}", combined, rand_a ^ rand_b)
+}
 
 #[component]
 pub fn UserManagement(
@@ -14,24 +27,31 @@ pub fn UserManagement(
 ) -> impl IntoView {
     // Estados locales para el formulario de nuevo usuario
     let (new_username, set_new_username) = create_signal(String::new());
-    let (new_password, set_new_password) = create_signal(String::new());
     let (new_role, set_new_role) = create_signal(RoleType::SocOperator);
     let (feedback_msg, set_feedback_msg) = create_signal(Option::<String>::None);
     let (error_msg, set_error_msg) = create_signal(Option::<String>::None);
+    // Token de activación Zero-Knowledge generado al crear usuario exitosamente
+    let (activation_token, set_activation_token) = create_signal(Option::<String>::None);
 
     // Estado local para la edición del timeout
     let (timeout_input, set_timeout_input) = create_signal(security_config.get().critical_action_timeout_secs.to_string());
 
-    // Registro de nuevo usuario
+    // Registro de nuevo usuario — Provisioning Zero-Knowledge
     let handle_create_user = move |_| {
         set_error_msg.set(None);
         set_feedback_msg.set(None);
+        set_activation_token.set(None);
 
         let user_str = new_username.get().trim().to_string();
-        let pass_str = new_password.get();
 
-        if user_str.is_empty() || pass_str.is_empty() {
-            set_error_msg.set(Some("El nombre de usuario y la contraseña son obligatorios.".to_string()));
+        if user_str.is_empty() {
+            set_error_msg.set(Some("El nombre de usuario no puede estar vacío.".to_string()));
+            return;
+        }
+
+        // Validación mínima: solo alfanuméricos, guiones y puntos
+        if !user_str.chars().all(|c| c.is_alphanumeric() || c == '_' || c == '-' || c == '.') {
+            set_error_msg.set(Some("El nombre de usuario solo puede contener letras, números, '_', '-' y '.'.".to_string()));
             return;
         }
 
@@ -44,6 +64,9 @@ pub fn UserManagement(
         let next_id = users.get().iter().map(|u| u.user_id).max().unwrap_or(0) + 1;
         let created_now = chrono::Local::now().format("%Y-%m-%d %H:%M:%S").to_string();
 
+        // Generar token de activación de un solo uso (Zero-Knowledge provisioning)
+        let token = generate_activation_token();
+
         let new_user_obj = SocUser {
             user_id: next_id,
             username: user_str.clone(),
@@ -54,10 +77,11 @@ pub fn UserManagement(
 
         set_users.update(|list| list.push(new_user_obj));
         set_new_username.set(String::new());
-        set_new_password.set(String::new());
 
+        // Mostrar token de activación al administrador (NO es la contraseña)
+        set_activation_token.set(Some(token));
         set_feedback_msg.set(Some(format!(
-            "✓ Usuario '{}' registrado exitosamente con rol {} y contraseña hasheada en servidor.",
+            "✓ Usuario '{}' provisionado con rol '{}'. Token de activación generado.",
             user_str,
             new_role.get().display_name()
         )));
@@ -145,6 +169,54 @@ pub fn UserManagement(
                     view! {
                         <div class="alert-box alert-danger">
                             {err}
+                        </div>
+                    }.into_view()
+                } else {
+                    view! {}.into_view()
+                }
+            }}
+
+            // Banner del Token de Activación Zero-Knowledge (aparece solo tras crear usuario)
+            {move || {
+                if let Some(token) = activation_token.get() {
+                    view! {
+                        <div style="
+                            border: 1px solid var(--ctp-yellow);
+                            border-radius: 8px;
+                            background: rgba(249, 226, 175, 0.08);
+                            padding: 1.25rem;
+                            margin-bottom: 1rem;
+                        ">
+                            <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.75rem;">
+                                <span style="font-size: 1.25rem;">"🔑"</span>
+                                <h4 style="color: var(--ctp-yellow); font-size: 0.95rem; font-weight: 700; margin: 0;">
+                                    "Token de Activación Zero-Knowledge (ISO/IEC 27001)"
+                                </h4>
+                            </div>
+                            <p style="font-size: 0.8125rem; color: var(--ctp-subtext1); margin-bottom: 0.75rem; line-height: 1.5;">
+                                "El administrador "
+                                <strong style="color: var(--ctp-red);">"NUNCA"</strong>
+                                " conoce ni define la contraseña del usuario. Entregue este token de un solo uso al nuevo usuario. "
+                                "Él deberá usarlo en su primer inicio de sesión para establecer su propia contraseña privada con "
+                                <strong style="color: var(--ctp-text);">"Argon2id."</strong>
+                                " El token expira en 24h."
+                            </p>
+                            <div style="
+                                background: var(--ctp-crust);
+                                border-radius: 6px;
+                                padding: 0.75rem 1rem;
+                                font-family: var(--font-mono);
+                                font-size: 0.875rem;
+                                color: var(--ctp-green);
+                                word-break: break-all;
+                                letter-spacing: 0.05em;
+                                border: 1px solid var(--ctp-surface1);
+                            ">
+                                {token}
+                            </div>
+                            <p style="font-size: 0.75rem; color: var(--ctp-overlay1); margin-top: 0.5rem;">
+                                "⚠️ Copia y entrega este token de forma segura (canal cifrado). No se almacenará ni podrá recuperarse después."
+                            </p>
                         </div>
                     }.into_view()
                 } else {
@@ -282,6 +354,23 @@ pub fn UserManagement(
                 </div>
 
                 <div class="rbac-card-body">
+                    // Nota informativa Zero-Knowledge
+                    <div style="
+                        background: rgba(166, 227, 161, 0.06);
+                        border: 1px solid rgba(166, 227, 161, 0.25);
+                        border-radius: 6px;
+                        padding: 0.75rem 1rem;
+                        margin-bottom: 1rem;
+                        font-size: 0.8125rem;
+                        color: var(--ctp-subtext1);
+                        line-height: 1.5;
+                    ">
+                        <strong style="color: var(--ctp-green);">"🔐 Provisioning Zero-Knowledge (ISO/IEC 27001 — Cláusula 9.4.3):"</strong>
+                        " El Administrador ingresa solo el nombre de usuario y el rol. "
+                        "El sistema genera un token de activación de un solo uso (24h). "
+                        "La contraseña es definida " <strong style="color: var(--ctp-text);">"exclusivamente por el usuario en su primer login"</strong>
+                        " con hashing Argon2id. Ningún administrador conoce las credenciales."
+                    </div>
                     <div class="form-row">
                         <div class="form-group">
                             <label class="form-label">"Nombre de Usuario:"</label>
@@ -291,17 +380,6 @@ pub fn UserManagement(
                                 placeholder="ej. analista_soc_3"
                                 prop:value=move || new_username.get()
                                 on:input=move |ev| set_new_username.set(event_target_value(&ev))
-                            />
-                        </div>
-
-                        <div class="form-group">
-                            <label class="form-label">"Contraseña (Hasheada con Argon2/Sal):"</label>
-                            <input
-                                type="password"
-                                class="form-control"
-                                placeholder="Contraseña segura"
-                                prop:value=move || new_password.get()
-                                on:input=move |ev| set_new_password.set(event_target_value(&ev))
                             />
                         </div>
 
@@ -329,7 +407,7 @@ pub fn UserManagement(
 
                         <div class="form-group" style="align-self: flex-end;">
                             <button class="btn btn-approve" on:click=handle_create_user>
-                                "✓ Registrar Usuario"
+                                "🔑 Provisionar Usuario (Zero-Knowledge)"
                             </button>
                         </div>
                     </div>

@@ -1,0 +1,73 @@
+@startuml
+
+skinparam backgroundColor #EFF1F5
+skinparam defaultFontName Arial
+skinparam defaultFontColor #4C4F69
+skinparam defaultFontSize 10
+skinparam roundcorner 8
+skinparam shadowing false
+skinparam nodesep 40
+skinparam ranksep 45
+skinparam arrow {
+    Color #1E66F5
+    FontColor #6C6F85
+    FontSize 9
+}
+
+skinparam package {
+    BackgroundColor #E6E9EF
+    BorderColor #8839EF
+    FontColor #4C4F69
+    FontStyle bold
+    BorderThickness 1.2
+}
+skinparam rectangle {
+    BackgroundColor #DCE0E8
+    BorderColor #1E66F5
+    FontColor #4C4F69
+    BorderThickness 1.5
+}
+skinparam usecase {
+    BackgroundColor #FFFFFF
+    BorderColor #1E66F5
+    FontColor #4C4F69
+    BorderThickness 1.2
+}
+skinparam actor {
+    BackgroundColor #8839EF
+    BorderColor #1E66F5
+    FontColor #1E66F5
+    FontStyle bold
+}
+
+
+left to right direction
+
+actor "Analista del SOC\n(Usuario Operativo)" as Operador
+actor "Administrador de Seguridad\n(Oficial Zero-Trust)" as Admin
+
+Operador <|-- Admin
+
+rectangle "Sprint 1: Gobernanza Zero-Trust & RBAC" {
+    usecase "CU1.1: Autenticarse con 2FA TOTP" as CU1_1
+    usecase "CU1.2: Controlar Tasa de Intentos (Rate Limiting)" as CU1_2
+    usecase "CU1.3: Forzar Rotación de Contraseña (ISO 27001)" as CU1_3
+    usecase "CU1.4: Validar Entropía Criptográfica" as CU1_4
+    usecase "CU1.5: Asignar Roles y Permisos RBAC" as CU1_5
+    usecase "CU1.6: Consultar y Revocar Sesiones Activas" as CU1_6
+    usecase "CU1.7: Re-autenticación Crítica (Timeout 300s)" as CU1_7
+}
+
+Operador --> CU1_1
+Operador --> CU1_3
+Operador --> CU1_7
+
+Admin --> CU1_5
+Admin --> CU1_6
+
+CU1_1 ..> CU1_2 : <<include>>
+CU1_3 ..> CU1_4 : <<include>>
+CU1_1 ..> CU1_3 : <<extend>>\n(Si expira política)
+CU1_7 ..> CU1_1 : <<extend>>
+
+@enduml

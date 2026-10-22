@@ -1,0 +1,169 @@
+@startuml
+
+skinparam backgroundColor #EFF1F5
+skinparam defaultFontName Arial
+skinparam defaultFontColor #4C4F69
+skinparam defaultFontSize 10
+skinparam roundcorner 8
+skinparam shadowing false
+skinparam nodesep 50
+skinparam ranksep 55
+
+skinparam package {
+    BackgroundColor #E6E9EF
+    BorderColor #7287FD
+    FontColor #4C4F69
+    FontStyle bold
+    BorderThickness 1.2
+}
+
+skinparam rectangle {
+    BackgroundColor #DCE0E8
+    BorderColor #1E66F5
+    FontColor #4C4F69
+    BorderThickness 1.5
+}
+
+skinparam usecase {
+    BackgroundColor #FFFFFF
+    BorderColor #1E66F5
+    FontColor #4C4F69
+    BorderThickness 1.2
+}
+
+skinparam class {
+    BackgroundColor #FFFFFF
+    BorderColor #1E66F5
+    FontColor #4C4F69
+    HeaderBackgroundColor #E6E9EF
+    BorderThickness 1.2
+}
+
+skinparam entity {
+    BackgroundColor #FFFFFF
+    BorderColor #1E66F5
+    FontColor #4C4F69
+    HeaderBackgroundColor #E6E9EF
+    BorderThickness 1.2
+}
+
+skinparam node {
+    BackgroundColor #E6E9EF
+    BorderColor #1E66F5
+    FontColor #4C4F69
+    BorderThickness 1.2
+}
+
+skinparam component {
+    BackgroundColor #FFFFFF
+    BorderColor #209FB5
+    FontColor #4C4F69
+    BorderThickness 1.2
+}
+
+skinparam artifact {
+    BackgroundColor #FFFFFF
+    BorderColor #8839EF
+    FontColor #4C4F69
+    BorderThickness 1.2
+}
+
+skinparam actor {
+    BackgroundColor #7287FD
+    BorderColor #1E66F5
+    FontColor #1E66F5
+    FontStyle bold
+}
+
+skinparam arrow {
+    Color #1E66F5
+    FontColor #6C6F85
+    FontSize 9
+}
+
+skinparam activity {
+    BackgroundColor #FFFFFF
+    BorderColor #1E66F5
+    FontColor #4C4F69
+    BorderThickness 1.2
+}
+
+
+node "Servidor Host Linux (AS27839 SOC Host)" as HostServer {
+
+    node "Contenedor Docker: tigo_rust_backend" as DockerBackend << Execution Environment >> {
+        artifact "tigo_soc_backend (Binario ELF x86_64)" as BinBackend
+        artifact "mejor_modelo_kfold.txt (Modelo LightGBM Serializado)" as ModelArtifact
+        artifact "tigo_soc_frontend.wasm (Artefacto WebAssembly)" as WasmArtifact
+        component "Axum REST & WebSocket Engine (Port 3000)" as AxumComp
+        component "Polars Vectorized SIMD Engine" as PolarsComp
+        component "LightGBM C-API Booster Runtime" as BoosterComp
+        component "Sensor Sockets RAW / AF_PACKET" as SensorComp
+    }
+
+    node "Contenedor Docker: tigo_postgres_db" as DockerDB << Database Server >> {
+        database "PostgreSQL 15 Alpine (BCNF)" as PostgresDB {
+            folder "Tablespace tigo_soc" as TigoSOCData
+        }
+    }
+
+    folder "Almacenamiento Persistente Host" as HostStorage {
+        file "bd/data/ (Volumen PostgreSQL)" as VolDB
+        file "bd/init.sql (Script de Inicialización)" as InitSql
+        file ".env (Variables de Entorno)" as EnvFile
+    }
+}
+
+node "Entorno Virtualizado de Telecomunicaciones (GNS3 Core AS27839)" as GNS3Env {
+    node "Router_Core_L3 (MikroTik / Cisco IOS)" as RouterCore
+    node "pfSense_Gateway (Firewall Perimetral NGFW)" as PfSense
+    node "Cisco ISE / FreeRADIUS (Servidor AAA / CoA)" as CiscoISE
+    node "AttackerKali (Inyector de Exfiltración)" as AttackerKali
+    node "VictimeAlpine1..9 (Estaciones Corporativas)" as Victims
+    node "Sandbox_VLAN_999 (Subred Aislada 10.200.0.0/24)" as SandboxVlan
+}
+
+node "Estación de Trabajo Desktop SOC (1440x900)" as ClientDesktop {
+    component "Navegador Web Moderno (Chrome/Firefox)" as BrowserDesktop {
+        artifact "Leptos WASM Runtime (Desktop View)" as WASMDesktop
+    }
+}
+
+node "Tablet Táctica de Respuesta Rápida (1024x768)" as ClientTablet {
+    component "Navegador Web Tablet" as BrowserTablet {
+        artifact "Leptos WASM Runtime (Tablet View)" as WASMTablet
+    }
+}
+
+node "Dispositivo Móvil de Guardia (390x844)" as ClientMobile {
+    component "Cliente Web Móvil / PWA" as BrowserMobile {
+        artifact "Leptos WASM Runtime (Mobile View)" as WASMMobile
+        component "Firebase Cloud Messaging Worker (FCM)" as FCMWorker
+    }
+}
+
+cloud "Google Firebase Cloud Services" as GoogleCloud {
+    component "FCM Push Notification Service" as FCMService
+}
+
+' Relaciones de conexión
+SensorComp ..> RouterCore : Captura en modo promiscuo
+SensorComp ..> PfSense : Inspección de paquetes L2-L7
+AxumComp --> PostgresDB : Conexión TCP 5432 (Pool SQLx)
+VolDB ..> PostgresDB : Montaje de volumen
+
+AxumComp <--> WASMDesktop : HTTPS 3000 / WSS Telemetry
+AxumComp <--> WASMTablet : HTTPS 3000 / WSS Telemetry
+AxumComp <--> WASMMobile : HTTPS 3000 / WSS Telemetry
+
+AxumComp --> FCMService : Despacho HTTP v1 OAuth2
+FCMService --> FCMWorker : Alertas Push Forenses
+
+DockerBackend ..> CiscoISE : RADIUS CoA (Puerto UDP 1700/3799)
+DockerBackend ..> RouterCore : BGP Blackhole / SSH CLI
+DockerBackend ..> PfSense : RESTCONF HTTPS 8443 / YANG
+
+AttackerKali --> Victims : Inyección de DNS Tunneling (dnscat2)
+SandboxVlan ..> DockerBackend : Validación previa de ACLs
+
+@enduml

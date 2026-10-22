@@ -1,0 +1,163 @@
+@startuml
+
+skinparam backgroundColor #1E1E2E
+skinparam defaultFontName Arial
+skinparam defaultFontColor #CDD6F4
+skinparam defaultFontSize 10
+skinparam roundcorner 8
+skinparam shadowing false
+skinparam nodesep 40
+skinparam ranksep 45
+skinparam arrow {
+    Color #89B4FA
+    FontColor #A6ADC8
+    FontSize 9
+}
+
+skinparam package {
+    BackgroundColor #181825
+    BorderColor #CBA6F7
+    FontColor #CDD6F4
+    FontStyle bold
+    BorderThickness 1.2
+}
+skinparam class {
+    BackgroundColor #313244
+    BorderColor #89B4FA
+    FontColor #CDD6F4
+    HeaderBackgroundColor #181825
+    BorderThickness 1.2
+}
+
+
+package "Modelos de Datos y Mitigación (PostgreSQL BCNF)" {
+    class SecurityAlert {
+        + Option<i64> alert_id
+        + Option<i64> feature_id
+        + i32 threat_id
+        + i32 status_id
+        + f32 anomaly_score
+        + Option<DateTime> detected_at
+        -- Funciones --
+        + is_critical(): bool
+        + can_auto_mitigate(): bool
+        + to_incident_summary(): String
+        + update_status(new_status_id: i32): void
+    }
+
+    class MitigationAction {
+        + Option<i32> action_id
+        + String action_name
+        + String layer_target
+        + Option<String> description
+        -- Funciones --
+        + is_destructive(): bool
+        + requires_reauth(): bool
+        + target_layer(): String
+    }
+
+    class ExecutionQueueTask {
+        + Option<i64> task_id
+        + i64 alert_id
+        + i32 action_id
+        + i32 node_id
+        + i32 status_id
+        + Option<DateTime> queued_at
+        + Option<DateTime> executed_at
+        -- Funciones --
+        + new(alert_id: i64, action_id: i32, node_id: i32): ExecutionQueueTask
+        + mark_in_progress(): void
+        + mark_completed(): void
+        + mark_failed(err_msg: &str): void
+    }
+
+    class RollbackSnapshot {
+        + Option<i64> snapshot_id
+        + i64 task_id
+        + Value pre_state_json
+        + Value rollback_payload
+        + Option<DateTime> created_at
+        -- Funciones --
+        + new(task_id: i64, pre_state: Value, rollback: Value): RollbackSnapshot
+        + generate_reversal_command(): String
+        + is_expired(timeout_secs: i64): bool
+    }
+
+    class MitigationAudit {
+        + Option<i64> audit_id
+        + Option<i64> task_id
+        + Option<i32> executed_by_user
+        + Option<DateTime> executed_at
+        + String result_status
+        -- Funciones --
+        + new(task_id: i64, user_id: Option<i32>, status: &str): MitigationAudit
+        + to_log_entry(): String
+    }
+}
+
+package "Servicios de Orquestación y Conectores de Red" {
+    class MitigationOrchestrator {
+        - Arc<OrchestrationRepository> repo
+        - RadiusCoaClient radius_client
+        - AclBlackholeClient acl_client
+        - DnsSinkholeClient dns_client
+        -- Funciones --
+        + new(repo: Arc<OrchestrationRepository>): Self
+        + evaluate_blast_radius(node_id: i32): Result<BlastRadiusReport>
+        + execute_mitigation(task_id: i64, auth_token: &str): Result<()>
+        + execute_rollback(snapshot_id: i64): Result<()>
+        + check_residual_connectivity(node_id: i32): bool
+    }
+
+    class RadiusCoaClient {
+        - String nas_ip
+        - String shared_secret
+        - u16 coa_port
+        -- Funciones --
+        + new(nas_ip: &str, secret: &str, port: u16): Self
+        + send_disconnect(mac_address: &str): Result<()>
+        + send_quarantine_vlan(mac_address: &str, vlan: u16): Result<()>
+    }
+
+    class AclBlackholeClient {
+        - String ssh_host
+        - u16 ssh_port
+        - String username
+        -- Funciones --
+        + new(host: &str, user: &str): Self
+        + inject_null_route(target_ip: &str): Result<()>
+        + withdraw_null_route(target_ip: &str): Result<()>
+    }
+
+    class DnsSinkholeClient {
+        - String dns_server_ip
+        - String sinkhole_target_ip
+        -- Funciones --
+        + new(server_ip: &str, sinkhole_ip: &str): Self
+        + redirect_domain(malicious_domain: &str): Result<()>
+        + restore_domain(malicious_domain: &str): Result<()>
+    }
+
+    class OrchestrationRepository {
+        - PgPool pool
+        -- Funciones --
+        + new(pool: PgPool): Self
+        + enqueue_task(task: &ExecutionQueueTask): Result<i64>
+        + save_snapshot(snap: &RollbackSnapshot): Result<i64>
+        + get_snapshot(snapshot_id: i64): Result<RollbackSnapshot>
+        + record_audit(audit: &MitigationAudit): Result<i64>
+    }
+}
+
+MitigationOrchestrator --> RadiusCoaClient : invoca
+MitigationOrchestrator --> AclBlackholeClient : invoca
+MitigationOrchestrator --> DnsSinkholeClient : invoca
+MitigationOrchestrator --> OrchestrationRepository : consulta_y_persiste
+
+OrchestrationRepository ..> SecurityAlert : maneja
+OrchestrationRepository ..> MitigationAction : maneja
+OrchestrationRepository ..> ExecutionQueueTask : persiste
+OrchestrationRepository ..> RollbackSnapshot : persiste
+OrchestrationRepository ..> MitigationAudit : persiste
+
+@enduml

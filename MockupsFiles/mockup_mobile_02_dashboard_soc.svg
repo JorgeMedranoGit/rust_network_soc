@@ -1,0 +1,126 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="390" height="844" viewBox="0 0 390 844">
+  <!-- Fondo y Chasis de Smartphone -->
+  <rect width="390" height="844" rx="44" fill="#080C14" stroke="#2D3B54" stroke-width="4"/>
+  
+  <!-- Barra de Estado Móvil (16:54, 5G, Batería 94%) -->
+  <g transform="translate(0, 0)">
+    <!-- Notch / Dynamic Island -->
+    <rect x="135" y="10" width="120" height="26" rx="13" fill="#03060B"/>
+    <circle cx="230" cy="23" r="5" fill="#111B2C"/>
+    
+    <text x="36" y="28" fill="#F8FAFC" font-family="'SF Mono', 'Fira Code', 'Roboto Mono', Consolas, monospace" font-size="13" font-weight="700">16:54</text>
+    <text x="314" y="28" fill="#94A3B8" font-family="'SF Mono', 'Fira Code', 'Roboto Mono', Consolas, monospace" font-size="12">5G</text>
+    <!-- Batería -->
+    <rect x="338" y="18" width="22" height="12" rx="2" fill="none" stroke="#94A3B8" stroke-width="1.5"/>
+    <rect x="340" y="20" width="15" height="8" rx="1" fill="#16A34A"/>
+    <rect x="361" y="22" width="2" height="4" fill="#94A3B8"/>
+  </g>
+
+  <!-- CONTENIDO DE LA PANTALLA MÓVIL -->
+  
+  <!-- Barra de Cabecera Móvil -->
+  <g transform="translate(20, 52)">
+    <text x="0" y="20" fill="#F8FAFC" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif" font-size="18" font-weight="800">TIGO SOC</text>
+    <text x="0" y="38" fill="#64748B" font-family="'SF Mono', 'Fira Code', 'Roboto Mono', Consolas, monospace" font-size="11">admin_soc | SOC_ADMIN</text>
+    
+    <!-- Campana de Notificaciones de Alertas Activas -->
+    <rect x="310" y="4" width="40" height="40" rx="20" fill="#0F172A" stroke="#334155" stroke-width="1"/>
+    <circle cx="330" cy="24" r="8" fill="none" stroke="#F8FAFC" stroke-width="2"/>
+    <circle cx="340" cy="14" r="5" fill="#DC2626"/>
+    <text x="340" y="17" fill="#FFFFFF" font-family="'SF Mono', 'Fira Code', 'Roboto Mono', Consolas, monospace" font-size="8" font-weight="700" text-anchor="middle">3</text>
+  </g>
+
+  <!-- Widgets Resumen Móviles Deslizables (2 Columnas) -->
+  <g transform="translate(20, 110)">
+    <!-- Widget 1: Tráfico -->
+    <rect x="0" y="0" width="168" height="84" rx="6" fill="#0F172A" stroke="#334155" stroke-width="1"/>
+    <text x="14" y="22" fill="#64748B" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif" font-size="10" font-weight="700">TRÁFICO L2/L7</text>
+    <text x="14" y="52" fill="#F8FAFC" font-family="'SF Mono', 'Fira Code', 'Roboto Mono', Consolas, monospace" font-size="20" font-weight="700">1,842</text>
+    <text x="75" y="52" fill="#64748B" font-family="'SF Mono', 'Fira Code', 'Roboto Mono', Consolas, monospace" font-size="11">pkts/s</text>
+    <text x="14" y="70" fill="#16A34A" font-family="'SF Mono', 'Fira Code', 'Roboto Mono', Consolas, monospace" font-size="10">Sniffer libpcap OK</text>
+
+    <!-- Widget 2: Alertas Críticas -->
+    <rect x="182" y="0" width="168" height="84" rx="6" fill="#0F172A" stroke="#DC2626" stroke-width="1"/>
+    <text x="196" y="22" fill="#DC2626" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif" font-size="10" font-weight="700">AMENAZAS ACTIVAS</text>
+    <text x="196" y="52" fill="#DC2626" font-family="'SF Mono', 'Fira Code', 'Roboto Mono', Consolas, monospace" font-size="20" font-weight="700">3</text>
+    <text x="216" y="52" fill="#64748B" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif" font-size="11">alertas</text>
+    <text x="196" y="70" fill="#D97706" font-family="'SF Mono', 'Fira Code', 'Roboto Mono', Consolas, monospace" font-size="10">2 Críticas | 1 Media</text>
+  </g>
+
+  <!-- Feed Vertical de Alertas Prioritarias (Touch Cards con Touch Target adecuado) -->
+  <g transform="translate(20, 214)">
+    <text x="0" y="0" fill="#F8FAFC" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif" font-size="13" font-weight="700">ALERTAS EN TIEMPO REAL</text>
+    <text x="350" y="0" fill="#0284C7" font-family="'SF Mono', 'Fira Code', 'Roboto Mono', Consolas, monospace" font-size="11" text-anchor="end">Ver todas</text>
+
+    <!-- Tarjeta de Alerta 1 (Crítica) -->
+    <g transform="translate(0, 16)">
+      <rect width="350" height="140" rx="6" fill="#450A0A" stroke="#DC2626" stroke-width="1"/>
+      <rect x="16" y="16" width="70" height="20" rx="3" fill="#DC2626"/>
+      <text x="51" y="30" fill="#FFFFFF" font-family="'SF Mono', 'Fira Code', 'Roboto Mono', Consolas, monospace" font-size="9" font-weight="700" text-anchor="middle">CRÍTICA 5</text>
+      <text x="96" y="30" fill="#64748B" font-family="'SF Mono', 'Fira Code', 'Roboto Mono', Consolas, monospace" font-size="11">ALT-2026-0891</text>
+      <text x="334" y="30" fill="#64748B" font-family="'SF Mono', 'Fira Code', 'Roboto Mono', Consolas, monospace" font-size="11" text-anchor="end">16:54:12</text>
+
+      <text x="16" y="60" fill="#F8FAFC" font-family="'SF Mono', 'Fira Code', 'Roboto Mono', Consolas, monospace" font-size="13" font-weight="700">DDOS_SYN_FLOOD (99.2%)</text>
+      <text x="16" y="78" fill="#94A3B8" font-family="'SF Mono', 'Fira Code', 'Roboto Mono', Consolas, monospace" font-size="11">Src: 192.168.100.50 (AttackerKali)</text>
+      <text x="16" y="94" fill="#94A3B8" font-family="'SF Mono', 'Fira Code', 'Roboto Mono', Consolas, monospace" font-size="11">Dst: 192.168.1.15 : 80 (Alpine5)</text>
+
+      <!-- Botón de Acción Touch Rápida -->
+      <rect x="16" y="104" width="318" height="26" rx="4" fill="#DC2626"/>
+      <text x="175" y="122" fill="#FFFFFF" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif" font-size="11" font-weight="700" text-anchor="middle">INSPECCIONAR Y MITIGAR L3</text>
+    </g>
+
+    <!-- Tarjeta de Alerta 2 -->
+    <g transform="translate(0, 172)">
+      <rect width="350" height="120" rx="6" fill="#0F172A" stroke="#334155" stroke-width="1"/>
+      <rect x="16" y="16" width="70" height="20" rx="3" fill="#D97706"/>
+      <text x="51" y="30" fill="#FFFFFF" font-family="'SF Mono', 'Fira Code', 'Roboto Mono', Consolas, monospace" font-size="9" font-weight="700" text-anchor="middle">CRÍTICA 5</text>
+      <text x="96" y="30" fill="#64748B" font-family="'SF Mono', 'Fira Code', 'Roboto Mono', Consolas, monospace" font-size="11">ALT-2026-0890</text>
+      <text x="334" y="30" fill="#64748B" font-family="'SF Mono', 'Fira Code', 'Roboto Mono', Consolas, monospace" font-size="11" text-anchor="end">16:52:05</text>
+
+      <text x="16" y="60" fill="#F8FAFC" font-family="'SF Mono', 'Fira Code', 'Roboto Mono', Consolas, monospace" font-size="13" font-weight="700">DNS_C2_EXFILTRATION (97.8%)</text>
+      <text x="16" y="78" fill="#94A3B8" font-family="'SF Mono', 'Fira Code', 'Roboto Mono', Consolas, monospace" font-size="11">Host: 192.168.1.12 -&gt; 208.67.222.222</text>
+
+      <rect x="16" y="88" width="318" height="24" rx="4" fill="#1E293B"/>
+      <text x="175" y="104" fill="#94A3B8" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif" font-size="10" font-weight="600" text-anchor="middle">Inspeccionar Tráfico DNS</text>
+    </g>
+
+    <!-- Estado de Topología Móvil -->
+    <g transform="translate(0, 312)">
+      <rect width="350" height="110" rx="6" fill="#0F172A" stroke="#334155" stroke-width="1"/>
+      <text x="16" y="24" fill="#F8FAFC" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif" font-size="12" font-weight="700">TOPOLOGÍA GNS3 / ISP</text>
+      <text x="16" y="46" fill="#94A3B8" font-family="'SF Mono', 'Fira Code', 'Roboto Mono', Consolas, monospace" font-size="11">12 Nodos Registrados</text>
+      <text x="16" y="66" fill="#DC2626" font-family="'SF Mono', 'Fira Code', 'Roboto Mono', Consolas, monospace" font-size="11">VictimeAlpine5: Bajo Ataque</text>
+      <text x="16" y="86" fill="#16A34A" font-family="'SF Mono', 'Fira Code', 'Roboto Mono', Consolas, monospace" font-size="11">pfSense &amp; MikroTik Core: OK</text>
+      
+      <rect x="230" y="35" width="104" height="48" rx="4" fill="#1E293B" stroke="#334155" stroke-width="1"/>
+      <text x="282" y="64" fill="#0284C7" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif" font-size="11" font-weight="700" text-anchor="middle">Ver Mapa</text>
+    </g>
+  </g>
+
+  <!-- BARRA DE NAVEGACIÓN INFERIOR MÓVIL (Bottom Tab Bar fija, alcance óptimo) -->
+  <g transform="translate(0, 756)">
+    <rect width="390" height="60" fill="#0F172A" stroke="#334155" stroke-width="1"/>
+    
+    <!-- Tab 1: Dashboard (Activo) -->
+    <rect x="24" y="8" width="60" height="44" rx="4" fill="#1E293B"/>
+    <line x1="38" y1="20" x2="70" y2="20" stroke="#0284C7" stroke-width="2"/>
+    <text x="54" y="40" fill="#0284C7" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif" font-size="9" font-weight="700" text-anchor="middle">Mando</text>
+
+    <!-- Tab 2: Alertas -->
+    <text x="134" y="40" fill="#94A3B8" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif" font-size="9" font-weight="600" text-anchor="middle">Alertas</text>
+    <circle cx="146" cy="18" r="4" fill="#DC2626"/>
+
+    <!-- Tab 3: Mitigación -->
+    <text x="214" y="40" fill="#94A3B8" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif" font-size="9" font-weight="600" text-anchor="middle">Mitigar</text>
+
+    <!-- Tab 4: Topología -->
+    <text x="294" y="40" fill="#94A3B8" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif" font-size="9" font-weight="600" text-anchor="middle">Red</text>
+
+    <!-- Tab 5: Perfil -->
+    <text x="354" y="40" fill="#94A3B8" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif" font-size="9" font-weight="600" text-anchor="middle">Perfil</text>
+  </g>
+
+
+  <!-- Barra de Inicio Inferior (Home Indicator de iOS/Android) -->
+  <rect x="125" y="828" width="140" height="5" rx="2.5" fill="#64748B"/>
+</svg>

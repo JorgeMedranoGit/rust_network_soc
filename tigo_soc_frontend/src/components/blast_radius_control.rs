@@ -71,9 +71,9 @@ pub fn BlastRadiusControl(
         set_feedback_msg.set(None);
 
         let user_role = session.get().current_user.role;
-        if user_role.is_read_only() {
+        if !user_role.can_execute_destructive_actions() {
             set_error_msg.set(Some(
-                "✕ ACCESO DENEGADO (RBAC): Los usuarios con rol Auditor poseen permisos exclusivos de solo lectura y no pueden despachar mitigaciones."
+                "✕ ACCESO DENEGADO (RBAC): Su rol actual no posee permisos para despachar mitigaciones de red. Roles autorizados: Administrador General y Operador SOC."
                     .to_string(),
             ));
             return;
@@ -99,9 +99,9 @@ pub fn BlastRadiusControl(
         set_feedback_msg.set(None);
 
         let user_role = session.get().current_user.role;
-        if user_role.is_read_only() {
+        if !user_role.can_execute_destructive_actions() {
             set_error_msg.set(Some(
-                "✕ ACCESO DENEGADO (RBAC): Los usuarios con rol Auditor no tienen autorización para ejecutar reversiones."
+                "✕ ACCESO DENEGADO (RBAC): Su rol actual no posee permisos para ejecutar reversiones (Rollback). Roles autorizados: Administrador General y Operador SOC."
                     .to_string(),
             ));
             return;
@@ -123,9 +123,9 @@ pub fn BlastRadiusControl(
 
     let reject_mitigation = move |task_id: i64| {
         let user_role = session.get().current_user.role;
-        if user_role.is_read_only() {
+        if !user_role.can_execute_destructive_actions() {
             set_error_msg.set(Some(
-                "✕ ACCESO DENEGADO (RBAC): Perfil Auditor sin permisos de descarte o modificación.".to_string(),
+                "✕ ACCESO DENEGADO (RBAC): Su rol no permite descartar o modificar mitigaciones pendientes. Roles autorizados: Administrador y Operador SOC.".to_string(),
             ));
             return;
         }
@@ -263,7 +263,7 @@ pub fn BlastRadiusControl(
                     items.into_iter().map(|item| {
                         let task_id = item.task_id;
                         let json_payload = item.rollback_payload.clone();
-                        let is_auditor = session.get().current_user.role.is_read_only();
+                        let is_no_perms = !session.get().current_user.role.can_execute_destructive_actions();
 
                         view! {
                             <div class="blast-card" style="border-left: 4px solid var(--ctp-peach);">
@@ -317,14 +317,14 @@ pub fn BlastRadiusControl(
                                     </button>
                                     <button
                                         class="btn btn-reject"
-                                        disabled=is_auditor
+                                        disabled=is_no_perms
                                         on:click=move |_| reject_mitigation(task_id)
                                     >
                                         "✕ Rechazar / Descartar"
                                     </button>
                                     <button
                                         class="btn btn-approve"
-                                        disabled=is_auditor
+                                        disabled=is_no_perms
                                         on:click=move |_| request_approve_mitigation(task_id)
                                     >
                                         "✓ Aprobar y Ejecutar Mitigación"
@@ -364,7 +364,7 @@ pub fn BlastRadiusControl(
                                         <button
                                             class="btn btn-approve"
                                             style="background-color: var(--ctp-mauve); color: var(--ctp-crust);"
-                                            disabled=session.get().current_user.role.is_read_only()
+                                            disabled=!session.get().current_user.role.can_execute_destructive_actions()
                                             on:click=move |_| request_execute_rollback(task_id_opt)
                                         >
                                             "🔄 Revertir Estado (Ejecutar Rollback JSON)"

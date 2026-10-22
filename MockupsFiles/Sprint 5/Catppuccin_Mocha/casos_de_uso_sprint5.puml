@@ -1,0 +1,79 @@
+@startuml
+
+skinparam backgroundColor #1E1E2E
+skinparam defaultFontName Arial
+skinparam defaultFontColor #CDD6F4
+skinparam defaultFontSize 10
+skinparam roundcorner 8
+skinparam shadowing false
+skinparam nodesep 40
+skinparam ranksep 45
+skinparam arrow {
+    Color #89B4FA
+    FontColor #A6ADC8
+    FontSize 9
+}
+
+skinparam package {
+    BackgroundColor #181825
+    BorderColor #CBA6F7
+    FontColor #CDD6F4
+    FontStyle bold
+    BorderThickness 1.2
+}
+skinparam rectangle {
+    BackgroundColor #11111B
+    BorderColor #89B4FA
+    FontColor #CDD6F4
+    BorderThickness 1.5
+}
+skinparam usecase {
+    BackgroundColor #313244
+    BorderColor #89B4FA
+    FontColor #CDD6F4
+    BorderThickness 1.2
+}
+skinparam actor {
+    BackgroundColor #CBA6F7
+    BorderColor #89B4FA
+    FontColor #89B4FA
+    FontStyle bold
+}
+
+
+left to right direction
+
+actor "Analista de Operaciones SOC\n(Usuario Frontal)" as AnalistaSOC
+actor "Auditor de Ciberseguridad\n(Oficial de Cumplimiento)" as AuditorSOC
+
+rectangle "Sprint 5: Consola Web Unificada Leptos WASM & Auditoría Integral" {
+    package "Monitoreo Ejecutivo y Métricas de Tesis" {
+        usecase "CU5.1: Visualizar Cuadro de Mando con KPIs (MTTD, MTTR, Latencia < 1ms)" as CU5_1
+        usecase "CU5.2: Explorar Curvas ROC/PR y Matriz de Confusión en Vivo" as CU5_2
+        usecase "CU5.8: Validar Hipótesis de Investigación (Optimización de Tiempo y Precisión)" as CU5_8
+    }
+
+    package "Operación Reactiva y Gestión de Incidentes" {
+        usecase "CU5.3: Conmutar Tema Visual Accesible (Mocha / Latte)" as CU5_3
+        usecase "CU5.4: Operar en Dispositivos Móviles y Tablets (Responsive PWA)" as CU5_4
+        usecase "CU5.5: Gestionar Mitigaciones Pendientes y Temporizador de Reversión" as CU5_5
+    }
+
+    package "Auditoría, Forense y Trazabilidad Inmutable" {
+        usecase "CU5.6: Exportar Reportes Forenses e Históricos (CSV/PDF)" as CU5_6
+        usecase "CU5.7: Consultar Pistas de Auditoría Inmutables (system_audit_logs)" as CU5_7
+    }
+}
+
+AnalistaSOC --> CU5_1
+AnalistaSOC --> CU5_2
+AnalistaSOC --> CU5_3
+AnalistaSOC --> CU5_4
+AnalistaSOC --> CU5_5
+CU5_1 ..> CU5_8 : <<evidenciar>>
+
+AuditorSOC --> CU5_6
+AuditorSOC --> CU5_7
+AuditorSOC --> CU5_8
+
+@enduml

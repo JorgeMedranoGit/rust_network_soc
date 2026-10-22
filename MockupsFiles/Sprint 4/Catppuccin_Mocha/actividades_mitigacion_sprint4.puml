@@ -1,0 +1,92 @@
+@startuml
+
+skinparam backgroundColor #1E1E2E
+skinparam defaultFontName Arial
+skinparam defaultFontColor #CDD6F4
+skinparam defaultFontSize 10
+skinparam roundcorner 8
+skinparam shadowing false
+skinparam nodesep 40
+skinparam ranksep 45
+skinparam arrow {
+    Color #89B4FA
+    FontColor #A6ADC8
+    FontSize 9
+}
+
+skinparam swimlane {
+    BorderColor #585B70
+    BorderThickness 1.2
+    TitleFontColor #89B4FA
+    TitleFontSize 11
+    TitleFontStyle bold
+}
+skinparam activity {
+    BackgroundColor #313244
+    BorderColor #89B4FA
+    FontColor #CDD6F4
+    BorderThickness 1.2
+}
+skinparam activityDiamond {
+    BackgroundColor #313244
+    BorderColor #CBA6F7
+    FontColor #CDD6F4
+}
+skinparam activityStart {
+    Color #A6E3A1
+}
+skinparam activityEnd {
+    Color #F38BA8
+}
+skinparam activityBar {
+    Color #89B4FA
+}
+skinparam note {
+    BackgroundColor #313244
+    BorderColor #F9E2AF
+    FontColor #CDD6F4
+    BorderThickness 1.2
+}
+
+
+|Motor de Mitigación (Rust)|
+start
+:Alerta de exfiltración detectada (Score >= 0.85);
+:Evaluación de Blast Radius (identificar si es nodo crítico o troncal);
+
+|Operador del SOC|
+if (¿Acción requiere re-autenticación crítica?) then (Sí)
+    :Solicitar confirmación y credencial 2FA;
+    :Operador valida identidad en ventana de 300 segundos;
+else (No)
+    :Mitigación automática autorizada por política Zero-Trust;
+endif
+
+|Orquestador & Base de Datos SQLx|
+:Generar instantánea de estado previo (pre_state_json);
+:Registrar tarea en execution_queue y rollback_snapshots;
+
+|Controlador de Red (L2 / L3 / L7)|
+split
+    :Enviar RADIUS CoA Disconnect / Reasignar VLAN 999;
+split again
+    :Inyectar ruta Null0 BGP Blackhole en router de borde;
+split again
+    :Redirigir consultas DNS sospechosas a Sinkhole IP;
+end split
+
+|Verificación y Resiliencia|
+:Verificar corte de flujo de exfiltración;
+:Iniciar temporizador de resiliencia (300 segundos);
+
+if (¿Operador reporta falso positivo o falla servicio?) then (Reversión Solicitada)
+    :Cargar snapshot_id y rollback_payload;
+    :Restaurar configuración previa en conmutadores/routers;
+    :Registrar en mitigation_audit con status 'ROLLED_BACK';
+else (Confirmado)
+    :Confirmar contención exitosa en mitigation_audit;
+    :Archivar snapshot y cerrar incidente;
+endif
+stop
+
+@enduml

@@ -1,0 +1,3266 @@
+               UNIVERSIDAD PRIVADA DEL VALLE
+              FACULTAD DE INFORMÁTICA Y ELECTRÓNICA
+             CARRERA DE LICENCIATURA EN INGENIERÍA DE
+                     SISTEMAS INFORMÁTICOS
+
+
+
+
+SISTEMA WEB APLICANDO EL ALGORITMO LIGHT GRADIENT
+BOOSTING MACHINE PARA LA OPTIMIZACIÓN DEL TIEMPO Y
+PRECISIÓN EN LA DETECCIÓN DE EXFILTRACIÓN DE DATOS
+
+            CASO: TIGO BUSINESS BOLIVIA
+
+
+
+
+                         PROYECTO DE GRADO PARA OPTAR AL TÍTULO
+                         DE     LICENCIATURA   EN   INGENIERÍA   DE
+                         SISTEMAS INFORMÁTICOS
+
+
+
+
+  POSTULANTE: JORGE ESTEBAN MEDRANO CHACOLLA
+
+  TUTOR: ING. GONZALO ALARCON ROLDAN
+
+
+
+                      La Paz – Bolivia
+
+                           2026
+                                                  ÍNDICE DE CONTENIDO
+
+1     CAPITULO IMARCO INTRODUCTORIO ............................................................................. 1
+
+    1.1 INTRODUCCIÓN ............................................................................................................. 1
+
+    1.2 PLANTEAMIENTO DEL PROBLEMA ............................................................................... 2
+
+       1.2.1 ANTECEDENTES ..................................................................................................... 2
+
+       1.2.2 CONTEXTUALIZACIÓN ............................................................................................ 4
+
+       1.2.3 IDENTIFICACIÓN DEL PROBLEMA ......................................................................... 5
+
+    1.3 FORMULACIÓN DEL PROBLEMA .................................................................................. 7
+
+    1.4 OBJETIVOS DE LA INVESTIGACIÓN ............................................................................. 7
+
+       1.4.1 OBJETIVO GENERAL............................................................................................... 7
+
+       1.4.2 OBJETIVOS ESPECÍFICOS ..................................................................................... 7
+
+    1.5 JUSTIFICACIÓN .............................................................................................................. 8
+
+       1.5.1 JUSTIFICACIÓN SOCIAL ......................................................................................... 8
+
+       1.5.2 JUSTIFICACIÓN TÉCNICA ....................................................................................... 8
+
+       1.5.3 JUSTIFICACIÓN ECONÓMICA .............................................................................. 10
+
+    1.6 DELIMITACIÓN ...............................................................................................................11
+
+       1.6.1 DELIMITACIÓN ESPACIAL ......................................................................................11
+
+       1.6.2 DELIMITACIÓN TEMPORAL ....................................................................................11
+
+       1.6.3 DELIMITACIÓN POBLACIONAL ..............................................................................11
+
+       1.6.4 DELIMITACIÓN TEMÁTICA .....................................................................................11
+
+    1.7 ALCANCES Y LÍMITES .................................................................................................. 12
+
+       1.7.1 ALCANCES ............................................................................................................. 12
+
+       1.7.2 LÍMITES .................................................................................................................. 13
+
+    1.8 METODOLOGÍA............................................................................................................. 13
+
+       1.8.1 ENFOQUE DE LA INVESTIGACIÓN ....................................................................... 13
+
+       1.8.2 MÉTODO DE LA INVESTIGACIÓN ......................................................................... 14
+
+       1.8.3 TIPO DE INVESTIGACIÓN ..................................................................................... 14
+       1.8.4 OPERACIONALIZACIÓN DE VARIABLES .............................................................. 15
+
+       1.8.5 DISEÑO DE INVESTIGACIÓN ................................................................................ 19
+
+       1.8.6 POBLACIÓN ........................................................................................................... 20
+
+       1.8.7 MUESTRA............................................................................................................... 20
+
+2     CAPITULO IIMARCO TEÓRICO ........................................................................................ 23
+
+    2.1 MARCO TEÓRICO ......................................................................................................... 23
+
+       2.1.1 INGENIERIA DE SOFTWARE ................................................................................. 23
+
+       2.1.2 MODELOS DE DESARROLLO ............................................................................... 27
+
+       2.1.3 ARQUITECTURA DE SISTEMA .............................................................................. 31
+
+       2.1.4 LENGUAJE UNIFICADO DE MODELADO UML ..................................................... 33
+
+       2.1.5 METODOLOGÍA DE DESARROLLO DE SOFTWARE ............................................ 40
+
+       2.1.6 METODOLOGÍA DE DESARROLLO DE MODELO DE IA....................................... 42
+
+       2.1.7 HERRAMIENTAS DE DESARROLLO ..................................................................... 43
+
+       2.1.8 ESTIMACIÓN DE COSTOS .................................................................................... 49
+
+       2.1.9 ASEGURAMIENTO DE CALIDAD ........................................................................... 51
+
+       2.1.10      SEGURIDAD DEL SISTEMA ............................................................................... 54
+
+    2.2 MARCO CONCEPTUAL ................................................................................................ 57
+
+       2.2.1 INTELIGENCIA ARTIFICIAL .................................................................................... 57
+
+       2.2.2 DEFINICIÓN DE MACHINE LEARNING ................................................................. 57
+
+       2.2.3 APRENDIZAJE PROFUNDO .................................................................................. 58
+
+       2.2.4 TIPOS DE APRENDIZAJE AUTOMÁTICO .............................................................. 58
+
+       2.2.5 GRADIENT BOOSTING MACHINE ......................................................................... 59
+
+       2.2.6 LIGHT GRADIENT BOOSTING MACHINE.............................................................. 60
+
+    2.3 MARCO INSTITUCIONAL .............................................................................................. 64
+
+       2.3.1 ANTECEDENTES DE LA INSTITUCIÓN ................................................................. 64
+
+       2.3.2 ESTRUCTURA ORGANIZACIONAL ....................................................................... 66
+
+       2.3.3 DESCRIPCIÓN DEL ÁREA DE ESTUDIO ............................................................... 66
+       2.3.4 INFRAESTRUCTURA TECNOLÓGICA ACTUAL .................................................... 68
+
+       2.3.5 ARQUITECTURA DE RED Y SISTEMAS DE INFORMACIÓN EXISTENTES ......... 68
+
+    2.4 MARCO NORMATIVO.................................................................................................... 69
+
+       2.4.1 NORMATIVA INTERNA (TIGO - TELECEL S.A.) ..................................................... 69
+
+       2.4.2 NORMATIVA NACIONAL (BOLIVIA)........................................................................ 70
+
+       2.4.3 ESTÁNDARES INTERNACIONALES......................... Error! Bookmark not defined.
+
+       2.4.4 OTROS MARCOS DE REFERENCIA Y BUENAS PRÁCTICASError! Bookmark not
+       defined.
+
+    2.5 ESTADO DEL ARTE....................................................................................................... 71
+
+       2.5.1 REVISIÓN Y COMPARACIÓN DE PROYECTOS NACIONALES ............................ 71
+
+       2.5.2 REVISIÓN Y COMPARACIÓN DE PROYECTOS INTERNACIONALES ................. 73
+
+3     BIBLIOGRAFÍA .................................................................................................................... 1
+
+4     APÉNDICES ........................................................................................................................ 1
+
+5     ANEXOS.............................................................................................................................. 1
+                                              ÍNDICE DE CUADROS
+Cuadro 1.1 Operacionalización de Variables ............................................................................. 15
+                                                  ÍNDICE DE FIGURAS
+Figura 1.1 Diagrama Ishikawa ..................................................................................................... 7
+Figura 2.1 Ciclo de Vida del Software ....................................................................................... 27
+Figura 2.2 Esquema del Modelo en Cascada ........................................................................ 28
+Figura 2.3 Esquema del Modelo Incremental ........................................................................ 29
+Figura 2.4 Esquema de Modelo Evolutivo ............................................................................. 30
+Figura 2.5 Esquema del Modelo Espiral .................................................................................... 31
+Figura 2.6 Tipos de Diagramas UML ...................................................................................... 34
+Figura 2.7 Diagrama de Casos de Uso .................................................................................. 35
+Figura 2.8 Diagrama de Secuencias ...................................................................................... 36
+Figura 2.9 Notación en un diagrama de clases ..................................................................... 37
+Figura 2.10 Diagrama de Actividades .................................................................................... 38
+Figura 2.11 Diagrama de Despliegue ..................................................................................... 39
+Figura 2.12 Esquema de la Metodología Scrum.................................................................... 40
+Figura 2.13 Arquitectura Algoritmo LightGBM ...................................................................... 61
+     CAPITULO I
+MARCO INTRODUCTORIO
+                                                                                              1
+
+
+                                     CAPITULO I
+                                MARCO INTRODUCTORIO
+1.1 INTRODUCCIÓN
+En la actualidad, la transformación digital ha impulsado a las empresas de
+telecomunicaciones a gestionar volúmenes de datos sin precedentes, convirtiéndolas en
+objetivos primarios para el cibercrimen organizado. La seguridad de la información ya no se
+limita a la protección del perímetro, sino que exige una vigilancia constante sobre el flujo de
+salida de los activos digitales. La exfiltración de datos, entendida como la transferencia no
+autorizada de información sensible, representa una de las amenazas más críticas para la
+infraestructura de red en Bolivia, debido a su naturaleza sigilosa y difícil de identificar
+mediante herramientas convencionales.
+
+El panorama de amenazas ha evolucionado hacia ataques de quinta generación (Gen V,
+caracterizados por ser ciberataques a gran escala, multivectoriales y de rápida
+propagación), los cuales utilizan técnicas de evasión altamente sofisticadas para burlar los
+Sistemas de Detección de Intrusos (IDS) y de Prevención de Pérdida de Datos (DLP). Estos
+sistemas tradicionales, basados mayoritariamente en firmas estáticas, muestran una
+incapacidad creciente para identificar patrones de tráfico dinámicos. En el contexto objeto
+de estudio en Tigo Bolivia, resulta necesario determinar si las capacidades actuales de
+detección presentan limitaciones relacionadas con una latencia reactiva que compromete
+la integridad operativa de su Centro de Operaciones de Seguridad (SOC, por sus siglas en
+inglés), el área responsable de monitorear, detectar y responder a incidentes de
+ciberseguridad en la organización.
+
+La inteligencia artificial surge como la respuesta técnica necesaria para cerrar la brecha de
+visibilidad en la red. El uso de algoritmos de Machine Learning permite analizar el
+comportamiento del tráfico de red en lugar de buscar únicamente coincidencias con firmas
+conocidas. De entre estas tecnologías, el algoritmo Light Gradient Boosting Machine
+(LightGBM), un marco de trabajo de aprendizaje automático basado en árboles de decisión
+diseñado para ser altamente eficiente destaca por su eficiencia en el procesamiento de
+grandes conjuntos de datos y su bajo consumo de recursos computacionales,
+características vitales para una empresa de gran escala como Tigo Business Bolivia.
+
+El presente proyecto propone el desarrollo de un sistema web que utilice el algoritmo de
+gradiente incrementado LightGBM para optimizar la detección de exfiltración. Esta solución
+busca transformar la postura de seguridad de la organización de una meramente reactiva a
+                                                                                           2
+
+
+una proactiva. Al implementar un modelo capaz de aprender de los patrones de red
+habituales, se pretende identificar desviaciones que sugieran el robo de información antes
+de que el daño sea irreversible.
+La integración de este modelo predictivo en una plataforma web facilitará la toma de
+decisiones por parte de los analistas de seguridad. El sistema proporcionará visualizaciones
+claras de las anomalías detectadas, permitiendo priorizar aquellas alertas que representan
+un riesgo real de compromiso de datos. Esto aborda directamente el problema de la
+saturación analítica causada por el exceso de falsos positivos en las herramientas actuales.
+
+Desde una perspectiva institucional, la implementación de esta tecnología en Tigo Bolivia
+representa un avance significativo en la soberanía tecnológica y la protección de
+infraestructuras críticas nacionales. Al optimizar los tiempos de detección (conocido en la
+industria como MTTD o Mean Time To Detect, que indica el tiempo promedio que tarda una
+organización en descubrir una brecha de seguridad), se obtiene una mayor resiliencia ante
+ataques sofisticados como las Amenazas Persistentes Avanzadas (APT) y el Ransomware.
+Este esfuerzo se alinea con las mejores prácticas globales en ciberseguridad industrial.
+
+1.2 PLANTEAMIENTO DEL PROBLEMA
+1.2.1 ANTECEDENTES
+En el contexto global, la transición hacia infraestructuras Redes Definidas por Software
+(SDN) permite una gestión dinámica de recursos, pero a su vez demanda la implementación
+de analítica de seguridad y respuesta automática (SAAR) para mitigar amenazas que los
+firewalls   convencionales     no   pueden      procesar    eficientemente    (International
+Telecommunication Union [ITU], 2025). Esta vulnerabilidad estructural se agrava ante un
+cambio fundamental en el panorama de amenazas, donde la integración de la inteligencia
+artificial y la automatización ha acelerado la escala de los ataques, transformando el
+ransomware en una economía de extorsión impulsada estrictamente por los datos (Check
+Point, 2026). En este escenario, el despliegue de arquitecturas de seguridad que protejan
+el plano de control y los dispositivos de borde resulta imperativo, dado que estos últimos
+son utilizados cada vez más como puntos de lanzamiento para tácticas de exfiltración que
+buscan vulnerar la integridad del núcleo estratégico del negocio
+
+A nivel regional, en América, el sector de las telecomunicaciones atraviesa una etapa de
+transición tecnológica crítica frente a un incremento exponencial en la sofisticación del
+cibercrimen. Esta vulnerabilidad se ve intensificada por una saturación operativa sin
+precedentes; de acuerdo con el Nokia Threat Intelligence Report (2024), el tráfico malicioso
+                                                                                              3
+
+
+de denegación de servicio creció un 166% en el último año, lo que ha elevado la frecuencia
+de incidentes en las redes de las operadoras de apenas un par de eventos diarios a más de
+100 ataques por día. Esta escala en la automatización de las amenazas obliga a las
+empresas a migrar hacia Centros de Operaciones de Seguridad basados en analítica
+proactiva y detección extendida para mitigar ataques complejos que los sistemas
+tradicionales no logran procesar. Según ESET (2024), este panorama se refleja en que el
+“30% de las organizaciones sufrió al menos un incidente de seguridad en 2023” (p. 5),
+destacando una alarmante economía de extorsión impulsada por los datos donde el “23%
+de las empresas fue blanco de al menos un intento de ataque de ransomware en los últimos
+dos años” (ESET, 2024, p. 15), confirmando que “el ransomware continuó siendo una
+amenaza muy activa a nivel global y también a nivel regional en América Latina durante
+2023” (ESET, 2024, p. 17).
+
+Descendiendo al ámbito nacional, en Bolivia, “La penetración del servicio de internet móvil
+a diciembre de 2024, alcanzó el 99%; es decir que, por cada 100 habitantes, se tienen 99
+líneas activas con el servicio de internet móvil” (Autoridad de Regulación y Fiscalización de
+Telecomunicaciones y Transportes [ATT], 2025, p. 8). A pesar de contar con sistemas de
+monitoreo, el país enfrenta una “Es una actividad delictiva realizada a través de internet y
+tecnologías digitales con el objetivo de obtener ganancias ilegales o causar daño a las
+Entidades Financieras (EF) u otras organizaciones, sustrayendo información estratégica”
+(Autoridad de Supervisión del Sistema Financiero [ASFI], 2025, p. 2).
+
+La urgencia de modernizar las capacidades de detección en los proveedores locales se
+fundamenta en los datos del Computer Security Incident Response Team (CSIRT) Bolivia
+(2025), donde se reporta que el 93.8% de los incidentes gestionados pertenecen a la
+categoría de Compromiso de la Información. Este dato es crítico, ya que el informe destaca
+que una de las deficiencias más recurrentes en la infraestructura nacional es el “El registro
+y monitoreo insuficiente, junto a la falta de respuesta ante incidentes permite a los atacantes
+mantener el ataque en el tiempo, pivotear a otros sistemas y manipular, extraer o destruir
+datos” (p. 14). Además, se identifica que el 28.6% de las vulnerabilidades corresponden a
+Configuraciones de Seguridad Incorrectas.
+
+En el caso específico de Tigo Business Bolivia (Telecel S.A.), la escala de su infraestructura
+regional genera un volumen de tráfico que plantea desafíos operativos; de acuerdo con el
+levantamiento de información preliminar realizado al personal del SOC, esto puede
+desbordar las capacidades de inspección tradicionales, véase Apéndice 1. Según el reporte
+                                                                                            4
+
+
+Millicom (2024), la organización enfrenta una amenaza constante donde la sofisticación de
+los ataques dirigidos a la sustracción de datos' obliga a una revisión de sus protocolos de
+respuesta (Millicom, 2024). Esta necesidad se vuelve crítica al considerar que, en el sector
+de telecomunicaciones, la latencia en la detección permite que el 35.5% de las brechas de
+datos se ejecuten a través de vulnerabilidades (SecurityScorecard, 2025). Por consiguiente,
+la estrategia corporativa de Millicom para 2025 prioriza la automatización de la detección
+para mitigar el riesgo de exfiltración, validando la implementación de modelos de
+aprendizaje automático que puedan procesar de manera proactiva los patrones anómalos
+que los umbrales estáticos actuales no logran identificar con precisión.
+
+1.2.2 CONTEXTUALIZACIÓN
+En un ecosistema de telecomunicaciones cada vez más impulsado por la convergencia de
+servicios y el flujo masivo de activos digitales, las operadoras enfrentan el reto crítico de
+modernizar sus arquitecturas de seguridad mediante soluciones inteligentes. La
+digitalización acelerada y el volumen exponencial de datos que transitan por el Core de red
+se han vuelto fundamentales no solo para la operatividad del negocio, sino también para
+garantizar la confianza del cliente, evaluar la integridad de las conexiones y responder con
+agilidad a las amenazas del entorno. En este escenario, la capacidad de respuesta en
+tiempo real y la analítica predictiva emergen como componentes clave para fortalecer la
+resiliencia institucional en empresas comprometidas con la protección de la información.
+
+De acuerdo al levantamiento de información preliminar realizado mediante entrevista al
+personal del área, véase Apéndice 1, en la actualidad, Tigo Business Bolivia enfrenta una
+gestión de la seguridad y detección de incidentes altamente fragmentada. Se evidenció que
+los sistemas de detección de intrusiones (IDS) y prevención de pérdida de datos (DLP)
+vigentes operan bajo arquitecturas tradicionales que dependen de reglas estáticas y firmas
+predefinidas, lo que dificulta el seguimiento y la identificación de patrones de exfiltración
+dinámicos. La recopilación y el análisis de registros (logs) se realizan de forma secuencial
+frente a volúmenes masivos de tráfico, lo que no solo ralentiza la capacidad de alerta, sino
+que también hace al sistema susceptible a omisiones críticas y al éxito de fugas de
+información antes de cualquier intervención manual.
+
+Esta situación ha generado una desconexión operativa entre la ejecución de una amenaza
+y su contención efectiva. Por ejemplo, el Centro de Operaciones de Seguridad (SOC) carece
+de reportes y visibilidad en tiempo real sobre anomalías sutiles en datos cifrados, mientras
+que las herramientas actuales, pese a capturar eventos, terminan generando una saturación
+                                                                                            5
+
+
+de falsos positivos que dilata el tiempo de respuesta o directamente oculta ataques reales.
+Además, al tratarse de técnicas de bajo volumen y alta persistencia (low and slow), la
+trazabilidad del incidente se ve seriamente afectada, ya que no existe un sistema que
+integre de manera coherente la correlación de variables complejas con los registros de
+tráfico institucionales.
+
+El crecimiento continuo de la infraestructura de Tigo Business, junto con la sofisticación de
+vectores de ataque como el Ransomware y el DNS Tunneling, hace evidente la necesidad
+de una herramienta o sistema, una solución tecnológica avanzada impulsada por el
+algoritmo LightGBM. Este sistema debe ser capaz de centralizar el análisis de flujos
+mediante el procesamiento de gradientes incrementales, optimizar los tiempos de detección
+y servir como base para una defensa proactiva basada en datos confiables y actualizados,
+minimizando así el impacto de posibles brechas de seguridad.
+
+1.2.3 IDENTIFICACIÓN DEL PROBLEMA
+En el ecosistema tecnológico de Tigo Business Bolivia, se buscará verificar si el desafío
+crítico en la detección temprana de exfiltración de información podría estar ocurriendo
+debido a una posible desactualización técnica de los sistemas IDS y DLP frente a vectores
+de ataque de alta complejidad. Esta brecha de seguridad genera una dependencia de
+procesos de inspección manuales y una visibilidad fragmentada de los eventos de red, lo
+que degrada la capacidad de respuesta ante incidentes en tiempo real. Es por ello que no
+solo se compromete la confidencialidad de millones de registros, sino que también restringe
+la capacidad de los analistas de seguridad para ejecutar defensas basadas en inteligencia
+de datos, derivando en un ciclo de protección puramente reactivo. La raíz de esta
+vulnerabilidad no es un evento aislado, sino la convergencia de múltiples deficiencias
+estructurales.
+
+Como eje de conflicto inicial, la arquitectura de gestión de datos actual presenta una
+visibilidad limitada como efecto de la opacidad del tráfico cifrado y a la dispersión de
+registros en nodos de red heterogéneos. La falta de una estructura de datos cohesiva obliga
+a un procesamiento secuencial de registros (logs), lo que genera un retraso significativo
+entre el inicio de una fuga y su identificación. Esta latencia no permite obtener una visión
+holística del comportamiento de la red, transformando el análisis de seguridad en una tarea
+forense posterior al daño, en lugar de una supervisión dinámica y preventiva.
+
+Desde otro punto de vista, los protocolos de medición y monitoreo revelan una asincronía
+en el flujo de alertas. El Tiempo Medio de Detección (MTTD) en el sector de
+                                                                                              6
+
+
+telecomunicaciones boliviano se ve afectado por el uso de firmas estáticas que fallan ante
+ataques polimórficos. Esto permite que la información sensible traspase el perímetro de
+seguridad mucho antes de que los sistemas de control emitan una notificación, además se
+puede observar una infraestructura heredada que no logra escalar al ritmo de las demandas
+de tráfico actuales de un operador convergente.
+
+Por otra parte, el factor humano y operativo se encuentra bajo una saturación analítica
+constante. La imprecisión de las herramientas vigentes genera un volumen masivo de falsos
+positivos que desborda al SOC, obligando a los expertos a realizar validaciones manuales.
+Este desgaste operativo ocasiona que amenazas sutiles, como el DNS Tunneling o el
+Ransomware de baja intensidad, pasen desapercibidas bajo el ruido de fondo, limitando el
+talento técnico a tareas repetitivas en lugar de labores estratégicas de mitigación.
+
+Así mismo, el entorno tecnológico enfrenta una barrera de escalabilidad debido a la
+intensidad   computacional    que   requieren    los   modelos   de   inspección       profunda
+convencionales. La carga sobre la memoria y el procesamiento de los servidores actuales
+genera cuellos de botella que ponen en riesgo la Calidad de Servicio, creando una
+desconexión entre la necesidad de una defensa robusta y la estabilidad de la red. En
+conjunto, estos factores establecen una brecha tecnológica con las herramientas actuales,
+resultando en un sistema de detección lento, ineficiente y vulnerable ante el cibercrimen
+moderno.
+
+Tal como se puede observar en la Figura 1.1, la identificación de estos vértices permite
+comprender cómo la interacción entre los Datos, el Personal, la Infraestructura y los
+Métodos de Medición culmina en el problema central: un tiempo de detección de
+vulnerabilidades que requiere una transición urgente hacia arquitecturas de alto rendimiento
+y baja latencia.
+                                                                                         7
+
+
+                              Figura 1.1 Diagrama Ishikawa
+
+
+
+
+Fuente. Elaboración Propia, 2026.
+
+1.3 FORMULACIÓN DEL PROBLEMA
+¿Cómo optimizar el tiempo y la precisión en la detección de exfiltración de datos en la
+infraestructura de red de la empresa de telecomunicaciones Tigo Business Bolivia?
+
+1.4 OBJETIVOS DE LA INVESTIGACIÓN
+1.4.1 OBJETIVO GENERAL
+Desarrollar un sistema web aplicando el algoritmo Light Gradient Boosting Machine para la
+optimización del tiempo y precisión en la detección de exfiltración de datos en la empresa
+de telecomunicaciones Tigo Business Bolivia.
+
+1.4.2 OBJETIVOS ESPECÍFICOS
+      Determinar los controles técnicos, procedimentales y los registros disponibles
+       actuales para la detección de exfiltración mediante el análisis de brechas en la
+       infraestructura de Tigo Business Bolivia, para establecer una línea base de las
+       vulnerabilidades.
+      Explicar los fundamentos teóricos, conceptuales y el estado del arte referentes a la
+       detección de anomalías en ciberseguridad y los algoritmos de Gradient Boosting,
+       para sustentar científicamente el desarrollo de la investigación.
+                                                                                          8
+
+
+      Determinar el modelo de detección basado en Gradient Boosting mediante la
+       evaluación del rendimiento, velocidad de respuesta y precisión, contrastando
+       algoritmos como XGBoost, CatBoost y LightGBM, con el fin de seleccionar la
+       arquitectura más apropiada para la infraestructura.
+      Validar la precisión del sistema de detección de exfiltración mediante la evaluación
+       del Tiempo Medio de Detección (MTTD) la tasa de falsos positivos y el puntaje F1
+       utilizando un dataset etiquetado, para asegurar la fiabilidad y consistencia de los
+       resultados.
+
+1.5 JUSTIFICACIÓN
+1.5.1 JUSTIFICACIÓN SOCIAL
+La implementación de este sistema resolverá una problemática organizacional crítica al
+fortalecer al Centro de Operaciones de Seguridad (SOC) de Tigo Business Bolivia. Al brindar
+apoyo directo a los analistas mediante la optimización de la detección temprana de
+amenazas, se asegura la continuidad de los servicios y se reduce la exposición de los
+activos digitales. En consecuencia, se eleva el estándar de protección de la información de
+los usuarios finales, garantizando indirectamente un ecosistema digital más seguro para la
+sociedad boliviana.
+
+De este modo, la transparencia en la detección y prevención de exfiltración de datos nos
+permite reducir la vulnerabilidad ante fraudes y extorsiones, apoyando tanto a la parte
+estratégica de ciberseguridad como ser el SOC (Security Operations Center) y la gerencia
+de Tigo Business, como a los usuarios finales para que puedan operar en un entorno digital
+íntegro. Con esto logramos un mayor acercamiento debido a que se podrá interactuar en
+un entorno seguro, obteniendo datos en el proceso útiles para que las telecomunicaciones
+puedan ajustarse a las necesidades de protección y desarrollo de la sociedad boliviana en
+general.
+
+1.5.2 JUSTIFICACIÓN TÉCNICA
+El proyecto se justifica por la viabilidad de integrar el algoritmo LightGBM en la
+infraestructura actual de Tigo Business Bolivia, la cual cuenta con los servidores y el
+volumen masivo de registros necesarios para el entrenamiento. La solución basa su eficacia
+en este algoritmo de gradientes incrementales por su bajo consumo de memoria y alta
+capacidad para clasificar características de red desbalanceadas. Al ejecutar el motor
+predictivo sobre lenguajes seguros de bajo nivel, se elimina la latencia tradicional (GIL),
+permitiendo que la IA evalúe amenazas polimórficas de manera asíncrona y en tiempo real.
+                                                                                             9
+
+
+Desde el punto de vista técnico, el sistema propone una solución integral basada en una
+arquitectura de alto rendimiento para centralizar el análisis de tráfico de red en un entorno
+unificado, optimizando la gestión de incidentes y la visibilidad proactiva. Gracias a la
+automatización de la detección mediante el algoritmo LightGBM implementado en un
+ecosistema de seguridad de memoria total, se superarán las limitaciones de latencia de las
+herramientas genéricas interpretadas, permitiendo generar reportes forenses con una
+velocidad de procesamiento nativa. Aprovechando la infraestructura de la universidad y su
+capacidad de cómputo en centros de datos distribuidos, el proyecto presenta una fuerte
+viabilidad para entornos de misión crítica.
+
+Si bien Python representa el estándar actual en la industria del Machine Learning, sus
+limitaciones de concurrencia impuestas por el Global Interpreter Lock (GIL) generan
+latencias durante el análisis de tráfico asíncrono. De acuerdo con Muñoz Guerrero (2024),
+en el procesamiento de modelos predictivos, las arquitecturas fundamentadas en Rust
+logran reducir el consumo de memoria en hasta un 40% y procesar ráfagas de datos con
+una latencia significativamente menor en comparación con aplicaciones equivalentes en
+Python. Por ello, el uso de Rust garantiza un control profundo del hardware y seguridad de
+memoria, eliminando las pausas imprevistas durante la ingesta de registros.
+
+Para cumplir estos objetivos, se utilizarán las siguientes tecnologías clave:
+    •   Axum: Framework backend moderno construido sobre la infraestructura asincrónica
+        de Tokio, diseñado para manejar miles de conexiones simultáneas y procesar alertas
+        de exfiltración con baja latencia.
+
+    •   Leptos: Framework FrontEnd basado en WebAssembly, implementado para cubrir
+        el requerimiento de una interfaz ágil que permita a los analistas visualizar datos sin
+        recargas que afecten el tiempo de respuesta.
+
+    •   Polars: Motor de análisis de datos, elegido por la necesidad de extraer
+        características y preprocesar registros masivos de red eliminando cuellos de botella.
+
+    •   LightGBM: Motor de inteligencia artificial, seleccionado para resolver la necesidad
+        técnica de clasificar el tráfico anómalo con alta precisión, adaptándose a conjuntos
+        de datos altamente desbalanceados.
+
+    •   PostgreSQL: Sistema de bases de datos relacional, necesario para cumplir con el
+        requerimiento de almacenamiento estructurado, garantizando la auditoría y
+        trazabilidad histórica de incidentes.
+                                                                                              10
+
+
+   •   Trunk:    Herramienta     de   construcción,    requerida   funcionalmente     para    el
+       empaquetado y la integración nativa del motor web en Rust.
+
+El motor algorítmico LightGBM funcionará como el núcleo analítico de la arquitectura. Los
+registros de red serán preprocesados en microsegundos para extraer sus características,
+las cuales alimentarán directamente al modelo de Machine Learning. Una vez que el
+algoritmo LightGBM clasifique un patrón como exfiltración de datos, el backend interceptará
+la predicción, registrará el incidente en la base de datos relacional y emitirá una notificación
+automatizada hacia el panel de control (frontend), cerrando el flujo operativo entre la ingesta
+de datos, la IA y la interfaz de usuario.
+
+1.5.3 JUSTIFICACIÓN ECONÓMICA
+Económicamente, el proyecto busca mitigar las pérdidas financieras masivas derivadas de
+una brecha de datos exitosa dentro de la infraestructura de Tigo Business Bolivia. A nivel
+global, el tiempo promedio para identificar el ciclo de vida de una filtración es de 207 días
+en el sector (IBM, 2025), lo que conlleva costos elevados si se considera que el costo
+promedio de una filtración de datos ha alcanzado los USD 4.88 millones (IBM, 2025). Estos
+gastos incluyen multas regulatorias, recuperación forense y compensación a usuarios,
+además del daño irreparable a la valoración de mercado.
+
+A nivel operativo interno, al optimizar el Tiempo Medio de Detección (MTTD) del sistema
+local mediante la arquitectura de alto rendimiento propuesta, se busca evitar que se
+alcancen dichos ciclos prolongados de exposición. Según IBM (2025), las organizaciones
+que utilizan IA y automatización de seguridad ahorran un promedio de USD 2.22 millones
+en costos de brechas y logran reducir el ciclo de vida de la amenaza en casi 100 días. La
+reducción de hasta un 45% de falsos positivos permite que Por otra parte, la potencial
+reducción de falsos positivos estimada en hasta un 45% mediante herramientas de IA según
+la misma fuente permitiría que el personal del SOC enfoque sus horas-hombre en amenazas
+reales, lo que podría contribuir a reducir costos asociados al procesamiento de alertas y a
+la atención de incidentes.
+
+Finalmente, al desarrollar una solución soberana, se aborda un riesgo crítico de la industria:
+el 35.5% de todas las brechas de datos en 2024 se originaron en compromisos de terceros,
+un incremento del 6.5% interanual (SecurityScorecard, 2025). Al reducir la dependencia de
+software licenciado externo y sus costos recurrentes, se garantiza una gestión de recursos
+más coherente y se minimiza la exposición a vulnerabilidades de la cadena de suministro.
+                                                                                           11
+
+
+En conjunto, estos factores garantizan una mejora económica sostenible al blindar los
+activos digitales de la empresa frente a pérdidas financieras catastróficas.
+
+1.6 DELIMITACIÓN
+1.6.1 DELIMITACIÓN ESPACIAL
+La delimitación espacial del proyecto comprende dos perativos definidos. El contexto de
+estudio y la fuente de datos corresponden al Centro de Operaciones de Seguridad (SOC)
+de Tigo Business Bolivia, focalizando los esfuerzos en el análisis de los flujos de tráfico
+originados en sus centros de datos de las ciudades de La Paz y Santa Cruz. Aunque el caso
+de estudio se centra en los activos digitales y nodos de red de esta unidad, la
+implementación técnica, el entrenamiento del modelo y las fases de validación del motor de
+detección se llevarán a cabo en un entorno experimental controlado. Esto con la finalidad
+de garantizar la integridad de los sistemas en producción de la empresa durante todo el ciclo
+de desarrollo.
+
+1.6.2 DELIMITACIÓN TEMPORAL
+La investigación tendrá una duración de diez meses, comprendidos entre febrero de 2026 y
+noviembre de 2026. Este periodo incluye las fases de recolección de datos, entrenamiento
+del modelo, desarrollo del sistema web y la fase final de pruebas y evaluación de resultados.
+
+1.6.3 DELIMITACIÓN POBLACIONAL
+La delimitación poblacional del proyecto diferencia dos dimensiones operativas. Por un lado,
+la unidad de análisis de datos que evaluará el modelo LightGBM se delimita al tráfico de red
+saliente y los registros de logs generados por dispositivos críticos como firewalls, sistemas
+IDS y servidores DNS de Tigo Business Bolivia. Por otro lado, la población de usuarios se
+delimita a los analistas de seguridad del SOC, quienes no forman parte de los datos a
+clasificar, sino que fungirán exclusivamente como actores/informantes para evaluar la
+eficacia del sistema en entornos de misión crítica y participarán en la evaluación de la
+interfaz de toma de decisiones.
+
+1.6.4 DELIMITACIÓN TEMÁTICA
+El sistema propuesto se fundamenta en conceptos avanzados de ciberseguridad industrial,
+procesamiento de datos de alto rendimiento, detección de anomalías y toma de decisiones
+basada en inteligencia de datos. Estos elementos son esenciales para transformar la
+postura de seguridad de la organización de un esquema reactivo a uno proactivo.
+                                                                                          12
+
+
+      Detección de Anomalías por Comportamiento: Implica el análisis de patrones de
+       tráfico dinámicos para identificar desviaciones sutiles que sugieran el robo de
+       información, superando la rigidez de los sistemas basados en firmas estáticas.
+      Gradiente Incrementado (LightGBM): Se centra en la aplicación de algoritmos de
+       aprendizaje automático para el procesamiento eficiente de grandes conjuntos de
+       datos desbalanceados, garantizando precisión en la clasificación de amenazas con
+       un bajo consumo de recursos.
+      Arquitecturas de Alto Rendimiento: Busca consolidar el análisis de flujos masivos
+       mediante el uso de lenguajes de programación de sistemas, mejorando la
+       escalabilidad y eliminando cuellos de botella en el procesamiento de registros en
+       tiempo real.
+      Prevención de Fuga de Información: Implica el uso de inteligencia predictiva para
+       reducir el ciclo de vida de las amenazas, limitando su alcance de manera estricta a
+       la detección de la fase de exfiltración de datos. El sistema no intentará identificar
+       malwares específicos (como ransomware), vectores de infección inicial ni anomalías
+       de red genéricas, focalizándose única y exclusivamente
+      Exfiltración de Datos: Consiste en la transferencia no autorizada de información
+       sensible hacia dominios externos, ejecutada de manera sigilosa mediante la
+       manipulación de protocolos legítimos. Este fenómeno representa el objetivo final de
+       ataques sofisticados, donde el atacante extrae activos digitales evadiendo los
+       controles perimetrales.
+
+El diseño del motor de detección considerará los recursos tecnológicos de los servidores de
+la empresa, así como la infraestructura de cómputo distribuida de la universidad para las
+fases de validación técnica. Al integrar estos pilares, se busca desarrollar una solución
+tecnológica que optimice la respuesta ante incidentes mediante el uso efectivo de la
+analítica avanzada.
+
+1.7 ALCANCES Y LÍMITES
+1.7.1 ALCANCES
+      El sistema permitirá la ingesta y el procesamiento asíncrono masivo de registros de
+       red de forma centralizada optimizando la extracción de características mediante el
+       motor de Polars.
+
+      El sistema analizará en tiempo real el flujo continuo de registros de red haciendo uso
+       del algoritmo LightGBM el cual será entrenado y validado previamente utilizando el
+                                                                                           13
+
+
+       tráfico histórico, clasificando el tráfico legítimo de los patrones anómalos vinculados
+       con la exfiltración de datos.
+
+      El sistema proporcionara un panel de control accesible desde variedad de
+       navegadores web a personas autorizadas, mostrando alertas críticas, métricas de
+       riesgo y el estado de la seguridad actual.
+
+      El sistema almacenará y administrará un registro histórico estructurado de los
+       incidentes detectados en una base de datos relacional (PostgreSQL), garantizando
+       la trazabilidad y la consulta de eventos previos para análisis forenses.
+
+      El sistema generará y emitirá alertas y notificaciones tempranas en tiempo real hacia
+       el panel de control del SOC, detallando el nivel de criticidad y las características de
+       las anomalías detectadas para facilitar la toma de decisiones del personal
+       autorizado.
+
+1.7.2 LÍMITES
+      El sistema se limitará a la detección y notificación de incidentes; no ejecutará
+       acciones de mitigación o bloqueo automático de tráfico en la red de producción de
+       Tigo Business. Esto garantiza que la disponibilidad de los servicios de
+       telecomunicaciones no se vea comprometida por potenciales falsos positivos.
+
+      La investigación se circunscribe específicamente a la detección de la fuga de datos.
+       Por lo tanto, no contempla el análisis ni la defensa ante otras etapas de una cadena
+       de ataque (Cyber Kill Chain), tales como la explotación de vulnerabilidades iniciales
+       o el movimiento lateral dentro de la red.
+
+      La precisión y efectividad del motor de detección están sujetas a la integridad,
+       volumen y continuidad de los registros proporcionados por la infraestructura
+       existente en la empresa de telecomunicaciones.
+
+      El despliegue y acceso al panel de control del sistema web estará restringido
+       exclusivamente a la red interna (Intranet) del Centro de Operaciones de Seguridad
+       (SOC), por lo que no será accesible desde internet público.
+
+1.8 METODOLOGÍA
+1.8.1 ENFOQUE DE LA INVESTIGACIÓN
+El enfoque seleccionado para la investigación es el cuantitativo, donde Reyez y Reyes,
+(2024) nos dicen que “Este se basa en la idea de que el conocimiento se puede obtener a
+                                                                                            14
+
+
+través de la observación y la medición objetivas. También considera que la realidad es una
+sola, existe externamente y debe descubrirse y conocerse” (p. 125).
+
+Con este enfoque podemos analizar el problema de la exfiltración de datos mediante la
+reelección de datos como ser el volumen de registros, tasa de falsos positivos, y la
+comparación entre los tiempos de detección actuales frente a la versión optimizada con el
+algoritmo LightGBM.
+
+1.8.2 MÉTODO DE LA INVESTIGACIÓN
+Se empleará el método analítico-deductivo, el cual se ejecutará en dos fases integradas:
+
+      Fase Analítica: Ñaupas et al. (2023) señala que “Consiste en desagregar un todo, un
+       sistema, en sus elementos únicos” (p. 120). En esta fase se desglosará el problema
+       general mediante la selección de datos, la preparación y la extracción de
+       características (features) del tráfico de red, analizando las variables clave que
+       componen un evento de exfiltración.
+      Fase Deductiva: Como nos dice Ñaupas et al. (2023), es el “Análisis de lo general
+       (leyes, axiomas, postulados, teoremas) a casos particulares” (p. 119). Se aplicará
+       durante la evaluación y operación del modelo entrenado LightGBM: a partir de las
+       reglas matemáticas generales de clasificación aprendidas durante la fase de
+       entrenamiento y validación, el algoritmo deducirá si un flujo de red nuevo e
+       independiente (caso particular) constituye o no un ataque de exfiltración.
+
+1.8.3 TIPO DE INVESTIGACIÓN
+De acuerdo con el propósito del estudio y la naturaleza del problema en la infraestructura
+de Tigo Bolivia, la investigación se clasifica en dos tipologías complementarias:
+
+1.8.3.1 Investigación Aplicada:
+El proyecto es fundamentalmente de carácter aplicativo, ya que no busca únicamente
+generar nuevo conocimiento teórico sobre ciberseguridad, sino que toma fundamentos
+técnicos ya establecidos (aprendizaje automático, análisis de gradientes, arquitecturas de
+alto rendimiento) para resolver un problema práctico, específico y urgente, pues, como nos
+dice Rodríguez-Toro, (2024) “Se conoce como el nivel de la investigación aplicada, y su
+propósito es mejorar. Es el uso de la estadística para el control de la calidad industrial” (p.
+63).
+                                                                                                   15
+
+
+1.8.3.2 Investigación Predictiva:
+El estudio también adopta un nivel predictivo debido a la integración central del modelo
+matemático LightGBM y como explica Rodríguez-Toro, (2024) “En este nivel se predice
+probabilísticamente la ocurrencia de eventos, utilizando los datos obtenidos en el pasado.
+Se construyen modelos predictivos” (p. 62). A diferencia de los métodos descriptivos que
+solo analizan incidentes pasados, el proyecto aplica un enfoque de clasificación
+supervisada. El sistema aprenderá de los patrones de red y de las características de un
+conjunto de datos etiquetado, con el objetivo de clasificar y el tráfico continuo y calcular
+probabilísticamente su pertenencia a la clase anómala (exfiltración) antes de que el ataque
+se complete.
+
+1.8.4 OPERACIONALIZACIÓN DE VARIABLES
+En el proyecto se busca optimizar el tiempo y la precisión en la detección de exfiltración de
+datos mediante el uso de un algoritmo de Gradient Boosting, lo cual metodológicamente se
+traduce en reducir el tiempo de alerta y mejorar la precisión de clasificación. Las variables
+se extraen del título oficial “Sistema web aplicando el algoritmo Light Gradient Boosting
+Machine para la optimización del tiempo y precisión en la detección de exfiltración de datos”,
+de donde se establecen formalmente la Variable Dependiente (Variable 1: Optimización del
+tiempo y la precisión en la detección) y la Variable Independiente (Variable 2: Sistema web
+basado en el algoritmo LightGBM como solución interventora).
+
+                       Cuadro 1.1 Operacionalización de Variables
+
+   Variable       Dimensión          Indicadores       Escala         Técnicas             Instrumentos
+                                                                                      Tablero      de     control
+                                                                   Experimentación
+                                    Tiempo Medio                                      interactivo (dashboard)
+                                                                   Controlada
+                                    de   Detección                                    en tiempo real.
+                                                                   mediante
+                 Velocidad de       (MTTD)      de Milisegundos                       Logs de auditoría con
+      V1:                                                          Simulación    de
+                   Respuesta        vectores    de      (ms)                          marcas       de     tiempo
+ Optimización                                                      Tráfico        y
+                                    exfiltración de                                   (timestamps            con
+ del tiempo y                                                      Vectores      de
+                                    datos.                                            resolución              de
+ precisión en                                                      Ataque.
+  detección                                                                           microsegundos)
+
+                                    Tasa de Falsos                 Evaluación         Matriz    de      confusión
+                   Precisión
+                                    Positivos         Porcentaje   Estadística   de generada por el motor
+                   Predictiva
+                                    (FPR).                         Modelos       de del algoritmo LightGBM.
+                                                                                                        16
+
+
+   Variable         Dimensión      Indicadores          Escala            Técnicas                Instrumentos
+                                                                      Clasificación        Reportes estructurados
+                                                                      Binaria              de        métricas          de
+                                                                                           evaluación          de      IA
+                                  Puntaje F1 (F1-
+                                                    Escala de 0 a 1                        generados durante            la
+                                  Score).
+                                                                                           fase       de        pruebas
+                                                                                           expresados          en     una
+                                                                                           proporción de 0.0 a 1.0.
+                                                                                            Módulo de telemetría
+                                  Latencia    de
+                                                     Milisegundos                            asíncrona integrado
+                                  respuesta de                        Medición
+                                                         (ms)                                   en el backend de
+                                  la API                              Técnica
+                                                                                                       Axum
+                                                                      Automatizada e
+                   Despliegue y                                                              Logs de diagnóstico
+                                  Volumen     de                      Instrumentació
+                   Arquitectura                                                                 de rendimiento del
+                                  memoria                             n   de     Código
+                                                      Megabytes                                     servidor e
+                                  RAM                                 (Profiling      de
+                                                         (MB)                                   instrumentación de
+                                  consumida                           Software).
+ V2 Sistema                                                                                       hilos con Tokio-
+                                  en el análisis
+ web basado                                                                                          console.
+     en el
+                                                                                           Scripts                    de
+  algoritmo
+                                                                                           automatización               y
+  LightGBM
+                                                                                           funciones de medición
+                                  Tiempo      de                      Pruebas         de
+                                                                                           temporal        nativas en
+                                  extracción de                        Carga
+                Procesamiento                                                              Rust
+                                  característica    Segundos (s)       Estadísticas e
+                    de Datos
+                                  s por millón                         Ingesta        de   Registros                  de
+                                  de registros.                        Datos.              rendimiento y métricas
+                                                                                           de         procesamiento
+                                                                                           interno       del        motor
+                                                                                           analítico.
+
+
+Fuente. Elaboración Propia, 2026.
+
+1.8.4.1 Técnicas
+Para la presente investigación se emplearán técnicas de recolección y medición de datos
+que permitan obtener información pertinente, objetiva y cuantificable respecto a las variables
+definidas. En ese sentido, debido a la naturaleza técnica, arquitectónica y computacional del
+estudio, se utilizarán cuatro técnicas principales: la Medición Técnica Automatizada e
+                                                                                             17
+
+
+Instrumentación de Código (Profiling de Software), las Pruebas de Carga Estadísticas e
+Ingesta de Datos, la Experimentación Controlada mediante Simulación de Tráfico y Vectores
+de Ataque, y la Evaluación Estadística de Modelos de Clasificación Binaria. Estas técnicas
+se justifican por su adecuación para analizar tanto el rendimiento del sistema web propuesto
+como su eficacia predictiva frente a vectores de exfiltración en un entorno de
+telecomunicaciones.
+
+La técnica de Medición Técnica Automatizada e Instrumentación de Código (Profiling de
+Software) se empleará con el propósito de analizar el comportamiento del backend y la
+arquitectura de despliegue en un entorno real. Esta técnica se justifica debido a que posibilita
+identificar aspectos relacionados con la eficiencia del sistema, tales como la latencia de
+respuesta de la API y el volumen de memoria RAM consumida. Se aplicará mediante la
+instrumentación directa del código fuente, considerando las dimensiones de Despliegue y
+Arquitectura establecidas en la operacionalización de la Variable 1.
+
+También, se utilizará la técnica de Pruebas de Carga Estadísticas e Ingesta de Datos, la cual
+permitirá recolectar información cuantitativa sobre el rendimiento del motor de
+procesamiento. Esta técnica se considera adecuada debido a que facilita la medición del
+tiempo de extracción de características por millón de registros bajo estrés computacional.
+Se aplicará tomando en cuenta los indicadores de la dimensión de Procesamiento de Datos
+de la Variable 1.
+
+Se aplicará la técnica de Experimentación Controlada mediante Simulación de Tráfico y
+Vectores de Ataque, con el propósito de medir la Velocidad de Respuesta del sistema. Esta
+técnica se justifica al permitir la inyección controlada de anomalías para calcular el Tiempo
+Medio de Detección (MTTD) en un entorno seguro y aislado.
+
+De igual manera, se empleará la técnica de Evaluación Estadística de Modelos de
+Clasificación Binaria, la cual permitirá recolectar datos cuantitativos sobre la Precisión
+Predictiva del algoritmo. Esta técnica es fundamental para calcular métricas como la Tasa
+de Falsos Positivos (FPR) y el Puntaje F1 (F1-Score), garantizando la fiabilidad matemática
+del modelo de inteligencia artificial implementado.
+
+1.8.4.2 Instrumentos
+De acuerdo con las técnicas seleccionadas, se diseñarán, configurarán y usarán los
+instrumentos para recolectar datos de manera sistemática, automatizada y ordenada. Estas
+                                                                                              18
+
+
+herramientas son el software específico, la telemetría y los reportes analíticos que permiten
+la aplicación de cada técnica.
+
+Para la técnica de Medición Técnica Automatizada e Instrumentación de Código, se usarán
+el módulo de telemetría asíncrona del backend de Axum (para captar la latencia) y los logs
+de diagnóstico del rendimiento del servidor e instrumentación de hilos con Tokio-console
+(para medir el uso de memoria RAM). Estos instrumentos registrarán de forma objetiva cómo
+se comporta el sistema a nivel de sistema operativo y framework.
+
+Respecto a la técnica de Pruebas de Carga Estadísticas e Ingesta de Datos, se emplearán
+los scripts de automatización y funciones de medición temporal que vienen con Rust, así
+como los registros de rendimiento y métricas del motor analítico columnar Polars. Así, se
+capturarán los tiempos exactos de extracción de características y el rendimiento del
+procesamiento de grandes volúmenes de datos.
+
+Para la técnica de Experimentación Controlada mediante Simulación de Tráfico, se usarán
+el tablero de control interactivo (dashboard) en tiempo real (para visualizar alertas) y los logs
+de auditoría con marcas de tiempo (timestamps de microsegundos). Estos instrumentos
+serán clave para calcular con precisión el Tiempo Medio de Detección (MTTD) de los
+vectores de exfiltración simulados.
+
+En la técnica de Evaluación Estadística de Modelos de Clasificación Binaria, se utilizarán la
+matriz de confusión generada por el motor del algoritmo LightGBM y los reportes
+estructurados de métricas de evaluación de IA generados durante la fase de pruebas (15%
+del dataset). Así, se podrá cuantificar el rendimiento predictivo calculando las métricas
+mediante las siguientes fórmulas matemáticas:
+                                                       𝐹𝑃
+      Tasa de Falsos Positivos (FPR): 𝐹𝑃𝑅 = 𝐹𝑃+𝑉𝑁 (donde 𝐹𝑃 representa los Falsos
+
+       Positivos y 𝑉𝑁 los Verdaderos Negativos clasificados por el modelo).
+                                             𝑃𝑟𝑒𝑐𝑖𝑠𝑖𝑜𝑛×𝑆𝑒𝑛𝑠𝑖𝑏𝑖𝑙𝑖𝑑𝑎𝑑
+      Puntaje F1 (F1-Score): 𝐹1 = 2 × 𝑃𝑟𝑒𝑐𝑖𝑠𝑖𝑜𝑛+𝑆𝑒𝑛𝑠𝑖𝑏𝑖𝑙𝑖𝑑𝑎𝑑 (calculado como la media
+
+       armónica entre la precisión y la sensibilidad del algoritmo).
+                                                            ∑(𝑇𝑑𝑒𝑡𝑒𝑐𝑐𝑖𝑜𝑛 −𝑇𝑖𝑛𝑖𝑐𝑖𝑜 )
+      Tiempo Medio de Detección (MTTD): 𝑀𝑇𝑇𝐷 =
+                                                            𝑇𝑜𝑡𝑎𝑙 𝑑𝑒 𝐼𝑛𝑐𝑖𝑑𝑒𝑛𝑡𝑒𝑠
+
+La aplicación sistemática de estas fórmulas sobre los datos de los instrumentos asegurará
+la validez, objetividad y confiabilidad de la precisión predictiva del modelo, garantizando la
+coherencia metodológica de la investigación.
+                                                                                             19
+
+
+Los instrumentos elegidos y configurados se diseñaron pensando en su relevancia para
+medir los indicadores técnicos definidos en la matriz de operacionalización, garantizando de
+este modo la coherencia metodológica de la investigación.
+
+1.8.5 DISEÑO DE INVESTIGACIÓN
+Considerando que se utiliza un método analítico-deductivo en un escenario aplicativo y
+cuantitativo, el diseño de la investigación es Cuasi-experimental.
+
+       La    investigación   cuasi experimental guarda        similitudes con     los trabajos
+       experimentales; sin embargo, su principal particularidad es que, en esta, los sujetos
+       de investigación no se asignan de manera aleatoria a los grupos que conforman el
+       experimento; en cambio, se asignan por criterios definidos por el investigador o
+       determinados por el contexto. (Reyez y Reyez, 2024, p. 146)
+
+Para el presente estudio, no se utilizarán dos grupos físicos independientes, sino que se
+evaluará la misma infraestructura bajo un esquema de pre-prueba (operación con los
+sistemas tradicionales actuales de IDS y DLP) y post-prueba (tras la intervención del nuevo
+sistema web propuesto). Las métricas comparadas para medir la mejora serán el Tiempo
+Medio de Detección (MTTD) y la tasa de falsos positivos.
+
+1.8.5.1 Fase de Pre-prueba (Línea Base del Grupo de Control):
+Se establecerá una línea base evaluando la eficacia de los sistemas tradicionales actuales
+(IDS y DLP basados en firmas) dentro de la infraestructura de Tigo Bolivia. Para esto, se
+recolectarán métricas sobre el MTTD actual y el porcentaje de falsos positivos que saturan
+el análisis manual, midiendo el comportamiento operativo de dichos sistemas tradicionales
+ante los escenarios de prueba o simulaciones iniciales de tráfico corporativo.
+
+1.8.5.2 Fase de Post-prueba (Medición de Resultados):
+Se recolectarán las nuevas métricas generadas por el sistema web ante los mismos flujos
+de datos o escenarios de prueba controlados. Para realizar la evaluación comparativa, los
+registros del conjunto de prueba también serán procesados a través de la emulación de las
+reglas de los sistemas tradicionales (IDS/DLP), permitiendo extraer sus reportes de alertas
+bajo las mismas condiciones de ejecución.
+
+Se contrastarán los resultados cuantitativos de la Pre-prueba frente a la Post-prueba. Esto
+permitirá documentar de manera objetiva y empírica la optimización de los tiempos de
+respuesta y la mejora en la precisión predictiva, validando así la viabilidad de la arquitectura
+propuesta.
+                                                                                          20
+
+
+1.8.6 POBLACIÓN
+La población de la presente investigación no abarca la totalidad de la infraestructura física
+del proveedor, sino que está conformada estrictamente por los registros históricos de
+auditoría y tráfico de red (logs) capturados, almacenados y disponibles para análisis en el
+entorno del Centro de Operaciones de Seguridad (SOC) de Tigo Business. Esta población
+incluye exclusivamente los eventos generados por los dispositivos críticos de seguridad
+(firewalls, sistemas IDS/IPS y servidores DNS) que son exportados al gestor central.
+
+Debido a la magnitud de la operadora, este volumen posee una naturaleza de Big Data,
+caracterizada por su alta velocidad, flujo constante y un marcado desbalance de clases,
+donde el tráfico legítimo predomina abrumadoramente sobre los intentos de exfiltración.
+Para efectos de procesamiento práctico y viabilidad investigativa, se delimita la población
+temporalmente al histórico de tráfico generado durante un periodo de observación de 30
+días continuos.
+
+Esto establece un universo cuantificable de 1.500.000.000 (mil quinientos millones) de
+eventos digitales y registros de red mensuales. El tamaño de esta población no se estima
+sobre usuarios finales externos, sino que se justifica documentalmente a partir de la
+volumetría operativa real reportada por la ingeniería del SOC de la organización, la cual
+procesa un promedio de 50 millones de eventos de seguridad diarios Véase Apéndice 3.
+
+1.8.7 MUESTRA
+Para el desarrollo y entrenamiento del modelo predictivo, se extraerá una muestra
+representativa equivalente al 2% de la población mensual calculada, lo que corresponde a
+treinta millones, que incluyen flujos IP y eventos transaccionales sometidos a procesos de
+ingeniería de características. La selección de este volumen responde a la naturaleza
+altamente desbalanceada de los eventos de ciberseguridad, donde los intentos de
+exfiltración representan una fracción extremadamente minoritaria respecto al tráfico legítimo
+total.   Esta   proporción   permite   mantener    un    volumen    de    datos   manejable
+computacionalmente mientras se garantiza la representatividad de los eventos de red.
+
+Considerando una incidencia estimada inferior al 0.01% para eventos potencialmente
+asociados a exfiltración de datos en redes de telecomunicaciones (Nokia, 2024), una
+muestra de menor tamaño podría generar una representación insuficiente de la clase
+minoritaria, limitando la capacidad de aprendizaje del modelo.
+                                                                                        21
+
+
+Debido a que las fórmulas estadísticas probabilísticas clásicas para poblaciones finitas no
+son aplicables para el entrenamiento de modelos de Machine Learning en entornos de Big
+Data donde una muestra estándar de n=384 omitiría los eventos anómalos, el tamaño de la
+muestra se determinó mediante un muestreo intencional orientado a la retención de la clase
+minoritaria. Para garantizar que el modelo LightGBM disponga de suficientes datos positivos
+para aprender patrones válidos, se extrajo una muestra del 2% del tráfico mensual
+poblacional, equivalente a 30,000,000 de registros, lo cual asegura estadísticamente la
+captura de al menos 3,000 eventos reales de exfiltración.
+
+En consecuencia, se aplicará un muestreo estratificado, dividiendo la población total
+estimada (𝑁 = 1,500,000,000 de eventos) según el tipo de protocolo de red. A partir de una
+muestra de 𝑛 = 30,000,000, se determinó la cantidad de registros por estrato de manera
+proporcional mediante la fórmula:
+
+                                                𝑁ℎ
+                                         𝑛ℎ =      ⋅𝑛
+                                                𝑁
+
+Tráfico TCP (70% de la población):
+
+                                    10,500,000,000
+                            𝑛ℎ =                   × 30,000,000
+                                    15,000,000,000
+
+                           𝑛ℎ = 0.70 × 30,000,000 = 21,000,000
+
+Tráfico UDP (20% de la población):
+
+                                    3,000,000,000
+                            𝑛ℎ =                   × 30,000,000
+                                    15,000,000,000
+
+                           𝑛ℎ = 0.20 × 30,000,000 = 6,000,000
+
+Tráfico ICMP (10% de la población):
+
+                                    1,500,000,000
+                            𝑛ℎ =                   × 30,000,000
+                                    15,000,000,000
+
+                           𝑛ℎ = 0.10 × 30,000,000 = 3,000,000
+
+Como resultado, se seleccionarán 21,000,000 de registros TCP, 6,000,000 de UDP y
+3,000,000 de ICMP, garantizando la representatividad de cada grupo dentro de la muestra
+total.
+
+Para evitar el sesgo de selección dentro de cada estrato, los registros de red específicos
+serán extraídos utilizando un generador automatizado de números aleatorios sobre los logs
+                                                                                          22
+
+
+históricos. Este procedimiento garantiza que todo el tráfico capturado en la ventana temporal
+tenga la misma probabilidad de ser evaluado y seleccionado para la muestra.
+
+Este procedimiento permitirá preservar proporcionalmente eventos críticos asociados a la
+exfiltración de datos garantizando representatividad analítica y capacidad de generalización
+del modelo predictivo.
+
+La muestra total se dividirá operativamente en tres subconjuntos cronológicos: 70% para
+entrenamiento, 15% para validación y 15% para pruebas (conjunto ciego). Para evitar el
+sobreajuste y la fuga de información (data leakage) propia del análisis de tráfico de red, no
+se aplicará una validación cruzada aleatoria (K-Fold tradicional) de manera indiscriminada
+sobre todo el dataset. En su lugar, la evaluación interna y ajuste de hiperparámetros se
+realizará exclusivamente sobre el conjunto de entrenamiento utilizando una validación
+cruzada para series temporales (Time Series Split), respetando la dependencia secuencial
+de los eventos.
+
+Para resolver el desbalance de clases sin perder la integridad de los datos legítimos, se
+configurará en el algoritmo LightGBM el parámetro hiper-optimizado de pesos de clase,
+permitiendo penalizar severamente al modelo durante el entrenamiento cuando no detecte
+correctamente la clase minoritaria
+  CAPITULO II
+MARCO TEÓRICO
+                                                                                          23
+
+
+                                      CAPITULO II
+                                    MARCO TEÓRICO
+2.1 MARCO TEÓRICO
+2.1.1 INGENIERIA DE SOFTWARE
+La ingenieria de software es una disciplina encargada de gestionar el software desde su
+producción hasta su mantenimiento, como nos dicen Celi, et al., (2023) “La ingeniería de
+software es una disciplina de ingeniería que se interesa por todos los aspectos de la
+producción de software, desde las primeras etapas de la especificación del sistema hasta el
+mantenimiento del sistema después de que se pone en operación” (p. 14)
+
+2.1.1.1 Fundamentos y Principios de Ingeniería de Software
+2.1.1.1.1 Don’t Repeat Yourself (Dry)
+Este principio se enfoca principalmente en evitar repetir y ser redundante con el código y
+distintas funcionalidades, otros autores afirman que:
+
+       Este es un principio que se infringe con regularidad por los principiantes, el cual se
+       traduce a “No te repitas” y lo que nos dice es que debemos evitar duplicar código o
+       funcionalidad.
+
+              No repetir código o funcionalidad puede resultar lógico, sin embargo, es muy
+       común ver programadores que copian y pegan fragmentos de código, o arquitectos
+       que diseñan componentes que repiten funcionalidad en más de un módulo, lo que
+       puede complicar mucho la administración, el mantenimiento y la corrección de bugs.
+       (Blancarte, 2020, p.49)
+
+2.1.1.1.2 Separation Of Concerns (Soc)
+Se define como la separación de preocupaciones donde cada parte del programa se
+encargue de una sola cosa en distintas secciones, Blancarte (2020) detalla a “SoC o
+Separación de preocupaciones o separación de conceptos o separación de intereses en
+español, propone la separación de un programa en secciones distintas, de tal forma que
+cada sección se enfoque en resolver una parte delimitada del programa” (p. 50).
+
+2.1.1.1.3 Keep It Simple, Stupid! (Kiss)
+Concepto cuya traduccion directa significa ¡Mantenlo simple, estúpido!, hace referencia a
+que no es necesario volver el código más complejo si no es necesario pues como dice
+Blancarte (2020) “La mejor solución no es la más elaborada o compleja, sino la más simple”
+(p. 54).
+                                                                                          24
+
+
+2.1.1.1.4 Inversión Of Control (Ioc)
+Esta es una forma de trabajo en la que el control que suele ser de la aplicación al framework
+sea invertida donde el framework se ejecuta sobre la ap, otros autores describen:
+
+       Pues bien, IoC se basa en la introspección (en Java llamado Reflection) el cual es
+       un procedimiento por el cual leemos metadatos de la Ap que nos permita entender
+       cómo funciona. Los metadatos pueden estar expresados principalmente de dos
+       formas, la primera es mediante archivos de configuración como XML o con
+       metadados directamente definidos sobre las clases de nuestro programa, en Java
+       estos metadatos son las @Annotations o anotaciones y es por medio de estos
+       metadatos y con técnicas de introspección que es posible entender el funcionamiento
+       de la Ap. (Blancarte, 2020, p. 56)
+
+2.1.1.2 Principios SOLID
+Estos son los principios más importantes para el desarrollo de una aplicación, así lo destaca
+Blancarte (2020) que define a solid “el cual es en realidad de unión de 5 principios que para
+muchos son los más importantes de todos, este acrónimo fue introducido por primera vez a
+principios de la década del 2000 por Robert C. Martin (mejor conocido por muchos como el
+tío Bob)” (p. 57).
+
+2.1.1.2.1 Single Responsibility Principle (SRP)
+Este principio nos dice que cada parte del programa debe tener una única responsabilidad,
+Blancarte (2020) nos detalla lo siguiente:
+
+       Este principio establece que cada función, clase o módulo debe de tener una única
+       responsabilidad dentro del software al que pertenece, al mismo tiempo que toda su
+       funcionalidad debe de estar encapsulada.
+
+               Este principio previene que desvirtuemos el propósito para el cual hemos
+       creado una función, clase o módulo, agregando elementos que no están
+       relacionados a resolver el problema para el cual existe. (p. 57)
+
+2.1.1.2.2 Open/Closed Principle (OCP)
+El cual expresa que toda función está abierta a ser extendida y escalada pero no está sujeta
+a recibir modificaciones
+
+Otros autores dirán:
+                                                                                            25
+
+
+       Básicamente lo que dice este principio es que cualquier unidad de software que
+       creemos deberá poder extenderse para ampliar su funcionalidad, es decir, mejorar
+       con ciertas restricciones el software, pero debemos evitar (cerrar) que lo modifiquen,
+       es decir, debemos evitar que el programador altere el propósito para el cual esta
+       echo o modifique el funcionamiento core del componente. (Blancarte, 2020, p. 58)
+
+2.1.1.2.3 Liskov Substitution Principle (LSP)
+Este quiere decir de acuerdo con Blancarte (2020) que se refiere a todo objeto de tipo T se
+puede sustituir por un objeto de subtipo S es decir un subtipo S que extiende a la clase base
+T.
+
+2.1.1.2.4 Interface Segregation Principle (ISP)
+Este indica que el cliente solo debe conocer los métodos que va a utilizar separando los
+métodos de una interfaz grande en interfaces pequeñas, Blancarte (2020) nos lo detalla:
+
+       La idea que propone es separar los métodos de una interfaz con una gran cantidad
+       de métodos, en varias interfaces más pequeñas y cohesivas, de tal forma que cada
+       interface tenga un rol especifico, permitiendo al cliente ignorar al resto de interfaces
+       y centrarse únicamente en la que necesita, reduciendo el número de método y la
+       complejidad de la misma. A este tipo de interface reducidas se les conoce como
+       Interfaces de rol. (p. 61)
+
+2.1.1.2.5 Dependency Inversion Principle (DIP)
+Este principio nos habla de que no debe existir dependencia entre módulos sino entre
+abstracciones, según Blancarte (2021):
+
+       • Los módulos de alto nivel no deben depender de módulos de bajo nivel. Ambos
+       deben depender de las abstracciones.
+
+       • Las abstracciones no deben depender de los detalles. Los detalles deben depender
+       de las abstracciones. (p. 83)
+
+2.1.1.3 Ciclo de Vida del Software
+
+Para (Pressman y Maxim, 2021) el ciclo de vida del software se puede definir como:
+
+       El marco de trabajo de un proceso establece la base para un proceso de ingeniería
+       de software completo mediante la identifi cación de un pequeño número de
+       actividades del marco de trabajo que sean aplicables a todos los proyectos de
+       software, sin importar su tamaño o complejidad. Además, el marco de trabajo del
+                                                                                         26
+
+
+       proceso abarca un conjunto de actividades sombrilla que se aplican a lo largo de
+       todo el proceso de software. Un marco de trabajo de proceso genérico para la
+       ingeniería de software cubre cinco actividades: (p. 10)
+
+2.1.1.3.1 Comunicación
+       Antes de poder comenzar cualquier trabajo técnico, es muy importante comunicarse
+       y colaborar con el cliente (y otros interesados).8 Se pretende entender los objetivos
+       que tienen los interesados para el proyecto y recopilar los requerimientos que ayuden
+       a definir las características y funciones del software. (Pressman y Maxim, 2021. p.
+       10)
+
+2.1.1.3.2 Planeación
+       Cualquier viaje complicado puede simplifi carse si existe un mapa. Un pro yecto de
+       software es un viaje complicado; la actividad de planeación crea un “mapa” que
+       ayuda a guiar al equipo durante el trayecto. El mapa (que se conoce como plan de
+       proyecto de software) defi ne el trabajo de ingeniería de software al describir las
+       tareas técnicas que se van a realizar, los probables riesgos, los recursos que se
+       requerirán, los productos de trabajo a generar y un calendario de trabajo. (Pressman
+       y Maxim, 2021. p. 10)
+
+2.1.1.3.3 Modelado
+       Si usted es paisajista, construye puentes, es ingeniero aeronáutico, carpintero o
+       arquitecto, entonces trabaja con modelos a diario. Crea un “bosquejo” de su objetivo
+       para poder entender el panorama en general: cómo se verá arquitectónicamente,
+       cómo se unen las partes que lo constituyen y muchas otras características. Si se
+       requiere, puede refi nar el bosquejo con mayor detalle para tratar de entender mejor
+       el problema y cómo resolverlo. Un ingeniero de software hace lo mismo al crear
+       modelos para entender mejor los requerimientos de software y el diseño que cumplirá
+       con dichos requerimientos. (Pressman y Maxim, 2021. p. 10)
+
+2.1.1.3.4 Construcción
+Pressman y Maxim, (2021) “Lo que diseña debe construirse. Esta actividad combina la
+generación de código (ya sea manual o automatizada) y las pruebas requeridas para
+descubrir los errores en el código” (p.10).
+                                                                                          27
+
+
+2.1.1.3.5 Implementación
+“El software (como una entidad completa o como un incremento par cialmente completado)
+se entrega al cliente, quien a su vez evalúa el producto entregado y provee retroalimentación
+con base en dicha evaluación” (Pressman y Maxim, 2021. p. 10).
+
+Figura 2.1 Ciclo de Vida del Software
+
+
+
+
+Fuente: Pressman y Maxim (2021)
+
+2.1.2 MODELOS DE DESARROLLO
+De acuerdo con Celi et al., (2023):
+
+       Un proceso de software es una serie de actividades relacionadas que conduce a la
+       elaboración de un producto de software. Estas actividades pueden incluir el
+       desarrollo de software desde cero en un lenguaje de programación estándar como
+       Java o C. Sin embargo, las aplicaciones de negocios no se desarrollan precisamente
+       de esta forma. El nuevo software empresarial con frecuencia ahora se desarrolla
+       extendiendo y modificando los sistemas existentes, o configurando e integrando el
+       software comercial o componentes del sistema. (p. 21)
+
+2.1.2.1 El Modelo en Cascada
+Basado en una cascada donde todas las fases están separadas, Celi et al., (2023) nos
+especifica: “Éste toma las actividades fundamentales del proceso de especificación,
+desarrollo, validación y evolución y, luego, los representa como fases separadas del
+proceso, tal como especificación de requerimientos, diseño de software, implementación,
+pruebas, etcétera” (p. 22)
+                                                                                         28
+
+
+                      Figura 2.2 Esquema del Modelo en Cascada
+
+
+
+
+Fuente. Tomado de Celi et al., (2023).
+
+2.1.2.2 Modelo incremental
+Está enfocado en decir que cada incremento entrega un producto de valor que ya funciona
+y cumple una parte del objetivo final. Otros autores dicen:
+
+       El desarrollo incremental es útil en particular cuando no se dispone de personal para
+       la implementación completa del proyecto en el plazo establecido por el negocio. Los
+       primeros incrementos se desarrollan con pocos trabajadores. Si el producto básico
+       es bien recibido, entonces se agrega más personal (si se requiere) para que labore
+       en el siguiente incremento. Además, los incrementos se planean para administrar
+       riesgos técnicos. Por ejemplo, un sistema grande talvez requiera que se disponga
+       de hardware nuevo que se encuentre en desarrollo y cuya fecha de entrega sea
+       incierta. En este caso, tal vez sea posible planear los primeros incrementos de forma
+       que eviten el uso de dicho hardware, y así proporcionar una funcionalidad parcial a
+       los usuarios finales sin un retraso importante. (Celi et al,. 2023, p. 23)
+                                                                                         29
+
+
+                       Figura 2.3 Esquema del Modelo Incremental
+
+
+
+
+Fuente. Celi et al., (2023).
+
+2.1.2.3 Modelo Evolutivo
+Estos son modelos iterativos que se caracterizan por la realización de varios entregables y
+versiones de un producto. Celi et al., (2023) nos expone:
+
+       El paradigma de hacer prototipos comienza con comunicación. Usted se reúne con
+       otros participantes para definir los objetivos generales del software, identifica
+       cualesquiera requerimientos que conozca y detecta las áreas en las que es
+       imprescindible una mayor definición. Se planea rápidamente una iteración para hacer
+       el prototipo, y se lleva a cabo el modelado (en forma de un “diseño rápido”). Éste se
+       centra en la representación de aquellos aspectos del software que serán visibles
+       para los usuarios finales (por ejemplo, disposición de la interfaz humana o formatos
+       de la pantalla de salida). (p. 24-25)
+                                                                                        30
+
+
+                         Figura 2.4 Esquema de Modelo Evolutivo
+
+
+
+
+Fuente. Celi et al., (2023).
+
+2.1.2.4 Modelo Espiral
+Es un modelo evolutivo acoplado con los prototipados, otros autores nos afirman:
+
+       El modelo espiral. Propuesto en primer lugar por Barry Boehm, el modelo espiral es
+       un modelo evolutivo del proceso del software y se acopla con la naturaleza iterativa
+       de hacer prototipos con los aspectos controlados y sistémicos del modelo de
+       cascada. (Celi et al,. 2023, p. 25)
+                                                                                          31
+
+
+Figura 2.5 Esquema del Modelo Espiral
+
+
+
+
+Fuente. Celi et al., (2023).
+
+2.1.2.5 Modelo Seleccionado
+El modelo de proceso de software seleccionado es el modelo incremental con un enfoque
+iterativo. Este modelo se ajusta al proyecto, ya que no exige contar con requisitos estáticos
+desde el inicio, sino que permite la entrega de software funcional en partes más pequeñas
+y manejables denominadas incrementos. La implementación de este modelo conceptual se
+llevará a cabo a través del marco de trabajo ágil.
+
+2.1.3 ARQUITECTURA DE SISTEMA
+2.1.3.1 Arquitectura en 3 Capas
+Esta arquitectura nos ayuda a definir las capas de la construcción de la arquitectura para la
+aplicación y nos dice que debe hacer cada una de ellas, con esta arquitectura también
+podemos combatir uno de los problemas más comunes pues como expone Blancarte (2020)
+es común construir una aplicación como una masa sin forma donde un solo componente se
+encarga de la lógica de negocio, acceso y presentación, esto causaba infracciones del
+principio DRY, es así que esta arquitectura propone las siguientes capas.
+                                                                                             32
+
+
+Figura 2.6 Esquema Arquitectura 3 Capas
+
+
+
+
+Fuente: Blancarte, (2020).
+
+2.1.3.1.1 Capa De Presentación
+Esta capa se encarga de crear la vista y la interfaz gráfica, esta capa “es la encargada de
+crear la vista o interfaz gráfica de usuario, puede ser una aplicación web, una ap de escritorio
+o una ap móvil. Generalmente escrito en HTML, Javascript, CSS, Android/Swift, etc”
+(Blancarte, 2020, p. 153).
+
+2.1.3.1.2 Capa De Lógica De Negocio
+La capa encargada de las operaciones, de acuerdo con Blancarte (2020) “esta capa contiene
+la lógica de negocio y las operaciones de alto nivel que la capa de presentación puede
+utilizar” (p. 153).
+
+2.1.3.1.3 Capa De Acceso De Datos
+Esta capa es aquella encargada de los datos y su acceso por ejemplo MySQL, Oracle,
+PostgreSQL, MongoDB entre otros, mediante por ejemplo la cadena de conexión u otros
+elementos similares Blancarte (2020).
+
+2.1.3.2 Características de una arquitectura en capas
+Las características que distinguen a la arquitectura en capas de las demás para Blancarte
+(2020) son las siguientes:
+
+       Las capas tienen responsabilidad única.
+                                                                                            33
+
+
+      Las capas son independientes.
+      Al menos tres capas.
+      Comunicación descendente.
+2.1.3.3 Ventajas de Utilizar una Arquitectura en Capas
+Si se seleccionó esta arquitectura es porque tiene sus ventajas y Blancarte (2020) nos
+expone las siguientes:
+
+      Separación de responsabilidades.
+      Fácil de desarrollar.
+      Fácil de probar.
+      Fácil de mantener.
+      Seguridad.
+2.1.3.4 Arquitectura en Capas en Aplicaciones Web
+Dado la naturaleza de una aplicación web es común ver la estructura en capas pues como
+detalla Blancarte (2020):
+
+       Las aplicaciones por lo general siguen el patrón arquitectónico conocido como MVC
+       (Modelo-Vista-Controlador), el cual consiste en separar la aplicación en tres partes,
+       la vista (páginas web), los datos (Modelo) y el controlador (lógica de negocio) en
+       partes separadas, lo cual se adapta muy bien con la arquitectura en capas.
+
+              En común ver que las aplicaciones de hoy en día se desarrollan en capas,
+       donde por una parte se construye la interface gráfica con tecnologías 100% del
+       FrontEnd como Angular, React o Vue, la cual corresponde a la capa de la vista, luego,
+       llaman a un API REST el cual contiene la capa de negocio y persistencia y finalmente
+       tenemos la base de datos, haciendo que nuestra aplicación tenga 3 o 4 capas, según
+       como se construya la aplicación. (p. 157)
+
+2.1.4 LENGUAJE UNIFICADO DE MODELADO UML
+UML (Unified Modeling Language) es un lenguaje que se encarga de modelar los sistemas
+y los procesos, de acuerdo con Debrauwer y Van Der Heyde (2020):
+
+              En un lenguaje de programación la descripción de los objetos se realiza de
+       manera formal utilizando una sintaxis rigurosa. Dicha sintaxis resulta ilegible para los
+       no programadores y difícil de descifrar para los programadores. A diferencia de las
+       máquinas, los humanos prefieren utilizar lenguajes gráficos para representar
+                                                                                       34
+
+
+       abstracciones, ya que dominan este tipo de lenguaje con mayor facilidad y obtienen
+       una visión de conjunto de los sistemas en mucho menos tiempo. (pp. 17-18)
+
+La finalidad de UML según el Object Management Group (OMG), como se citó en Cubero
+(2020) es:
+
+      Brindar a los arquitectos de sistemas, ingenieros y desarrolladores de software las
+       herramientas para el análisis, el diseño y la implementación de sistemas basados en
+       software, así como el modelado de procesos de negocios y, además, hacer progresar
+       el estado de la industria permitiendo la interoperabilidad de herramientas de
+       modelado visual de objetos. (p. 3)
+
+                          Figura 2.7 Tipos de Diagramas UML
+
+
+
+
+Fuente. Tomado de. (Cubero 2020, p. 5).
+
+2.1.4.1 Diagramas de Casos de Uso
+Un caso de uso es un diagrama que describe las acciones e interacciones del sistema con
+los actores, para Debrauwer y Van Der Heyde (2020):
+                                                                                        35
+
+
+       Los casos de uso describen en forma de lista de acciones y de interacciones el
+       comportamiento del sistema, estudiado desde el punto de vista de los actores.
+       Definen los límites del sistema y sus relaciones con el entorno.
+
+              Ahora bien, esta definición debe completarse, ya que no especifica si un caso
+       de uso debe describir la totalidad o sólo una parte del diálogo entre el actor y el
+       sistema. Podría formularse así:
+
+              Entre un actor y el sistema, los casos de uso describen las acciones e
+       interacciones vinculadas con un objetivo funcional del actor. (p. 30)
+
+                          Figura 2.8 Diagrama de Casos de Uso
+
+
+
+
+Fuente. Tomado de. (Aurelio 2024, p. 15).
+
+2.1.4.2 Diagrama de Secuencias
+Este diagrama es realizado para describir la dinámica del sistema, como detallan Debrauwer
+y Van Der Heyde (2020):
+                                                                                         36
+
+
+       El diagrama de secuencia describe la dinámica del sistema. A menos que se modele
+       un sistema muy pequeño, resulta difícil representar toda la dinámica de un sistema
+       en un único diagrama. Por tanto, la dinámica completa se representará mediante un
+       conjunto de diagramas de secuencia, cada uno de ellos vinculado generalmente a
+       una subfunción del sistema. Estudiaremos los trucos de interacción que facilitan esta
+       posibilidad de representación.
+
+              El diagrama de secuencia describe las interacciones entre un grupo de
+       objetos mostrando de forma secuencial los envíos de mensajes entre objetos. El
+       diagrama puede asimismo mostrar las transmisiones de datos intercambiados
+       durante el envío de mensajes. (p. 50)
+
+                          Figura 2.9 Diagrama de Secuencias
+
+
+
+
+Fuente. Tomado de. (Aurelio 2024, p. 37).
+
+2.1.4.2.1 Línea De Vida
+Este diagrama al representar dinámicas hace interactuar distintas instancias de las clases
+con las subfunciones vinculadas, esta muestra las acciones y reacciones que tiene cada
+una de estas instancias, también describe sus periodos de actividad y ejecución (Debrauwer
+y Van Der Heyde, 2020).
+                                                                                            37
+
+
+2.1.4.2.2 Mensajes
+Los mensajes como afirman Debrauwer y Van Der Heyde (2016) son representadas for
+flechas horizontales y unen a dos lineas de vida representando el envio de mensajes de una
+instancia a otra instancia.
+
+2.1.4.3 Diagrama de Clases
+Los diagramas de clases se hacen para representar a los objetos y las relaciones entre los
+mismos dentro del sistemas, Debrauwer y Van Der Heyde (2020) afirman lo siguiente:
+
+       El diagrama de clases es una representación estática del sistema. También puede
+       mostrar los objetos, es decir, en un momento determinado, las instancias creadas y
+       sus vínculos cuando el sistema está activo. Las instancias se representan dentro de
+       un rectángulo con su nombre subrayado y, eventualmente, el valor de uno o varios
+       atributos. (p. 115)
+
+                     Figura 2.10 Notación en un diagrama de clases
+
+
+
+
+Fuente. Tomado de. (Cubero 2020, p. 6).
+
+2.1.4.4 Diagrama de Actividades
+Se encarga de representar las actividades que se definen como “Una actividad es una serie
+de acciones. Una acción consiste en asignar un valor a un atributo, crear o destruir un objeto,
+efectuar una operación” (Debrauwer y Van Der Heyde, 2020, p. 163).
+                                                                                     38
+
+
+                            Figura 2.11 Diagrama de Actividades
+
+
+
+
+Fuente. Tomado de. (Aurelio 2024, p. 35).
+
+2.1.4.4.1 Encadenamiento De Actividades
+Estos se refieren a un vínculo entre dos actividades, de acuerdo con Debrauwer y Van Der
+Heyde (2020) “Un encadenamiento de actividades es un vínculo orientado entre dos
+actividades. Puede traspasarse cuando concluye la actividad inicial, lo que conduce a la
+activación de la actividad final” (p. 163).
+                                                                                          39
+
+
+2.1.4.4.2 Particiones
+Estas dividen a los objetos para tener un mejor orden, este diagrama se divide en particiones
+donde corresponde un objeto que es el encargado de realizar la actividad que pertenece a
+esta calle (Debrauwer y Van Der Heyde, 2020).
+
+2.1.4.4.3 Diagrama De Despliegue
+Este es el último diagrama realizado y se encarga de representar la arquitectura física del
+sistema mediante distintos nodos que ejecutan partes del sistema o piezas de software.
+Otros autores nos dicen lo siguiente:
+
+       El diagrama de despliegue describe la arquitectura física del sistema. Está
+       compuesto de nodos. Un nodo es una unidad material capaz de recibir y de ejecutar
+       elementos de software. La mayoría de nodos son ordenadores. Los vínculos físicos
+       entre nodos también pueden describirse en el diagrama de despliegue, corresponden
+       a las ramas de la red.
+
+              Los nodos contienen elementos de software en su forma física, conocida
+       como artefact. Los archivos ejecutables, las bibliotecas compartidas y los scripts son
+       ejemplos de formas físicas de elementos de software. (Debrauwer y Van Der Heyde,
+       2020, p. 191)
+
+                          Figura 2.12 Diagrama de Despliegue
+
+
+
+
+Fuente. Tomado de. (Aurelio 2024, p. 53).
+                                                                                            40
+
+
+2.1.5 METODOLOGÍA DE DESARROLLO DE SOFTWARE
+2.1.5.1 SCRUM
+La metodología Scrum se define para guiar las actividades a tiempo real, Celi et al., (2023)
+lo definen como “Los principios Scrum son congruentes con el manifiesto ágil y se utilizan
+para guiar actividades de desarrollo dentro de un proceso de análisis que incorpora las
+siguientes actividades estructurales: requerimientos, análisis, diseño, evolución y entrega”
+(p. 30).
+
+                        Figura 2.13 Esquema de la Metodología Scrum
+
+
+
+
+Fuente. Tomado de Celi et al., (2023).
+
+2.1.5.1.1 Actores
+Dentro del marco de trabajo Scrum, se identifican roles y elementos fundamentales para su
+correcta ejecución. De acuerdo con Pressman y Maxim (2021), los actores o equipo de
+scrum conforman un grupo interdisciplinario y autoorganizado que consta de tres roles
+específicos:
+
+          Propietario del producto (Product Owner): Es la persona encargada de establecer y
+           ordenar las prioridades de los requerimientos o características del producto que
+           aportan valor de negocio para el cliente. Es el responsable de gestionar la lista de
+                                                                                          41
+
+
+       objetivos y es el único con autoridad para decidir si un incremento es aceptado o si
+       un sprint debe cancelarse antes de tiempo (p. 43).
+      Maestro Scrum (Scrum Master): Sirve como facilitador para todos los miembros del
+       equipo. Es el responsable de llevar a cabo las reuniones diarias, guiar el proceso y
+       eliminar los obstáculos o impedimentos técnicos que los miembros del equipo
+       identifiquen para que puedan completar sus tareas (p. 44).
+      Equipo de desarrollo (Development Team): Es un grupo pequeño y autoorganizado
+       (generalmente de tres a seis personas) responsable de seleccionar los
+       requerimientos, decidir cómo se ejecutarán y llevar a cabo las tareas de ingeniería
+       de software (programación y pruebas) necesarias para entregar un incremento
+       funcional al final de cada sprint (p. 44).
+
+2.1.5.1.2 Artefactos
+El proceso genera una serie de Artefactos de Scrum, los cuales representan el trabajo y el
+valor generado en el proyecto, diseñados para maximizar la transparencia de la información
+clave (Pressman y Maxim, 2021):
+
+      Product Backlog: Es una lista con prioridades de los requerimientos o características
+       del producto. Es un documento dinámico que nunca está completo, ya que
+       evoluciona constantemente para satisfacer las nuevas necesidades de las partes
+       interesadas (p. 43).
+      Sprint Backlog: Es el subconjunto de aspectos de la lista de objetivos principales que
+       el equipo de desarrollo selecciona y se compromete a completar durante el sprint
+       activo actual. Una vez iniciado el sprint, no se pueden agregar nuevas características
+       a esta lista (p. 44).
+      Incremento: Es la unión de todos los aspectos de la lista de objetivos completados
+       durante el sprint actual, integrados con los incrementos de los sprints anteriores. Al
+       final del sprint, este incremento debe estar terminado y listo para ser demostrado al
+       propietario del producto (p. 44).
+
+2.1.5.1.3 Eventos
+Para sincronizar el trabajo y asegurar la transparencia y la inspección continua, el marco de
+trabajo establece una serie de eventos de Scrum. Según Pressman y Maxim (2021), estos
+eventos operan dentro de un periodo de tiempo asignado y comprenden:
+                                                                                            42
+
+
+      El Sprint: Es el evento contenedor de todos los demás. Consiste en un periodo de
+       desarrollo de prototipos incrementales que, por lo general, tiene una duración fijada
+       de dos a cuatro semanas. Durante el sprint, el equipo adapta y modifica el trabajo
+       necesario para entregar el incremento (p. 43).
+      Sprint Planning: Se realiza antes de comenzar cada sprint. En ella, el propietario del
+       producto indica su meta y el equipo de desarrollo selecciona los aspectos de la lista
+       de objetivos que se pueden entregar dentro del tiempo asignado, definiendo así el
+       trabajo necesario para lograrlo (p. 44).
+      Daily Scrum: Es un evento breve, típicamente de 15 minutos, programado al inicio
+       de cada día de trabajo para que los miembros del equipo sincronicen sus actividades.
+       Se responden tres preguntas clave: qué se hizo desde la última reunión, qué
+       obstáculos se encontraron y qué se planea lograr para la próxima reunión (p. 44).
+      Sprint Review: Ocurre al final del sprint. Su actividad principal es la demostración del
+       incremento de software completado a las partes interesadas y al propietario del
+       producto, quien puede aceptar el incremento o proveer retroalimentación para la
+       siguiente ronda de planeación (p. 45).
+      Sprint Retrospective: Es una reunión que se lleva a cabo después de la revisión y
+       antes del siguiente sprint. El maestro Scrum conduce esta sesión para que el equipo
+       discuta qué se hizo bien, qué podría mejorarse y a qué mejoras se comprometerán
+       en el siguiente ciclo, adaptando así sus prácticas para ser más efectivos (p. 45).
+
+2.1.6 METODOLOGÍA DE DESARROLLO DE MODELO DE IA
+2.1.6.1 CRISP-DM
+Esta será la metodología seleccionada dado que según Sánchez y Pérez, (2021):
+
+       Es un modelo de referencia que describe de forma general las fases, tareas
+       generales y salidas de un proyecto de Data Mining en general. Por otro lado, la guía
+       del usuario proporciona información a detalle sobre la aplicación del modelo a
+       proyectos de Data Minning específicos, se proporcionan guías y listas de cotejo
+       sobre las actividades y tareas correspondientes a cada fase. De esta manera se
+       estructura el ciclo de vida de un proyecto en seis fases, que interactúan entre ellas
+       de forma iterativa durante el desarrollo del mismo. (p. 4)
+
+Y lo comprenden las siguientes fases:
+                                                                                          43
+
+
+2.1.6.1.1 Comprensión del Negocio
+Esta es la fase de inicio, Sanchéz y Pérez, (2021) la describen como:
+
+       Es la fase de inicio, se identifica el objetivo del negocio, cual es problema y que se
+       busca resolver las tareas, propósitos y requisitos del proyecto desde una perspectiva
+       de negocio, que se traducen en objetivos técnicos para plasmarlos en un plan del
+       proyecto. (p. 4)
+
+2.1.6.2 Comprensión de los Datos
+Fase importante para comprender el problema, en esta fase se realiza el reconocimiento
+básico de los datos, Sanchéz y Pérez, (2021) nos exponen:
+
+       Se establece el primer acercamiento para familiarizarse con el problema, en esta
+       fase de recolectan los datos iniciales, se describe su significado, se procede a
+       explorar los datos, es decir aplicar pruebas estadísticas básicas e identificar la
+       calidad de los datos y plantear las hipótesis. (p. 4)
+
+2.1.6.3 Preparación de Datos
+Esta fase se describe como: “Después de la recolección inicial, se seleccionan, limpian,
+formatean e integran los datos” (Sánchez y Pérez, 2021, p.4).
+
+2.1.6.4 Modelado
+“En esta fase se elige la técnica en función de: disposición de datos, conocimiento de la
+técnica, pertinencia con el problema y cumplir con los requisitos. Se realiza un plan de
+prueba para generar el modelo y evaluarlo” (Sánchez y Pérez, 2021, p.4).
+
+2.1.6.5 Evaluación
+“Se evalúan los resultados, se revisa el proceso para identificar deficiencias. Si el modelo
+generado es válido en función de los criterios establecidos en la fase anterior, se procede a
+la implementación del modelo” (Sánchez y Pérez, 2021, p.4).
+
+2.1.6.6 Implementación
+Según nos describen Sánchez y Pérez, (2021) “En esta fase se propone contar con
+estrategias para monitorear y mantener el modelo” (p. 4).
+
+2.1.7 HERRAMIENTAS DE DESARROLLO
+2.1.7.1 Programación Web
+En relación con las tecnologías de desarrollo web. Celi et al., (2023) afirman que:
+                                                                                            44
+
+
+       En el desarrollo de proyectos Web, la generación del contenido de las páginas se
+       lleva a cabo generalmente utilizando un conjunto de tecnologías en las que se
+       integran tecnologías dedicadas, por un lado, a la generación del contenido estático,
+       y por otro, tecnologías encaminadas a generar el contenido dinámico de las páginas
+       Web.
+
+               Cuando se habla de contenido estático se hace referencia al contenido de las
+       páginas Web, el cual se presenta de forma estática, invariante a las acciones que
+       realiza el usuario, y cuyo objetivo primordial es presentar datos al usuario, los cuales
+       normalmente no cambian con el paso del tiempo. (p. 3)
+
+Con esta introducción a la programación web se nos hará más fácil seguir entendiendo los
+conceptos más complejos.
+
+2.1.7.2 HTML (Hyper Text Markup Language)
+En cuanto al origen y evolución de HTML, Celi et al., (2023) afirma que “HTML fue
+desarrollado originalmente por Tim Berners-Lee mientras estaba en el CERN, y
+popularizado por el navegador Mosaic desarrollado en NCSA. Durante el transcurso de la
+década de 1990 proliferó con el crecimiento explosivo de la Web” (p. 9). La primera versión
+de HTML fue en 1990 y hoy en día estamos manejando HTML 5, “Lo que hace el estándar
+HTML5 es especificar qué marcas deben utilizarse para escribir un documento web y qué
+significa cada una de ellas. De esta forma, cualquier navegador sabrá cómo interpretarlas”
+(Celi et al., 2023, p 10).
+
+Como indica Wójcik et al. (2021), los sitios web son usualmente creados en editores y
+guardados en archivos de texto, al momento de cargar un archivo HTML, el navegador
+interpreta etiquetas que son colocadas en estos archivos con el fin de mostrar la información.
+Estas etiquetas pueden tener atributos y estos a su vez valores, como se ve en la figura.
+
+2.1.7.3 CSS (Cascading Style Sheets)
+De acuerdo con Hernández y Baquero (2020):
+
+       CSS (Cascading Style Sheets), o también “hojas de estilo en cascada”. La primera
+        versión de CSS fue publicada a finales del año 1996. A su vez, fue logrando
+        popularidad y aceptación hasta llegar a la versión 2.1, estándar actual que brinda
+        compatibilidad con la mayoría de los navegadores existentes en el mercado. (p. 70)
+
+“A partir del año 2005, se comenzó a definir el sucesor de esta versión, al cual se le conoce
+como CSS3 o Cascading Style Sheets Level” (Hernández y Baquero, 2020, p. 70).
+                                                                                          45
+
+
+2.1.7.4 JavaScript
+En palabras de Hernández y Baquero (2020):
+
+       JavaScript es un lenguaje interpretado, basado en objetos que permite incluir macros
+       en páginas web. Estas macros se ejecutan en el computador, en páginas web del
+       cliente, y no en el servidor (algo muy interesante, porque los servidores web están
+       sobrecargados con el procesamiento propio de la aplicación, mientras que los
+       computadores de los usuarios no suelen estarlo, pues solo realizan las peticiones y
+       esperan las respuestas del lado del servidor). (p. 108)
+
+2.1.7.5 El Lenguaje de Programación Rust
+Rust es uno de los lenguajes de programación mas usados por su velocidad y su control
+profundo en general. Muñoz, (2024) nos expone:
+
+       Rust emerge en la escena de la programación como un lenguaje que aborda desafíos
+       significativos y omnipresentes en el ámbito de la computación. Su oferta de un control
+       profundo sobre el rendimiento del hardware, combinada con garantías integrales de
+       seguridad de la memoria, lo convierte en un candidato idóneo para diversas
+       aplicaciones. Este abanico de posibilidades abarca desde sistemas embebidos hasta
+       servidores web de alto rendimiento y, particularmente, proyectos en el campo del
+       Machine Learning (ML).
+
+               Rust no es simplemente otro lenguaje en el ecosistema de la programación;
+       es el resultado de una meticulosa ingeniería del lenguaje que aprovecha más de una
+       década de avances en diseño y teoría de lenguajes de programación. Adopta las
+       mejores prácticas de lenguajes predecesores como C++ y Haskell, y además
+       introduce innovaciones que buscan resolver problemas de acceso no seguro a la
+       memoria y dificultades en la concurrencia. (pp. 21-22)
+
+2.1.7.5.1 Polars
+Es una de las bibliotecas de Rust para el manejo de DataFrames, Muñoz, (2024) profundiza
+al respecto:
+
+       Las bibliotecas como `reqwest` y `scraper` facilitan la obtención de datos, mientras
+       que `polars` es excelente para su almacenamiento y manipulación. Sin embargo, se
+       deben considerar éticamente las fuentes de los datos y asegurarse de que se
+       almacenen y validen adecuadamente. (p. 121)
+                                                                                          46
+
+
+2.1.7.5.2 Leptos
+De acuerdo con la documentación oficial del Leptos Team (2026), Leptos es un framework
+web de pila completa (full-stack), isomórfico y de alto rendimiento diseñado para el lenguaje
+Rust. Su arquitectura permite la creación de interfaces de usuario declarativas con una
+reactividad que optimiza la actualización de componentes en el navegador.
+
+2.1.7.5.3 Axum
+De acuerdo con la documentación oficial del Tokio Team (2026), Axum es un framework web
+enfocado en la ergonomía y la modularidad, diseñado específicamente para integrarse con
+el ecosistema asíncrono de Rust. A diferencia de otros frameworks tradicionales, Axum
+aprovecha el sistema de tipos del lenguaje para garantizar la seguridad en el manejo de
+peticiones y respuestas.
+
+2.1.7.6 WebAssembly
+WebAssembly es una tecnologia fundamental en la actualidad, Sletten, (2024) nos dice
+sobre WebAssembly:
+
+       En esta visión, WebAssembly se centra en la intersección del desarrollo de software,
+       la web, su historia y cómo ofrece funcionalidad en un espacio geográficamente
+       distribuido. Con el tiempo, la idea se ha ampliado drásticamente más allá de este
+       punto de partida para imaginar una plataforma computacional ubicua, segura y de
+       alto rendimiento que afecte a casi todos los aspectos de nuestra vida profesional
+       como tecnólogos. WebAssembly tendrá un impacto en los mundos del desarrollo
+       web del lado del cliente, las aplicaciones de escritorio y empresariales, la
+       funcionalidad del lado del servidor, la modernización del legado, los juegos, la
+       educación, la computación en la nube, las plataformas móviles, los ecosistemas del
+       Internet de las Cosas (IoT), las iniciativas sin servidor y de microservicios, y mucho
+       más. (p. 1)
+
+2.1.7.7 WEBASSEMBLY Y RUST
+Para entender a Rust y a WebAssembly debemos ver como se integran, Sletten, (2024) nos
+lo explica de la siguiente manera:
+
+       WebAssembly. Este es el primer gran paso hacia un lenguaje diferente. Rust es un
+       lenguaje moderno con una ética moderna. Proporciona un buen rendimiento en
+       tiempo de ejecución con una red de seguridad que sería casi imposible engendrar
+       como una ocurrencia tardía. Dado el importante papel que C y C++ siguen
+                                                                                         47
+
+
+        desempeñando en los fallos, defectos y exploits de malware a los que nos
+        enfrentamos a diario, disponer de un lenguaje de sistemas rápido y seguro es una
+        mejora material. Tras un largo periodo como favorito de la comunidad de código
+        abierto, estas ventajas han empezado a ser obvias para los desarrolladores
+        comerciales, y el interés por Rust crece día a día.
+
+2.1.7.8 Visual Studio Code
+“Microsoft Visual Studio Code es un editor de código gratuito, eficaz y ligero para Windows,
+macOS y Linux. Basado en código abierto, es muy personalizable con más de 25 000
+extensiones, para cada desarrollador y cada lenguaje de programación” (Microsoft, 2026,
+parr. 1).
+
+2.1.7.9 Micro
+Micro es otro editor de texto que de acuerdo con Micro Editor, (2026):
+
+        Micro es un editor de texto para terminal que busca ser fácil de usar e intuitivo,
+        aprovechando al mismo tiempo todas las capacidades de las terminales modernas.
+        Se presenta como un único binario estático, completo y sin dependencias, y puedes
+        descargarlo y usarlo ahora mismo.
+
+                Como su nombre indica, micro pretende ser una especie de sucesor del editor
+        nano, ya que es fácil de instalar y usar en caso de necesidad, pero también pretende
+        ser agradable de usar a tiempo completo, tanto si trabajas en la terminal porque la
+        prefieres (como yo) como si lo necesitas (a través de ssh). (parr. 1-2)
+
+2.1.7.10 Git
+        La principal diferencia entre Git y cualquier otro VCS (incluyendo Subversion y sus
+        amigos) es la forma en la que manejan sus datos. Conceptualmente, la mayoría de
+        los otros sistemas almacenan la información como una lista de cambios en los
+        archivos. Estos sistemas (CVS, Subversion, Perforce, Bazaar, etc.) manejan la
+        información que almacenan como un conjunto de archivos y las modificaciones
+        hechas a cada uno de ellos a través del tiempo. (Chacon y Straub, 2026, p. 14)
+
+2.1.7.11 GitHub
+
+        GitHub es el mayor proveedor de alojamiento de repositorios Git, y es el punto de
+        encuentro para que millones de desarrolladores colaboren en el desarrollo de sus
+        proyectos. Un gran porcentaje de los repositorios Git se almacenan en GitHub, y
+        muchos proyectos de código abierto lo utilizan para hospedar su Git, realizar su
+                                                                                             48
+
+
+       seguimiento de fallos, hacer revisiones de código y otras cosas. Por tanto, aunque
+       no sea parte directa del proyecto de código abierto de Git, es muy probable que
+       durante tu uso profesional de Git necesites interactuar con GitHub en algún
+       momento. (Chacon y Straub, 2026, p. 166)
+
+2.1.7.12 PlantUML
+PlantUML, (2020) PlantUML es un proyecto Open Source (código abierto) que permite
+escribir rápidamente diagramas de secuencia, casos de uso, clases, objetos, actividades,
+componentes, despliegue, estados, entre otros, utilizando un lenguaje simple e intuitivo.
+
+2.1.7.13 Draw.io
+Draw.io es una herramienta para diagramación, según draw.io Ltd, (2026)
+
+       Draw.io es la aplicación de diagramación más utilizada del mundo y su uso e
+       implementación son gratuitos.
+
+                Desde 2005, hemos estado desarrollando software de diagramación con una
+       misión: proporcionar software de diagramación gratuito y de alta calidad para todo el
+       mundo. (parr. 1-2)
+
+2.1.7.14 Docker
+De acuerdo con Sánchez (2026) “Docker es una plataforma de código abierto diseñada para
+facilitar la creación, implementación y ejecución de aplicaciones en contenedores” (p. 1).
+
+2.1.7.15 Microsoft Azure
+       Microsoft Azure es una plataforma de informática en la nube de Microsoft que ofrece
+       más de 200 productos y servicios en una red global de centros de datos, diseñada
+       para respaldar la estrategia empresarial, la administración de infraestructura y el
+       desarrollo de soluciones tecnológicas escalables. (Microsoft, 2026)
+
+2.1.7.16 GNS3
+
+       GNS3 (Graphical Network Simulator) es una plataforma de software de código
+       abierto que permite la emulación y simulación de redes complejas, combinando
+       dispositivos virtuales y reales para diseñar, probar y configurar topologías de red en
+       un entorno de laboratorio. (GNS3 Technologies, 2026)
+
+2.1.7.17 Bash
+De acuerdo con Ollé (2020):
+                                                                                           49
+
+
+       Bash (Bourne-again Shell) es una de las shells o línea de comandos más populares
+       que hay en la mayoría de distribuciones GNU/Linux.
+
+                 Bash incluye mejoras propias, pero también tiene características de otras
+       shells populares, como la Korn Shell y la C Shell, y, a su vez, es compatible con la
+       de su predecesora, Bourne Shell. (p. 5)
+
+2.1.7.18 Firebase Cloud Messaging
+"Firebase Cloud Messaging (FCM) es una solución de mensajería multiplataforma que te
+permite enviar mensajes de forma fiable" (Google, 2026).
+
+2.1.8 ESTIMACIÓN DE COSTOS
+De acuerdo con Briano (2023):
+
+       La estimación de un proyecto es quizá la parte tarea más compleja que debe
+       desarrollar el encargado de gestionarlo. En determinadas industrias, en función de
+       los estándares y la experiencia, existen tablas estimativas que facilitan la tarea. Hay
+       tiempos estimados de cuanto lleva construir una casa; las automotrices saben cuánto
+       les lleva el proceso de fabricación de un vehículo, pero… ¿existe tal cosa en el
+       software? (p. 173)
+
+Según Briano (2023) tenemos dos tecnicas para estimar el costo de un software, las tecnicas
+basadas en experiencia y los modelos algoritmicos (donde entra COCOMO) sin embargo
+menciona que existen factores que afectan a estas tecnicas: Complejidad, tamaño,
+incertidumbre e información historica.
+
+Se deben estimar tres cosas:
+
+2.1.8.1 Recursos Humanos
+       La actividad desarrollo de software es una actividad que depende fundamentalmente
+       de los recursos humanos y de su capacidad intelectual. Será necesario contratar
+       líderes     de    proyecto,   analistas,   diseñadores,     programadores,      testar,
+       implementadores, especialistas en riesgo y seguridad. Si el proyecto es más grande,
+       aparecerán seguramente muchas más funciones (analistas de experiencia de
+       usuario, arquitecto se software, analistas de calidad, entre otros). Para cada uno de
+       los recursos necesarios deberá estimarse la cantidad, los conocimientos requeridos
+       y donde estarán ubicados físicamente. (Briano, 2023, p. 174)
+                                                                                            50
+
+
+2.1.8.2 Recursos Ambientales
+En este apartado acuñaremos la definición de Briano, (2023):
+
+       La actividad desarrollo de software es una actividad que depende fundamentalmente
+          de los recursos humanos y de su capacidad intelectual. Será necesario contratar
+          líderes   de    proyecto,     analistas,   diseñadores,     programadores,    testar,
+          implementadores, especialistas en riesgo y seguridad. Si el proyecto es más grande,
+          aparecerán seguramente muchas más funciones (analistas de experiencia de
+          usuario, arquitecto se software, analistas de calidad, entre otros). Para cada uno de
+          los recursos necesarios deberá estimarse la cantidad, los conocimientos requeridos
+          y donde estarán ubicados físicamente. (p. 174)
+
+2.1.8.3 Componentes a Desarrollar
+       Será necesario construir nuevos componentes, podrán reutilizarse componentes ya
+          desarrollados (por ejemplo, el componente que gestiona el login de usuarios, o tablas
+          ya cargadas o la documentación de ciertas funcionalidades), o también modificar
+          alguno y adaptarlo al nuevo desarrollo. También existe la posibilidad de comprar o
+          conseguir externamente componentes completos e incluirlos en el nuevo sistema,
+          por ejemplo, un carrito de compras o un botón de pago. (Briano, 2023, p. 175)
+
+2.1.8.4 Estimación en Metodologías Ágiles
+De acuerdo con Briano (2023):
+
+       A diferencia de los modelos tradicionales, en las metodologías ágiles no se
+          presupuesta la totalidad del software al inicio del proyecto debido a la naturaleza
+          evolutiva de los requerimientos. Briano (año) establece que un costeo preciso
+          requiere un plan detallado, por lo que en entornos ágiles la estimación se adapta a
+          entregas periódicas de software funcional, priorizando la flexibilidad
+
+Briano (2023) también nos propone estimar empleando técnicas de valorización calculando
+el costo de los recursos involucrados y estimar los costos por sprint en lugar de estimarlos
+de todo el proyecto.
+
+2.1.8.5 Puntos de Función
+
+Esta es una de las formas de estimar un proyecto de software, según Pressman y Maxim,
+(2021):
+
+       Puesto que la estimación de un proyecto solo es tan buena como la estimación del
+          tamaño del trabajo a realizar, el dimensionado del software representa su primer
+                                                                                           51
+
+
+        desafío como planeador. En el contexto de la planeación de proyectos, el tamaño se
+        refiere a un resultado cuantificable del proyecto de software. Si se adopta un enfoque
+        directo, el tamaño puede medirse en líneas de código (LOC). Si se elige un enfoque
+        indirecto, el tamaño se representa como puntos de función (FP). Para estimar el
+        tamaño se considera el tipo de proyecto y su dominio de aplicación, la funcionalidad
+        entregada (es decir, el número de puntos de función), el número de componentes (o
+        casos de uso) a entregar y la medida en que un conjunto de componentes existentes
+        debe modificarse para el nuevo sistema. (p. 512)
+
+2.1.8.5.1 Ejemplo de Uso
+        La descomposición para la estimación basada en FP se enfoca en los valores del
+        dominio de información en vez de las funciones del software. [...] Para calcular el
+        conteo total necesario en la ecuación de FP:
+
+                   FP𝑒𝑠𝑡𝑖𝑚𝑎𝑑𝑜 = conteo total × [0.65 + 0.01 × ∑(𝐹𝑖 )]
+
+               Para los fines de esta estimación, se asume que el factor de ponderación de
+        complejidad será un promedio. [...] Para calcular un valor para ∑(𝐹𝑖 ), cada uno de
+        los 14 factores de ponderación de complejidad enumerados [...] se califica con un
+        valor entre 0 (no importante) y 5 (muy importante). La suma de estas calificaciones
+        para los factores de complejidad ∑(𝐹𝑖 ) es de 52. Entonces, el valor del factor de
+        ajuste es 1.17:
+
+                              [0.65 + 0.01 × ∑(𝐹𝑖 )] = 1.17
+
+               Por último, se deriva el número estimado de FP:
+
+               FP𝑒𝑠𝑡𝑖𝑚𝑎𝑑𝑜 = conteo total × [0.65 + 0.01 × ∑(𝐹𝑖)] = 375          (Pressman y
+        Maxim, 2021, pp. 514-515)
+
+2.1.9 ASEGURAMIENTO DE CALIDAD
+“En el sentido más general, podemos defi nir la calidad del software así: un proceso de
+software efectivo, aplicado de una forma que cree un producto útil, el cual ofrezca un valor
+cuantifi cable para quienes lo producen y quienes lo utilizan.” (Pressman y Maxim, 2021, p.
+312).
+                                                                                          52
+
+
+2.1.9.1 Pruebas de Caja Blanca
+Este tipo de pruebas ayudan a derivar casos de prueba, según Pressman y Maxim, (2021):
+
+       Las pruebas de caja blanca, algunas veces conocidas como pruebas de caja de
+       cristal o pruebas estructurales, son una filosofía de diseño de casos de prueba que
+       utiliza la estructura de control descrita como parte del diseño a nivel de componentes
+       para derivar casos de prueba. (p. 383)
+
+2.1.9.1.1 Pruebas de Ruta Base
+       El método de ruta base permite al diseñador de los casos de prueba derivar una
+       medida de complejidad lógica de un diseño procedimental y usar esta medida como
+       guía para definir un conjunto base de rutas de ejecución. Se garantiza que los casos
+       de prueba derivados para ejercer el conjunto base ejecutarán cada instrucción en el
+       programa al menos una vez durante la prueba. (Pressman y Maxim, 2021, p. 384).
+
+2.1.9.1.2 Pruebas de Estructura de Control
+       Es una de varias técnicas para las pruebas de estructura de control. Aunque las
+       pruebas de ruta base son simples y muy efectivas, no son suficientes por sí solas.
+       En esta sección analizaremos otras variaciones de las pruebas de estructura de
+       control. Estas amplían la cobertura de las pruebas y mejoran la calidad de las
+       pruebas de caja blanca. (Pressman y Maxim, 2021, p. 386).
+
+2.1.9.2 Pruebas de Caja Negra
+De acuerdo con Pressman y Maxim, (2021) este otro tipo de pruebas son:
+
+       Las pruebas de caja negra, conocidas también como pruebas de comportamiento o
+       funcionales, se enfocan en los requerimientos funcionales del software. Esto es, las
+       técnicas de pruebas de caja negra nos permiten derivar conjuntos de condiciones de
+       entrada que empleen todos los requerimientos funcionales de un programa. Las
+       pruebas de caja negra no son una alternativa para las técnicas de caja blanca. Más
+       bien, son un enfoque complementario que muy probablemente descubra una clase
+       distinta de errores que los métodos de caja blanca. (p. 387)
+
+2.1.9.2.1 Pruebas de Interfaz
+“Se usan para comprobar que el componente del programa acepte la información que recibe
+en el orden y con los tipos de datos apropiados, y que devuelva la información en el orden
+y formato de datos apropiados” (Pressman y Maxim, 2021, p. 388).
+                                                                                         53
+
+
+2.1.9.2.2 Particionamiento de Equivalencias
+Pressman y Maxim, (2021) “El particionamiento de equivalencias es un método de prueba
+de caja negra que divide el dominio de entrada de un programa en clases de datos a partir
+de las cuales pueden derivarse casos de prueba” (p. 389).
+
+2.1.9.2.3 Análisis de Valores Límite
+“El análisis de valores límite es una técnica de diseño de casos prueba que complementa el
+particionamiento de equivalencias. En vez de seleccionar cualquier elemento de una clase
+de equivalencias” (Pressman y Maxim, 2021, p. 389).
+
+2.1.9.3 Pruebas de Integración
+Este otro tipo de pruebas se basan en verificar que todo funcione respecto a las interfaces,
+Pressman y Maxim, (2021) lo describen:
+
+       Las pruebas de integración son una técnica sistemática para construir la arquitectura
+       de software, mientras que al mismo tiempo se realizan pruebas para descubrir
+       errores aso ciados con las interfaces. El objetivo es tomar los componentes a los que
+       se les realizó la prueba unitaria y crear una estructura de programa regida por el
+       diseño. (p. 398)
+
+2.1.9.4 Pruebas de Validación
+“Podemos definir la validación de muchas formas, pero una definición simple (aunque cruda)
+es que la validación tiene éxito cuando el software funciona de una forma que el cliente
+pueda esperar razonablemente” (Pressman y Maxim, 2021, p. 407).
+
+2.1.9.5 Pruebas de Contenido
+Esta es una prueba descrita para aplicaciones web, Pressman y Maxim, (2021) lo abarcan
+de la siguiente manera:
+
+       Tienen tres objetivos importantes: (1) descubrir errores sin tácticos (como errores
+       tipográficos o de gramática) en documentos basados en texto, re presentaciones
+       gráficas y otros medios; (2) descubrir errores semánticos (es decir, errores en la
+       precisión o integridad de la información) en cualquier objeto de contenido que se
+       presente mientras se realiza la navegación y (3) encontrar errores en la organización
+       o estructura del contenido que se presenta al usuario final. (p. 420)
+                                                                                         54
+
+
+2.1.9.6 Pruebas de Interfáz
+Otra de las pruebas web según Pressman y Maxim, (2021) son “Las pruebas de interfaz
+ejercitan los mecanismos de interacción y validan los aspectos estéticos de la interfaz de
+usuario” (p. 421).
+
+2.1.9.7 Pruebas de Navegación
+“El trabajo de las pruebas de navegación es (1) asegurar que los mecanismos que permiten
+al usuario recorrer la WebApp sean todos funcionales y (2) validar que cada NSU pueda ser
+realizada por la categoría de usuario apropiada” (Pressman y Maxim, 2021, p. 422).
+
+2.1.9.8 Pruebas de Seguridad
+“Las pruebas de seguridad intentan verifi car que los mecanismos de protección integrados
+en un sistema realmente lo protejan de una penetración inapropiada” (Pressman y Maxim,
+2021, p. 423).
+
+2.1.9.9 Pruebas de Rendimiento
+       Las pruebas de rendimiento se usan para descubrir problemas de rendimiento que
+       pueden resultar de una falta de recursos del lado servidor, un ancho de banda de red
+       inadecuado, capacidades de bases de datos inadecuadas, capacidades del sistema
+       operativo defectuosas o débiles, una funcionalidad de la WebApp mal diseñada y
+       otros aspectos de hardware o software que puedan conducir a un rendimiento
+       degradado del cliente-servidor. El propósito es doble: (1) entender cómo responde el
+       sistema en cuanto aumenta la carga (es decir, número de usuarios, número de
+       transacciones o volumen de datos total) y (2) recolectar métricas que conduzcan a
+       modifi caciones del diseño para mejorar el rendimiento. (Pressman y Maxim, 2021,
+       p. 425).
+
+2.1.10 SEGURIDAD DEL SISTEMA
+Con la creciente interconectividad global y el valor inherente de los datos corporativos, la
+protección de las arquitecturas de red demanda esquemas defensivos profundos
+fundamentados en teoría criptográfica y en topologías avanzadas.
+
+2.1.10.1 Tríada De Seguridad De La Información Y Defensa En Profundidad
+La arquitectura fundamental de ciberseguridad se cimenta irrefutablemente sobre el axioma
+analítico de la Tríada CIA: Confidencialidad, Integridad y Disponibilidad (Availability). La
+Confidencialidad garantiza que la información en estado de reposo y en tránsito sea ilegible
+y esté ocluida para cualquier entidad no autenticada, aplicando para ello la robustez de los
+                                                                                         55
+
+
+cifrados simétricos (AES-256) y asimétricos (RSA, Curvas Elípticas), respaldados por
+mecanismos de autenticación y controles de acceso basados en roles (RBAC). La Integridad
+
+protege heurísticamente los datos vitales contra alteraciones, modificaciones no
+autorizadas, ataques de inyección (SQLi) o corrupción fortuita. Para validarlo de manera
+criptográfica, se emplean algoritmos hash (como SHA-3) y firmas digitales. Finalmente, la
+Disponibilidad asegura incondicionalmente el acceso sostenido e ininterrumpido a la
+infraestructura y datos por parte de los usuarios legítimos, lo cual requiere topologías con
+redundancia extrema, balanceo geométrico de carga y algoritmos mitigantes frente a
+ataques volumétricos de Denegación de Servicio Distribuido (DDoS).
+
+El modelo doctrinario de "Defensa en Profundidad" (Defense in Depth) es una estrategia de
+ciber-resiliencia holística y multinivel que impone establecer capas concéntricas y
+superpuestas de medidas defensivas y obstáculos de seguridad (segmentación de redes,
+hardening de hosts, análisis estático de aplicaciones de software, políticas estrictas de
+control de identidad y prevención de fuga de datos o DLP). Este modelo dictamina que el
+fracaso inevitable de una medida perimetral o un único control de seguridad se vea
+inmediatamente absorbido y mitigado por la siguiente capa estructural de protección,
+frenando efectivamente la propagación del compromiso.
+
+2.1.10.2 Hashing Criptográfico de Contraseñas
+En este algoritmo llevamos una función con poca entropía haciendo uso de la sal, mas
+específicamente, Lucena (2022) la define cómo:
+
+       La función KDF se suele usar entonces para generar un valor que se almacena, junto
+       con la sal, y que permitirá verificar la contraseña en el futuro sin guardarla
+       explícitamente. Puesto que los posibles valores para la contraseña serían
+       relativamente pocos, un atacante podría hacer una búsqueda exhaustiva, con un
+       coste computacional dado por la entropía inicial del conjunto. Para aumentar la
+       dificultad de este ataque por la fuerza bruta, haciendo que en la práctica sea
+       equivalente a una búsqueda dentro un espacio de valores mucho mayor, se emplean
+       funciones que sean deliberadamente exigentes desde el punto de vista
+       computacional. (p. 273)
+
+2.1.10.3 Comparación en Tiempo Constante
+Se refiere a una técnica usada para mejorar el control de accesos sin exponer ningún tipo
+de información, otros autores la definen como:
+                                                                                            56
+
+
+       En contextos que afectan a la seguridad, incluso pequeñas variaciones en la
+       sincronización    pueden   ser   aprovechadas     por   los   atacantes   para   inferir
+       indirectamente ciertos detalles sobre el funcionamiento interno del producto. Por
+       ejemplo, en algunos algoritmos criptográficos, los atacantes pueden usar las
+       diferencias de tiempo para inferir ciertas propiedades de una clave privada,
+       facilitando así su adivinación. Estas discrepancias temporales constituyen, en la
+       práctica, un canal lateral de temporización. (MITRE Corporation, 2026, parr. 2)
+
+2.1.10.4 Tokens Opácos de Sesión
+SecureAuth Corporation (2026) en su documentación oficial los definen como:
+
+       El token opaco es una cadena de caracteres única y aleatoria emitida por el servidor
+       de autorización. Es uno de los formatos posibles para los tokens de acceso o de
+       actualización. El token opaco no transmite información identificativa del usuario, por
+       lo que el servidor de recursos no puede tomar decisiones de autorización basándose
+       únicamente en él. El token opaco contiene un identificador que apunta a la
+       información almacenada en el servidor de autorización. Para validar el token y
+       recuperar la información del token y del usuario, el servidor de recursos llama al
+       servidor de autorización y solicita la introspección del token.
+
+               Con los tokens opacos, puede ocultar información de identificación personal
+       (PII), evitar que se compartan las credenciales y limitar el tamaño de los
+       encabezados de la solicitud (para evitar el rechazo de solicitudes sobrecargadas).
+       (parr. 4-5)
+
+2.1.10.5 Firma Digital
+Una firma digital ayuda al control de integridad, Lucena (2022) nos detalla:
+
+       Una firma digital es una secuencia de bits que se añade a una pieza de información
+       cualquiera, y que permite garantizar su autenticidad de forma independiente del
+       proceso de transmisión, tantas veces como se desee. Presenta una analogía directa
+       con la firma manuscrita, y para que sea equiparable a esta última debe cumplir las
+       siguientes propiedades.
+
+               Va ligada indisolublemente al mensaje. Una firma digital válida para un
+       documento no puede ser válida para otro distinto.
+                                                                                            57
+
+
+              Sólo puede ser generada por su legítimo titular. Al igual que ca da persona
+       tiene una forma diferente de escribir, y que la escritura de dos personas diferentes
+       puede ser distinguida mediante análisis caligráficos, una firma digital sólo puede ser
+       construida por la persona o personas a quienes legalmente corresponde.
+
+              Es públicamente verificable. Cualquiera puede comprobar su autenticidad en
+       cualquier momento, de forma sencilla (p. 303)
+
+2.2 MARCO CONCEPTUAL
+2.2.1 INTELIGENCIA ARTIFICIAL
+La inteligencia artificial es un campo muy amplio que ha crecido mucho en los últimos años.
+Arán (2022) afirmó que:
+
+       La inteligencia artificial (IA) es un campo de las ciencias de la computación en el que,
+       mediante el diseño de diferentes algoritmos, se busca que las máquinas adopten
+       comportamientos propios de los seres humanos, tales como el aprendizaje o la toma
+       de decisiones. Así, se pueden resolver problemas que requieran un alto rendimiento
+       para procesar grandes cantidades de datos, y, al mismo tiempo, se puede mejorar la
+       manera de procesarlos. (p. 1)
+
+Desde un enfoque mas reciente Briva, (2023) la define:
+
+       La IA es una palabra de moda que debéis haber oído mucho en los últimos años. En
+       pocas palabras, este concepto hace refe rencia a una serie de algoritmos y de
+       programas de ordenador que se han di señado para hacer tareas que normalmente
+       requerirían la inteligencia huma na. La IA no es un concepto nuevo, pero los
+       adelantos tecnológicos recientes y las mejoras en potencia computacional lo han
+       hecho más accesible en los últimos años, lo cual ha extendido su uso en diferentes
+       ámbitos. (p.7)
+
+2.2.2 MACHINE LEARNING
+Hoy en dia el machine learning es una herramienta muy comun y con el tiempo avanzara
+mas e inlcuso sera una olbigacion tenerla para la toma de decisiones.
+
+El machine learning ha crecido mucho en los ultimos años y estamos viviendo su auge, Arán
+(2022) afirmó que:
+
+       El aprendizaje automático o machine learning es una de las ramas de las ciencias de
+       la computación y, en concreto, una de las ramas de la inteligencia artificial. Este
+                                                                                        58
+
+
+       término fue acuñado en el año 1959 por el informático estadounidense Arthur Samuel
+       y hace referencia a las técnicas centradas en el desarrollo de algoritmos que buscan
+       que las máquinas realicen un aprendizaje.
+
+               Se considera que una máquina ha realizado un aprendizaje cuando, en base
+       a su experiencia, está haciendo un mejor desempeño de la tarea que le había sido
+       asignada. De este modo, se pueden resolver problemas sin la necesidad de
+       programarlos de forma explícita, ya que la máquina puede desarrollar una lógica
+       propia utilizando los datos que se le proporcionen. (p. 2)
+
+Desde otro enfoque mas moderno Forero y Negre, (2024) la definene como:
+
+       Machine Learning (ML), también conocido como aprendizaje automático o
+       aprendizaje de máquina, es una rama de la inteligencia artificial (IA) que ha tenido
+       un incremento exponencial en los últimos años. La comunidad científica está
+       prestando cada vez más atención a las herramientas educativas enriquecidas con
+       tecnología inteligente, ya que tienen el potencial de revolucionar los procesos de
+       enseñanza aprendizaje.
+
+2.2.3 APRENDIZAJE PROFUNDO
+Para Arán (2022) el aprendizaje profundo, una subdisciplina del aprendizaje automático, se
+caracteriza por el desarrollo de modelos avanzados como las redes neuronales artificiales.
+Estas estructuras, que contienen múltiples capas de procesamiento, buscan emular el
+funcionamiento del cerebro humano a través del análisis de grandes volúmenes de
+información.
+
+Por otro lado, Pérez y Gegúndez, (2021) nos dicen que “El aprendizaje profundo, deep
+learning en inglés, es un campo del aprendizaje au tomático, machine learning en inglés,
+que se engloba, a su vez, dentro de la inteli gencia artificial” (p. 191).
+
+2.2.4 TIPOS DE APRENDIZAJE AUTOMÁTICO
+2.2.4.1 Aprendizaje Supervisado
+Es claro que el aprendizaje supervisado es una técnica dentro del aprendizaje automático
+que se basa en el uso de un conjunto de datos previamente etiquetado, conocido como
+conjunto de entrenamiento. En este proceso, el algoritmo recibe pares de datos de entrada
+y sus respectivas salidas esperadas, lo que le permite aprender la relación entre ambos y,
+posteriormente, predecir resultados para nuevos datos no vistos Arán (2022).
+                                                                                         59
+
+
+Prince, (2023) lo define como: “Los modelos de aprendizaje supervisado definen una
+correspondencia de los datos de entrada a una predicción de salida. En las siguientes
+secciones, discutimos las entradas, las salidas, el propio modelo y lo que se entiende por
+“aprender” un modelo” traducido de Prince, (2023) “Supervised learning models define a
+mapping from input data to an output prediction. In the following sections, we discuss the
+inputs, the outputs, the model itself, and what is meant by “learning” a model” (p. 1)
+
+2.2.4.2 Aprendizaje No Supervisado
+Para Arán (2022) el aprendizaje no supervisado es una rama del aprendizaje automático en
+la que los algoritmos trabajan únicamente con datos de entrada sin conocer las salidas
+esperadas. A diferencia del aprendizaje supervisado, no se utilizan pares de entrada-salida,
+sino que se busca descubrir patrones, relaciones o estructuras ocultas dentro del conjunto
+de datos mediante su análisis interno.
+
+Desde otra perspectiva: Prince (2023) lo define como:
+
+       Construir un modelo a partir de datos de entrada sin etiquetas de salida
+       correspondientes se denomina aprendizaje no supervisado; la ausencia de etiquetas
+       de salida implica que no puede existir “supervisión”. En lugar de aprender una
+       correspondencia de entrada a salida, el objetivo es describir o comprender la
+       estructura de los datos. Como ocurre con el aprendizaje supervisado, los datos
+       pueden presentar características muy distintas; pueden ser discretos o continuos, de
+       baja o alta dimensionalidad, y de longitud constante o variable.
+
+Traducido de Prince (2023):
+
+       Constructing a model from input data without corresponding output labels is termed
+       unsupervised learning; the absence of output labels means there can be no
+       “supervision.” Rather than learning a mapping from input to output, the goal is to
+       describe or under stand the structure of the data. As was the case for supervised
+       learning, the data may have very different characteristics; it may be discrete or
+       continuous, low-dimensional or high-dimensional, and of constant or variable length.
+       (p. 7)
+
+2.2.5 GRADIENT BOOSTING MACHINE
+Estos son modelos novedosos del aprendizaje automatico, los autores
+
+       El gradient-boosting es una técnica de aprendizaje automático que construye un
+       modelo predictivo fuerte a partir de múltiples modelos débiles, generalmente árboles
+                                                                                          60
+
+
+       de decisión. Funciona iterativamente, optimizando el modelo al corregir los errores
+       de los modelos anteriores mediante la minimización del gradiente de una función de
+       pérdida [38]. Este enfoque permite manejar datos complejos y mejorar la precisión
+       predictiva, haciéndolo especialmente útil en tareas de regresión y clasificación.
+       (Rosales y Rosales, 2025, p. 133)
+
+Otros autores definen GBM como:
+
+       El GBM es un enfoque de aprendizaje supervisado, basado en la combinación
+       secuencial de múltiples árboles de decisión con el objetivo de mejorar la precisión
+       del modelo. A diferencia de métodos como Random Forest, donde los árboles se
+       entrenan de manera independiente, en GBM cada nuevo árbol se construye para
+       corregir los errores cometidos por los árboles anteriores. (Cachaga y Villanueva,
+       2024, p. 21)
+
+2.2.6 LIGHT GRADIENT BOOSTING MACHINE
+Este algoritmo desarrollado por Microsoft es un algoritmo que de acuerdo con Rosales y
+Rosales, (2025)
+
+       El algoritmo LightGBM, basado en árboles de decisión, incorpora dos estrategias
+       novedosas: el muestreo unilateral basado en gradientes (GOSS) y la agrupación
+       exclusiva de características (EFB) [40]. Estas estrategias mejoran la velocidad de
+       entrenamiento, la precisión y la eficiencia de LightGBM en comparación con los
+       árboles de decisión de gradient-boosting tradicional (GBDT) [38]. La estrategia
+       GOSS permite eliminar una porción significativa de muestras con gradientes
+       pequeños, mejorando así la eficiencia en el cálculo de la ganancia de información
+       [39]. EFB reduce el número de características agrupando las que son mutuamente
+       excluyentes, optimizando el rendimiento del modelo [40]. (p. 134)
+
+Otros autores nos lo definen como:
+
+       El algoritmo LightGBM es una variante de los algoritmos Boosting optimizada para
+       optimizar y eficiencia computacional requerida al ejecutar el proceso, a diferencia de
+       los otros algoritmos Boosting, LightGBM utiliza un crecimiento de árbol basado en
+       hojas en lugar de nivel, lo que lo hace más veloz y adecuado para grandes
+       volúmenes de datos. (Chilusa, 2025, p. 13)
+                                                                                        61
+
+
+                     Figura 2.14 Arquitectura Algoritmo LightGBM
+
+
+
+
+Fuente. Tomado de Yan Gao, (2023).
+
+2.2.7 AMENAZAS PERSISTENTES AVANZADAS (APT)
+Es una técnica utilizada para buscar extraer información, Centro Critpológico Nacional,
+(2020) como se cito en Martínez y Conde (2025) “Las amenazas persistentes avanzadas
+consisten en una técnica de intrusión a un sistema informático infringiendo las medidas de
+seguridad, con el propósito de extraer información esencial, con el atacante manteniéndose
+indetectable durante el mayor tiempo posible” (p. 156).
+
+2.2.8 EXFILTRACIÓN DE DATOS
+“La exfiltración de datos, también conocida como extrusión o exportación de datos, es el
+robo de datos: la transferencia intencionada, no autorizada y encubierta de datos desde un
+ordenador u otro dispositivo” (IBM, 2026, parr. 1)
+
+2.2.9 DETECCIÓN DE ANOMALÍAS EN EL TRÁFICO DE RED
+En este apartado Martín de Diego y Fernández (2020) nos exponen:
+
+       En ocasiones se recomienda comenzar el sistema de aprendizaje con un algoritmo
+       de agrupamiento, incluso cuando tengamos etiquetas y el problema pudiera
+       plantearse como un problema de Aprendizaje Supervisado. De este modo, los
+       algoritmos de agrupamiento permiten obtener una visión de la complejidad de la
+       tarea de clasificación. Consideremos un problema de clasificación de tráfico de red.
+       (p. 145)
+
+2.2.10 SISTEMAS DE DETECCIÓN DE INTRUSOS (IDS)
+       Un IDS o sistema de detección de intrusos (por sus siglas en inglés, intrusion
+       detection system) es aquel que monitorea la red y los dispositivos conectados a ella
+       para detectar una posible intrusión y alertar al administrador del sistema. Sin
+                                                                                        62
+
+
+       embargo, este sistema no está capacitado para imponer medida o acción alguna
+       contra el intruso. (Marcillo y Cordero, 2024, p. 68)
+
+2.2.10.1 Tipos de IDS
+De acuerdo con Marcillo y Cordero, (2024) entendemos que:
+
+       Los IDS se pueden clasificar según el sistema que monitorean (NIDS e HIDS) y en
+       función de cómo se implementan (SIDS y SIDA). Por lo tanto, existen cuatro tipos de
+       sistemas de detección de intrusos
+
+              Sistema de detección de intrusos en la red (NIDS): Monitorea todo el tráfico
+       de la red en un segmento estratégico para buscar actividades sospechosas y
+       compararla con los ataques conocidos.
+
+              Sistema de detección de intrusos en host (HIDS): Monitorea las
+       características de un host y los eventos que ocurren en él en busca de actividades
+       maliciosas o sospechosas.
+
+              Sistema de detección de intrusos basados en firmas (SIDS): Analiza los
+       paquetes de datos que entran en la red y los compara con firmas de amenazas
+       conocidas almacenadas en su base de datos.
+
+              Sistema de detección de intrusos basado en anomalías (SIDA): Monitoriza el
+       tráfico de red en busca de comportamientos o actividades anómalas, aunque no
+       coincidan con firmas. (p. 68)
+
+2.2.11 SISTEMAS DE PREVENCIÓN DE INTRUSOS (IPS)
+Para comprender este concepto nos referimso a Marcilla y Cordero, (2024):
+
+       Un Sistema de Prevención de Intrusiones (IPS) no solo detecta amenazas como lo
+       hace un IDS, sino que también toma medidas automáticas para bloquearlas o
+       mitigarlas en tiempo real. El IPS es una extensión del IDS, con la capacidad añadida
+       de intervenir directamente para proteger la red.
+
+2.2.12 SISTEMAS SIEM
+Gracias a Marcilla y Cordero podemos decir que un sistema de gestión de eventos e
+información de seguridad (Security Information and Event Management o SIEM) centraliza
+y correlaciona de forma automatizada los registros y alertas provenientes de múltiples
+tecnologías de defensa como cortafuegos y sistemas IDS/IPS (2024).
+                                                                                          63
+
+
+2.2.13 TRÁFICO DE RED Y REGISTROS
+En este apartado la exposición de Marcilla y Cordero, (2024) nos da a entender que:
+
+       El tráfico de red comprende el flujo constante de datos, impulsos eléctricos u ondas
+       electromagnéticas que se transmiten e interconectan entre los nodos de una
+       infraestructura mediante diversos medios de transmisión y protocolos de
+       comunicación. Por su parte, los registros o logs representan las evidencias digitales
+       y trazas cronológicas generadas de manera automatizada por los dispositivos de red,
+       servidores y sistemas de seguridad al procesar dicho tráfico, constituyendo la fuente
+       primaria de información para la monitorización, auditoría y análisis de anomalías en
+       entornos corporativos.
+
+2.2.14 TIEMPO MEDIO DE RESPUESTA (MTTD)
+De acuerdo con CISCO (2022) podemos afirmar:
+
+       El MTTD es la cantidad de tiempo que suele tar dar un equipo de seguridad en
+       encontrar y confirmar que se ha produ cido una violación a la seguridad. Alcanzar un
+       MTTD bajo es más que solo recibir una alerta y encontrar el sitio del ataque. (p. 15)
+
+2.2.15 FALSOS POSITIVOS
+Los falsos positivos son actividades mal identificadas como amenazas, para una explicación
+mas profunda nos referimos a CISCO (2022):
+
+       En el contexto de la seguridad, los falsos positivos son actividades benignas que se
+       identifican erróneamente como amenazas a la seguri dad. Tal vez un administrador
+       de la base de datos se marcha a la hora de almuerzo después de comenzar un gran
+       trabajo de exportación. Mien tras tanto, un empleado de seguridad de la red cancela
+       su almuerzo porque ve un gran volumen de tráfico en la red que no esperaba.
+
+              Para empeorar las cosas, se suponía que su almuerzo iba a ser un delicioso
+       sándwich de pollo katsu. ¡Qué desperdicio terrible! Las violaciones de seguridad que
+       son falsos positivos no solo causan interrupciones innecesarias y pérdida de tiempo,
+       sino que también dejan pasar inadvertidamente violaciones de seguridad reales. La
+       fatiga de las alertas se asemeja al “Pastorcito mentiroso”. Digamos que, en promedio,
+       un equipo de seguridad de aplicativos recibe diez alertas de seguridad todos los días,
+       pero solo dos de ellas son amenazas legítimas. Si esto pasa durante unos pocos
+       días no es un problema, pero si hay semanas de alertas falsas, el equipo no prestará
+                                                                                            64
+
+
+       mucha atención a las alertas. Después de todo, lo más probable es que no sea una
+       amenaza real. (p. 16)
+
+2.2.16 PUNTAJE F1-SCORE
+De acuerdo con Arias (2024):
+
+       El F1-score, también llamado F-score o medida F, es un estimador de la capacidad
+       de clasificación de una prueba que se usa con frecuencia en la ciencia de datos y en
+       los algoritmos de inteligencia artificial y que puede ser de utilidad para la valoración
+       de las pruebas diagnósticas. Es la media armónica de sensibilidad y valor predictivo
+       positivo, por lo que pondera el valor de ambos en un solo estimador. (p. 1)
+
+2.3 MARCO INSTITUCIONAL
+El marco institucional provee el contexto fundacional empírico, estructural y tecnológico que
+define a la organización objeto de estudio. Es a través de la comprensión detallada de su
+andamiaje jerárquico, su filosofía operativa y las limitaciones de su infraestructura actual
+que se logra justificar rigurosamente la necesidad de aplicar arquitecturas de software
+modernas, lenguajes con control de memoria determinista y modelos predictivos de
+inteligencia artificial en la mitigación de los riesgos de ciberseguridad.
+
+2.3.1 ANTECEDENTES DE LA INSTITUCIÓN
+Cualquier esfuerzo de modernización tecnológica e implementación de sistemas heurísticos
+predictivos debe, imperiosamente, acoplarse con la evolución histórica y el entorno
+operativo particular de la entidad, reconociendo que los desafíos de escalabilidad actuales
+son producto de un crecimiento orgánico de red y de las exigencias del mercado digital.
+
+2.3.1.1 Reseña Histórica De La Empresa/Institución
+La Empresa/Institución objeto del presente marco se ha consolidado en las últimas décadas
+como un actor fundamental en la provisión de servicios digitales y la orquestación de
+comunicaciones corporativas. Nacida inicialmente como un proveedor local de
+infraestructura estática para redes de área metropolitana, la institución ha experimentado
+un profundo proceso de evolución y transformación digital constante. Su migración hacia
+servicios gestionados en la nube y la adopción progresiva de soluciones de interconexión
+han multiplicado su capacidad operativa, pero al mismo tiempo, han heredado sistemas
+transaccionales monolíticos forjados en etapas tempranas que hoy en día enfrentan
+desafíos mayúsculos para mantenerse al ritmo de las transacciones masivas.
+
+De acuerdo con Bhattacharyya, (2024):
+                                                                                            65
+
+
+El diseño de la estructura organizacional contemporánea exige una adaptabilidad sin
+precedentes, donde la división de áreas debe facilitar no solo el flujo de información
+gerencial, sino también la rápida asimilación de nuevas tecnologías y la respuesta inmediata
+ante disrupciones del mercado global y las crecientes presiones de seguridad en el
+perímetro extendido. (p. 45).
+
+2.3.1.2 Filosofía Institucional
+La adopción de soluciones de software de vanguardia se rige inexorablemente por la filosofía
+subyacente que moldea las operaciones tácticas y la dirección estratégica general de la
+entidad.
+
+2.3.1.3 Misión
+La misión central de la institución se focaliza en dotar al ecosistema corporativo e individual
+de   una     infraestructura      de   telecomunicaciones   ininterrumpida,   convergente    y
+extremadamente resiliente, asegurando permanentemente la conectividad de alta velocidad
+y protegiendo el flujo irrestricto, pero estrictamente confidencial de la información a través
+de la integración incesante de tecnologías de última generación.
+
+2.3.1.4 Visión
+La visión estratégica de la entidad persigue el posicionamiento como el referente
+internacional indiscutible en la provisión de arquitecturas de red puramente seguras y
+operaciones de tecnología predictivas, impulsando incansablemente una digitalización sin
+fisuras donde los ciberataques sean neutralizados proactivamente en tiempo real mediante
+el uso de inteligencia analítica avanzada, sin comprometer jamás la agilidad del negocio o
+la privacidad de sus abonados.
+
+2.3.1.5 Valores Corporativos Y Objetivos Estratégicos
+Los valores corporativos fundamentales —integridad absoluta, innovación tecnológica
+constante, excelencia operativa y responsabilidad en la custodia de datos— dictaminan el
+comportamiento de todos los engranajes de la corporación. David, (2023) "Cada capítulo
+finaliza destacando conceptos y herramientas importantes que utilizan los estrategas que
+realmente construyen sistemas sostenibles" (p. 15). Estos valores se materializan
+operativamente en objetivos estratégicos rígidos: la minimización sistemática de la
+superficie de ataque, el cumplimiento irrestricto de las normas globales de privacidad de la
+información, y la optimización continua de los tiempos de respuesta del equipo de
+operaciones y tecnología.
+                                                                                          66
+
+
+2.3.2 ESTRUCTURA ORGANIZACIONAL
+La arquitectura organizativa dictamina cómo se delega la toma de decisiones tecnológicas,
+delineando cómo los componentes de auditoría, las operaciones puras y el desarrollo de
+ingeniería interactúan orgánicamente en el despliegue del sistema.
+
+2.3.2.1 Organigrama General De La Institución
+El diseño estructural de la corporación exhibe una topología matricial moderna y sumamente
+aplanada, alejándose de los modelos rígidos en silos. Encabezada por una Junta Directiva
+y una Gerencia General Ejecutiva (CEO), el organigrama se ramifica en direcciones
+estratégicas interconectadas: la Dirección de Operaciones (COO), la Dirección Financiera
+(CFO), la Dirección Comercial, y de suma relevancia para la continuidad del negocio, la
+Dirección      General de Tecnología     e   Información   (CIO/CISO),   la   cual   sostiene
+estructuralmente y gestiona holísticamente la columna vertebral digital de toda la compañía.
+
+2.3.2.2 Descripción De Las Gerencias O Áreas Principales
+Dentro de la Dirección de Tecnología, las áreas subyacentes se segmentan
+metodológicamente según su responsabilidad transaccional y su rol en el Ciclo de Vida del
+Sistema:
+
+       Gerencia de Desarrollo e Ingeniería de Software: Responsable de la creación de
+        aplicaciones internas, el mantenimiento de APIs y la implementación de despliegues
+        mediante integración continua.
+       Gerencia de Infraestructura y Nube: Encargada de mantener los nodos físicos
+        perimetrales, orquestar contenedores (Kubernetes) y velar por el estado del
+        hardware y los enlaces de telecomunicaciones puros.
+       Gerencia de Ciberseguridad y Riesgos: Unidad fundamental encargada de diseñar
+        el gobierno de la protección de datos corporativos, administrar las identidades IAM,
+        modelar amenazas y asegurar la auditoría criptográfica, a la cual se supedita
+        operativamente el Centro de Operaciones de Seguridad (SOC).
+2.3.3 DESCRIPCIÓN DEL ÁREA DE ESTUDIO
+El enfoque de la presente problemática se ancla específicamente en el ecosistema logístico
+y operacional dedicado a la prevención técnica activa y a la respuesta frente a incidentes
+cibernéticos que involucran el riesgo extremo de fuga de la información confidencial de la
+institución.
+                                                                                            67
+
+
+2.3.3.1 Estructura Del Departamento De Tecnologías De La Información (TI)
+El Departamento de Tecnologías de la Información, y específicamente su rama de Seguridad
+Operativa, atraviesa actualmente un rediseño monumental impulsado por la complejidad del
+nuevo tráfico cifrado. "El sesenta y tres por ciento de los líderes globales planean reinventar
+
+su función de TI en los próximos tres años para mantenerse por delante de las incesantes
+interrupciones tecnológicas" (Accenture, 2025, p. 2). Esta unidad especializada se organiza
+internamente combinando una célula táctica de ingeniería de seguridad (arquitectos de red
+que configuran cortafuegos y políticas de control) y un equipo operacional que monitorea
+activamente el pulso de las comunicaciones, actuando como la primera línea de defensa
+frente a exfiltraciones sofisticadas.
+
+2.3.3.2 Funciones Específicas Del Equipo De Monitoreo O SOC (Centro De Operaciones
+De Seguridad)
+El SOC de la institución actúa funcionalmente como el sistema nervioso central e incesante
+del ecosistema digital, y es exactamente allí donde el problema de exfiltración lateral no
+mitigado tiene su impacto destructivo. Evani, (2025) "El SOC moderno ahora debe anticipar
+amenazas, adaptarse a pilas tecnológicas en constante cambio y absorber el impacto de
+una brecha con una interrupción mínima para el negocio" (p. 1).
+
+Las responsabilidades críticas y operacionales exigidas al equipo de analistas y gestores
+del SOC abarcan:
+
+       Ingesta y Triage: Analizar diariamente innumerables colas de alertas generadas de
+       manera estática y correlacionada por los sistemas perimetrales.
+
+               Identificación   y   Caza    de   Amenazas      (Threat   Hunting):   Rastrear
+       heurísticamente comportamientos anómalos, buscar el tráfico lateral oculto de tipo
+       APT y perseguir proactivamente a actores maliciosos que evadan los controles
+       booleanos iniciales.
+
+               Respuesta Inmediata y Contención: Actuar como comandantes del incidente
+       técnico y cortar quirúrgicamente las sesiones de red sospechosas o subprocesos
+       comprometidos sin generar caídas sistémicas en servicios legítimos.
+
+       Una descripción de exactamente qué necesita ser conocido cuando un endpoint es
+       puesto en una red, con roles, responsabilidades, y con requerimientos de
+       actualización, es parte de un perfil Zero Trust maduro de la organización. El uso de
+                                                                                         68
+
+
+        un proceso de integración consistente asegurará que se pueda practicar una defensa
+        optimizada y eficiente en el ecosistema del SOC. (Muniz, 2021, p. 18).
+
+2.3.4 INFRAESTRUCTURA TECNOLÓGICA ACTUAL
+La raíz técnica irrefutable de la incapacidad operativa del SOC institucional para frenar el
+ciclo complejo de exfiltración de datos no reside en la falta de capacidad humana, sino
+primordialmente en la obsolescencia subyacente, la ineficiencia arquitectónica y la
+saturación matemática de su actual infraestructura analítica y de software perimetral.
+
+2.3.5   ARQUITECTURA DE RED Y SISTEMAS DE INFORMACIÓN EXISTENTES
+Actualmente, la institución posee una arquitectura de red fragmentada y transitoria. Los
+sistemas de información operativos y de backend han sido históricamente programados y
+desplegados utilizando lenguajes de scripting interpretados (como Python) y monolitos
+basados en C++, lo cual impone barreras masivas de rendimiento, sobrecarga de
+paralelismo y un persistente historial de vulnerabilidades de memoria (fugas de búfer y data
+races) que las APT explotan para evadir controles. Adicionalmente, el enrutamiento
+perimetral sigue dependiendo de esquemas de inspección tradicionales que no logran
+escalar de manera asíncrona ante el abrumador flujo actual de micro-transacciones en la
+nube corporativa, forzando a los componentes del sistema a encolar y a retrasar
+inexorablemente las validaciones críticas.
+
+"Rust proporciona ventajas únicas, su modelo de gestión de memoria permite el
+procesamiento de datos a alta velocidad sin la sobrecarga común en lenguajes
+interpretados" (Van Der Post, 2024, p. 12). La adopción formal de un ecosistema en Rust
+para renovar las sondas de tráfico y el uso del framework web Axum para el enrutamiento
+de transacciones internas, resulta por tanto ingenieril e imperativamente necesario, al
+proporcionar garantías de memoria estrictas mediante el ownership, concurrencia asíncrona
+limpia a través de Tokio, e infraestructuras API escalables que no consumen
+exponencialmente los recursos del servidor físico de recolección.
+
+2.3.5.1 Manejo Actual De Logs, Bases De Datos Y Volumen De Información Procesada
+El cuello de botella fundamental y catastrófico reside en el procesamiento y almacenamiento
+de los inmensos océanos de telemetría de red. Gupta y Mamta, (2024)
+
+La cantidad de datos generados por la multitud de dispositivos interconectados aumenta
+exponencialmente, lo que hace que el almacenamiento y procesamiento de estos datos sea
+                                                                                           69
+
+
+un verdadero desafío. La gestión y analítica de Big Data han ganado un impulso decisivo en
+casi todas las industrias modernas de la actualidad. (p. 5).
+
+El sistema SIEM legado de la corporación maneja el ingente y asíncrono volumen de
+registros temporales o logs (que frecuentemente exceden los terabytes diarios de tramas IP,
+metadatos DNS y registros de actividad del servidor) apoyándose en bases de datos
+relacionales lentas o estructuras indexadas que experimentan retardos inmanejables al
+momento de aplicar heurística. El modelo algorítmico reactivo actual es inviable, colapsando
+matemáticamente frente a la "explosión de complejidad" y el diluvio infinito de Falsos
+Positivos documentados en redes de este calibre.
+
+Para mitigar esta saturación y dotar al SOC del poder analítico en tiempo casi real que
+requiere, se exige migrar forzosamente a una infraestructura de manipulación columnar
+hiper-rápida. "Polars está implementado nativamente en Rust con un motor de consultas
+analíticas y utiliza el formato columnar de Apache Arrow como su modelo de memoria
+subyacente" (Pedreira et al., 2023, p. 2680). La extrema eficiencia de Polars para leer,
+agrupar y vectorizar flujos asíncronos en RAM habilita la preparación casi instantánea de la
+Ingeniería de Características. Por último, la ingesta masiva de esta estructura tabular
+compacta (pre-procesada por Polars) resulta el alimento ideal para la implementación
+predictiva final de clasificadores como el ensamble LightGBM, el cual, gracias a sus
+optimizaciones estructurales GOSS y EFB, será capaz por fin de inferir asíncronamente y
+bloquear la exfiltración silenciosa dentro de los márgenes estrechos de milisegundos
+exigidos en un esquema hiper-conectado.
+
+2.4 MARCO NORMATIVO
+El marco normativo constituye el compendio ineludible de leyes, decretos, reglamentaciones
+técnicas y estándares internacionales que otorgan validez jurídica, delimitan la ética del
+tratamiento de la información y regulan las operaciones tecnológicas objeto de la
+investigación. La adopción de sistemas predictivos de IA y el desarrollo de arquitecturas
+robustas para detener la exfiltración deben forzosamente orbitar y dar cumplimiento a los
+parámetros exigidos por los estados y los reguladores tanto locales como a nivel global.
+
+2.4.1 NORMATIVA INTERNA (TIGO - TELECEL S.A.)
+Para garantizar el cumplimiento de sus objetivos institucionales, la operadora ha
+consolidado su propia batería de normas de cumplimiento interno y protección.
+                                                                                            70
+
+
+      Política de Clasificación y Manejo de Datos: Establece categorías estrictas para
+       la información (pública, interna, confidencial y restringida), garantizando que las
+       bases de datos transaccionales, como las evaluadas en este estudio, no se
+       encuentren expuestas por roles de IAM erróneos o en configuraciones no
+       autorizadas en nubes públicas.
+
+      Política de Gestión y Respuesta a Incidentes de Ciberseguridad: Dicta
+       operativamente los procedimientos del SOC ante brechas, exigiendo la contención
+       asíncrona de ataques, incluyendo vulnerabilidades de tipo "zero-day" y extracciones
+       anómalas descubiertas en la red de forma dinámica.
+
+      Política de Privacidad y Protección de Datos de Clientes: Regula el resguardo
+       absoluto de la Privacidad de los usuarios finales (PII). Millicom, (2024)
+
+Sujeto a la ley en el mercado donde usted resida, autoridades locales, tribunales, otros
+organismos de resolución de disputas y agencias encargadas de hacer cumplir la ley pueden
+tener permitido y/o requerido por ley solicitar y usar sus datos personales. (p. 2)
+
+      Código de Ética y Conducta Corporativa: "Las políticas estipulan que todos los
+       proveedores están obligados a firmar el Código de Conducta para Proveedores de
+       la corporación durante su integración" (Millicom, 2024, p. 2). Este documento es de
+       aceptación anual obligatoria para evitar el riesgo originado por el factor humano.
+
+2.4.2 NORMATIVA NACIONAL (BOLIVIA)
+El anclaje de un proyecto de seguridad debe atenerse a las regulaciones de la nación donde
+se despliegue la infraestructura de la red, respetando los derechos constitucionales.
+
+2.4.2.1 Decreto Supremo N° 1793 - Reglamento de la Ley N° 164
+Emitido el 13 de noviembre de 2013. En concordancia con la Ley 164, este reglamento
+aborda en su Artículo 4 (Obligaciones de los Operadores) y Artículo 5 (Parámetros de
+Calidad) los mecanismos técnicos detallados para mantener estándares óptimos en la red.
+Estas normativas obligan a la operadora a garantizar que la infraestructura no presente
+anomalías ni degradaciones originadas por ciberataques (como las generadas durante la
+extracción masiva de información), justificando así la necesidad de un sistema de detección
+y monitoreo en tiempo real.
+                                                                                           71
+
+
+2.4.2.2 Resoluciones Regulatorias de la Autoridad de Regulación y Fiscalización de
+Telecomunicaciones y Transportes (ATT)
+Directrices de orden vinculante emitidas hacia los operadores públicos para auditar,
+supervisar y penalizar faltas relacionadas con la seguridad y confidencialidad de la
+infraestructura tecnológica nacional.
+
+2.4.2.3 Código Penal Boliviano
+"El que con la intención de obtener un beneficio indebido para sí o un tercero, manipule un
+procesamiento o transferencia de datos informáticos" (Estado Plurinacional de Bolivia, 2024,
+p. 31). Los artículos 363 Bis (Manipulación informática) y 363 Ter (Alteración, acceso y uso
+indebido de datos informáticos) tipifican explícitamente y sancionan los ataques cibernéticos
+a infraestructuras en territorio nacional.
+
+2.5 ESTADO DEL ARTE
+El estado del arte constituye una investigación documental de carácter crítico que expone
+las fronteras actuales del conocimiento técnico y metodológico. Este escrutinio riguroso,
+centrado en estudios, tesis, monografías y artículos científicos publicados de forma estricta
+a partir del año 2020 en adelante, persigue identificar vacíos investigativos (research gaps),
+corroborar la validez de la aplicación de la inteligencia artificial en topologías de red, y
+fundamentalmente, comparar el presente proyecto de grado frente a iniciativas académicas
+y corporativas nacionales e internacionales análogas, demostrando las diferencias
+arquitectónicas y la innovación tecnológica superadora que supone el uso conjunto de Rust
+y el modelo LightGBM.
+
+2.5.1 REVISIÓN Y COMPARACIÓN DE PROYECTOS NACIONALES
+Las investigaciones desarrolladas dentro de la coyuntura académica de la región reflejan la
+adopción creciente de marcos de ciberseguridad y modelos predictivos para afrontar
+vulnerabilidades estructurales en ecosistemas empresariales.
+
+2.5.1.1 Primer Proyecto
+Aplicación De La Metodología Zero Trust Para Mejorar La Seguridad En La Infraestructura
+De Red
+
+Autor: Murga, R.
+
+Año: 2022
+
+Institución: Universidad Mayor de San Andrés (UMSA), La Paz, Bolivia.
+                                                                                             72
+
+
+Resumen: La investigación expone una implementación cuasi-experimental orientada a
+subsanar debilidades de autenticación de usuarios y filtraciones de datos desde módulos
+empresariales mediante la adopción de principios de confianza cero (Zero Trust).
+
+Similitudes: Ambos proyectos comparten la misma fundamentación técnica basada en
+mitigar los vectores de ataque laterales y el movimiento no autorizado (enrutamiento de
+datos). Además, ambos proyectos asimilan operativamente modelos estandarizados para
+reforzar el diseño organizacional de seguridad frente a APTs.
+
+Diferencias: El estudio de Murga (2022) posee un perfil estrictamente arquitectónico y
+procedimental, centrándose en aplicar políticas perimetrales de restricción de identidad
+(Identity Access Management), sin involucrar ninguna herramienta de inteligencia artificial ni
+análisis automatizado del tráfico de red subyacente para detectar anomalías estocásticas.
+
+2.5.1.2 Segundo Proyecto
+Aplicación De Técnicas De Machine Learning A La Ciberseguridad: Aprendizaje Supervisado
+Para La Detección De Amenazas Web
+
+Autor: Dueñas Quesada, A.
+
+Año: 2020
+
+Institución: Universitat Oberta de Catalunya (UOC), Barcelona, España (relevante al
+contexto regional).
+
+Resumen: Desarrolla un modelo analítico enfocado en la clasificación de peticiones de
+tráfico de red (HTTP) para segmentar anomalías utilizando algoritmos de aprendizaje
+supervisado basados en árboles de decisión.
+
+Similitudes: Existe una correlación metodológica idéntica respecto al uso primario de
+algoritmos de Machine Learning de aprendizaje supervisado basados en árboles de decisión
+para procesar metadatos cibernéticos y clasificar el comportamiento del tráfico de la red.
+
+Diferencias: Dueñas (2020) se apoyó en algoritmos genéricos implementados a través de
+bibliotecas tradicionales (Scikit-learn en lenguaje Python), operando únicamente sobre
+conjuntos de datos estáticos y reducidos, lo cual arrastra deficiencias críticas de velocidad
+computacional frente a volúmenes masivos de datos (Big Data).
+                                                                                          73
+
+
+2.5.2 REVISIÓN Y COMPARACIÓN DE PROYECTOS INTERNACIONALES
+La literatura internacional en foros indexados y estudios de posgrado consolida la
+pertinencia de la evaluación algorítmica de vanguardia para mitigar las intrusiones de red
+complejas.
+
+2.5.2.1 Primer Proyecto
+Comparativa De Algoritmos De Aprendizaje Automático Para La Detección De Tipos
+Específicos De Malware En Entornos Adversos
+
+Autor: Guale Rosales, J. Y.
+
+Año: 2025
+
+Institución: Universidad Estatal Península de Santa Elena (UPSE), Ecuador.
+
+Resumen: Desarrolla una evaluación rigurosa donde somete a escrutinio el rendimiento
+métrico de diversos algoritmos clasificatorios contra flujos de software malicioso y
+comportamientos adversos en terminales.
+
+Similitudes: La investigación converge en la misión estratégica de fortalecer los sistemas
+preventivos informáticos evaluando métricas estrictas de aprendizaje automático y
+abogando por la defensa proactiva contra el accionar de amenazas en las redes actuales.
+
+Diferencias: La tesis mencionada se orienta puramente hacia el análisis de la detección
+tipológica de malware estático o ejecutable en terminales, sin enfocar el núcleo de su
+entrenamiento analítico en la evasión perimetral, la telemetría dinámica asíncrona ni el
+proceso encubierto específico de fuga progresiva de información confidencial (Data
+Exfiltration).
+
+2.5.2.2 Segundo Proyecto
+Algoritmos De Machine Learning E Inteligencia Artificial En La Detección De Patrones De
+Ciberataques
+
+Autores: Obregón-Martínez, M., et al.
+
+Año: 2025
+
+Institución: Revista Multidisciplinaria de Perspectivas Investigativas (Estudio multicéntrico
+internacional).
+                                                                                         74
+
+
+Resumen: Examinan el rol decisivo de los meta-ensambles avanzados y algoritmos de
+gradiente optimizado (como LightGBM) en la detección de patrones de ciberataques
+distribuidos en plataformas corporativas y de nube.
+
+Similitudes: El reconocimiento universal de LightGBM como la solución de frontera para
+procesar matrices densas e identificar patrones estocásticos de ciberataques ocultos en
+inmensos registros es un denominador común absoluto y base teórica principal de ambos
+estudios.
+
+Diferencias: Estos artículos internacionales se limitan fundamentalmente al análisis
+algorítmico, operando conceptualmente en entornos controlados de laboratorio para la
+validación de métricas (F1-Score), sin diseñar la arquitectura de un sistema web empresarial
+completo ni resolver los desafíos del procesamiento de memoria de bajo nivel.
+                                        BIBLIOGRAFÍA
+AGETIC - CSIRT Bolivia. (2025). Informe de Gestión de Incidentes y Vulnerabilidades
+       Informáticas: Tercer Trimestre 2025. La Paz: Agencia de Gobierno Electrónico y
+       Tecnologías de Información y Comunicación.
+
+Aniche, M. (2022). Effective Software Testing: A Developer's Guide. Manning Publications.
+
+Arán Godés, 2. (2022). Metodos de aprendizaje automático y aplicaciones. Universidad de
+       Zaragoza.
+
+Aurelio, M. (2024). UM - A Simple Guide for Beginners. Amazon KDP.
+
+Aurelio, M. (s.f.). UML - A Simple Guide for Beginers.
+
+Australian Signals Directorate. (2026). Information Security Manual. Australian Cyber
+       Security Centre.
+
+Autoridad de Regulación y Fiscalización de Telecomunicaciones y Transportes (ATT).
+       (2025). Estado de Situación de las Telecomunicaciones en Bolivia: Gestión 2024.
+       ATT.
+
+Autoridad de Supervisión del Sistema Financiero. (2025). Ciberdelincuencia. ASFI.
+
+Bernal Ontiveros, J. M., Palacios Reyes, M., Zorrilla Briones, F., Rosales Morales, N. R., &
+       Cervantes Cardenas, S. A. (2025). Ciberseguridad: Métodos de Defensa Ante
+       Ataques de Infiltraciones. Revista Iberoamericana para la investigación y el
+       Desarrollo Educativo.
+
+Bertolini, P., Cruz, M., & Bravo, J. (2023). Redesde Nueva Generación el futuro de la
+       conectividad y la transformación digital. Digital Trends.
+
+Briano, C. A. (2023). Compilación de apuntes sobre conceptos fundamentales de la
+       Ingeniería de Software: con una visión orientada a proyectos vinculados con las
+       Ciencias Económicas. César Ariel Briano.
+
+Briva Iglesias, V. (2023). Inteligencia Artificial (IA). Universitat Oberta de Catalunya.
+
+Cachaga Herrera, P., & Villanueva Osorio, D. M. (2024). Nowcast del PIB mediante
+       algoritmos de machine learning: Una evaluación en tiempo real *. Revista de Análisis,
+       41, 9-64.
+Celi Párraga, R. J., Boné Andrade, M. F., Mora Olivero, A. P., & Sarmiento Saavedra, J. C.
+       (2023). Ingeniería del Software I: Requerimientos y Modelado del Software. Grupo
+       AEA.
+
+Centro Critpológico Nacional (CCN-CERT). (2021). Principios y recomendaciones básicas
+       en ciberseguridad. Gobierno de España, Ministerio de Defensa.
+
+Check Point Software Technologies Ltd. (2026). Cyber Security Report 2026 (14th ed.). (L.
+       Finkelstein, Ed.) Check Point Research.
+
+Chilusa Cabezas, J. I. (2025). Evaluación de algoritmos de diagnóstico para mantenimiento
+       basado en la condición en motores trifásicos W22: XGBoost, LightGBM y CatBoost.
+       Escuela Superior Politécnica de Chimborazo.
+
+Cubero, H. (2020). PROCESOS DE INGENIERÍA DE SOFTWARE.
+
+Debrauwer, L., & Van Der Heyde, F. (2020). UML 2.5: Iniciación, ejemplos y ejercicios
+       corregidos (5th ed.). Ediciones ENI.
+
+ESET. (2024). ESET Security Report Latinoamérica 2024. ESET Latinoamérica. ESET.
+
+Forero Corba, W., & Negre Bennasar, F. (2024). Técnicas y aplicaciones del Machine
+       Learning e Inteligencia Artificial en educación: una revisión sistemática. RIED-
+       Revista        Iberoamericana           de       Educación        a       Distancia.
+       https://doi.org/https://doi.org/10.5944/ried.27.1.37491
+
+Hernandéz, M., & Baquero, L. (2020). Fundamentos de Programación Web. Editorial
+       Universidad ECCI.
+
+IBM Security. (2025). Cost of a Data Breach Report 2025. IBM Corporation.
+       https://doi.org/https://www.ibm.com/reports/data-breach
+
+International Organization for Standardization (ISO). (Marzo de 2022). ISO/IEC 27001:2022.
+       www.iso.org: https://www.iso.org/es/norma/27001
+
+International Telecommunication Union. (2025). Security in Telecommunications and
+       Information Technology (8th edition). (K. H. Oh, Ed.) Geneva, Suiza: ITU-T.
+
+Leptos Team. (8 de May de 2026). Leptos: A full-stack, isomorphic Rust web framework.
+       Docs.rs: https://docs.rs/leptos/latest/leptos/
+
+Millicom International Cellular S.A. (2024). Annual Report 2024 (Form 20-F). U.S. Securities
+       and Exchange Commission.
+Millicom International Cellular S.A. (2025). Annual Report 2024: Building the Digital
+       Highways. Millicom.
+
+Minnick, C. (2023). JavaScript All-in-One For Dummies. John Wiley & Sons.
+
+Muñoz Guerrero, L. E. (2024). Rust para inteligencia artificial: Una introducción al machine
+       learning. Corporación Centro Internacional de Marketing Territorial para la .
+
+Ñaupas Paitán, H., Mejía Mejía, E., Trujillo Román, I. R., Romero Delgado, H. E., Medina
+       Bárcena, W., & Novoa Ramírez, E. (2023). Metodología de la Investigación Total
+       Cuantitativa - Cualitativa y Redacción de Tésis (6th ed.). Ediciones de la U.
+
+Nokia. (2024). Threat Intelligence Report 2024: What's next for telecom. Nokia OYJ. Nokia.
+
+Ortuño Perez, M. (2025). Programación Web: HTML, CSS, JavaScript. Universidad Rey
+       Juan Carlos.
+
+Pérez Borrero, I., & Gegúndez Arias, M. E. (2021). Deep Learning. Servicio Publicaciones
+       Universidad de Huelva.
+
+Pérez Hernández, J. Á., & Sánchez Trujillo, M. G. (2021). International Conference on Project
+       Management 2021. ean universidad.
+
+Prince, S. J. (2023). Understanding Deep Learning. The MIT Press.
+
+Raschka, S., Liu Yuxi, & Mirjalili, V. (2022). Machine Learning with PyTorch and Scikit-Learn:
+       Develop machine learning and deep learning models with Python. Expert Insight.
+
+Reyez Cruz, M., & Reyes Cruz, E. (2024). Investigar con Perspectiva Intelectual.
+       Comunicación Cientifica. https://doi.org/10.52501/cc.217
+
+Rivero, G. F., & López Espada, J. L. (2025). Ciberseguridad Inteligente: Prevención y
+       Respuesta Autónoma. Centro Demostrador TIC (CDTIC), Junta de Extremadura.
+
+Rodríguez-Toro, O. (2024). El método general de Investigación Cientifica y Dieciseis
+       Metodos de Investigación. Ed. Mirdav Natsar Desarrollo literario.
+
+Rosales Malpartida, J. Y., & Rosales Cutipa, V. A. (2025). Comparación de los modelos
+       LightGBM y XGBoost para la predicción a la resistencia a la comprensión del
+       concreto. Revista Cientifica TecnoHumanismo, 5, 129-146.
+
+Sarker, I. (2021). Machine Learning: Algorithms, Real-World Applications and Research
+       Directions. SN Comput Sci.
+SecurityScorecard. (2025). 2025 Global Third-Party Breach Report: From Ratings to
+        Resilience. SecurityScorecard.
+
+Sletten, B. (2024). WebAssembly: La Guía Definitiva. O'Reilly Media, Inc.
+
+Tokio Team. (8 de May de 2026). Axum: Ergonomic and modular web framework (Versión
+        0.7.5). Docs.rs: https://docs.rs/axum/latest/axum/
+
+Wójcik, K., Kaputsa, J., Skalka, J., Benkova, L., Turčínek, J., Polak, I., . . . Francisti, J. (2021).
+        HTML Fundamentals. FITPED.
+
+Yan Gao. (2023). Towards Data-Driving Multi-View Evaluation Framework. IEEE (Institute of
+        Electrical and Electronics Engineers).
+                                        APÉNDICES
+APÉNDICE      1:   TRANSCRIPCIÓN        DE   ENTREVISTA DE         LEVANTAMIENTO        DE
+INFORMACIÓN (VÍA WHATSAPP)
+
+Objetivo: Recopilar información técnica sobre las limitaciones actuales en la detección de
+exfiltración de datos en Tigo Business Bolivia.
+
+Modalidad: Conversación vía WhatsApp.
+
+El entrevistado acepta participar voluntariamente en esta entrevista, autorizando el uso
+exclusivo de los datos proporcionados para fines académicos e investigativos del presente
+Proyecto de Grado, manteniendo la confidencialidad de datos sensibles de la empresa.
+
+Datos del Entrevistado:
+
+Cargo: Ingeniero Especialista en Ciberseguridad.
+
+Fecha de aplicación: 15 de marzo de 2026.
+
+[15/03/2026, 10:15] Jorge Medrano (JM): Hola Ing., ¿cómo está? Quería hacerle unas
+consultas rápidas por acá para mi proyecto de grado sobre cómo estamos con la detección
+de fuga de datos en el SOC. ¿Tiene unos minutos?
+
+[15/03/2026, 10:22] Ingeniero SOC (IS): Hola Jorge. Claro, dale. Te respondo por acá entre
+reuniones.
+
+[15/03/2026, 10:23] Jorge Medrano (JM): ¡Gracias! Primero: ¿Cuál diría que es el mayor
+problema que tenemos hoy en el SOC para detectar si nos están robando información?
+
+[15/03/2026, 10:26] Ingeniero SOC (IS): El problema principal es que los sistemas que
+usamos ya están desactualizados. Funcionan con "firmas" (reglas fijas). Si el ataque es
+nuevo o cambia un poco, el sistema simplemente no lo reconoce.
+
+[15/03/2026, 10:28] Jorge Medrano (JM): Entiendo. ¿Y eso cómo les afecta en el trabajo del
+día a día revisando las alertas?
+
+[15/03/2026, 10:31] Ingeniero SOC (IS): Nos satura de falsos positivos. El sistema salta por
+cualquier cosa sospechosa pero que termina siendo tráfico normal. Perdemos muchísimo
+tiempo revisando a mano alertas que no son nada.
+
+[15/03/2026, 10:33] Jorge Medrano (JM): Mucho ruido entonces. ¿Y qué pasa con el tiempo
+de respuesta? ¿Tardamos mucho en darnos cuenta si hay una fuga real?
+[15/03/2026, 10:36] Ingeniero SOC (IS): Sí, tardamos demasiado. A veces los datos ya
+salieron de la empresa para cuando nos llega la alerta o nos damos cuenta. Básicamente,
+estamos reaccionando al problema cuando ya pasó, en vez de prevenirlo.
+
+[15/03/2026, 10:38] Jorge Medrano (JM): Me imagino que los atacantes también usan trucos
+más difíciles de ver ahora.
+
+[15/03/2026, 10:41] Ingeniero SOC (IS): Exacto. Hacen ataques muy lentos y silenciosos
+para no levantar sospechas, o esconden los datos robados en conexiones que parecen
+normales. Nuestros sistemas actuales no están hechos para ver eso. Además, los
+servidores a veces se saturan de tanto tráfico que tienen que analizar.
+
+[15/03/2026, 10:43] Jorge Medrano (JM): Última consulta Ing: Si metemos Inteligencia
+Artificial, como el algoritmo LightGBM para que aprenda el comportamiento del tráfico, ¿cree
+que nos ayude a solucionar esto?
+
+[15/03/2026, 10:46] Ingeniero SOC (IS): Totalmente. Si una IA aprende cómo es el tráfico
+normal, puede detectar comportamientos raros al instante sin depender de reglas viejas.
+Nos filtraría la basura, veríamos solo las alertas reales y podríamos bloquear la fuga a
+tiempo. Sería un cambio enorme para el equipo.
+
+[15/03/2026, 10:48] Jorge Medrano (JM): ¡Queda clarísimo! Mil gracias por su tiempo Ing.,
+me sirve muchísimo para justificar el desarrollo.
+
+[15/03/2026, 10:50] Ingeniero SOC (IS): De nada Jorge. Éxitos con el proyecto, nos avisas
+cómo avanza.
+
+CONCLUSIONES DERIVADAS DE LA ENTREVISTA Y PRECISIONES METODOLÓGICAS
+
+A partir del diagnóstico empírico proporcionado por el especialista del SOC, se valida la
+necesidad de transicionar de un enfoque reactivo basado en firmas hacia un modelo
+inteligente. Sin embargo, para alinear las expectativas operativas expresadas en la
+entrevista con el marco metodológico del proyecto, se establecen las siguientes precisiones
+técnicas:
+
+      Tipo de Aprendizaje y Mecanismo de Etiquetado: Aunque a nivel coloquial se
+       mencionó que la IA "aprende cómo es el tráfico normal", el sistema propuesto no
+       operará como un modelo genérico de detección de anomalías no supervisado. Se
+       implementará LightGBM estrictamente como un algoritmo de aprendizaje
+       supervisado. Esto requiere que, durante la fase de entrenamiento y evaluación, el
+    modelo procese conjuntos de datos (datasets) donde cada registro haya sido
+    previamente etiquetado de forma explícita, identificando a qué clase pertenece:
+    tráfico legítimo o tráfico asociado a exfiltración.
+   Límites de Acción (Mitigación): Respecto a la expectativa operativa de "bloquear la
+    fuga", es imperativo aclarar que el alcance técnico del sistema está delimitado
+    exclusivamente a la optimización de los tiempos de detección y notificación
+    (generación de alertas de alta fidelidad). El sistema no ejecutará bloqueos
+    automáticos (mitigación activa) sobre la infraestructura de red de Tigo Business,
+    evitando así el riesgo de interrumpir servicios corporativos críticos por potenciales
+    falsos positivos.
+APENDICE 2: ESTIMACIÓN DE EVENTOS MENSUALES TIGO BUSINESS BOLIVIA
+
+En el presente apéndice se detalla la metodología utilizada para estimar el volumen de
+eventos de red procesados por Tigo Bolivia. El cálculo se basa en la proporción de clientes
+de Bolivia respecto al total de Millicom (≈11%), de los 46 millones obtenidos de Millicom
+International Cellular S.A., (2024, p. 47)
+
+Basado en los reportes de tráfico de redes móviles de la Autoridad de Regulación (ATT,
+2025) y los estándares de generación de logs en telecomunicaciones (Nokia, 2024), se
+estima un promedio de 100 eventos transaccionales diarios por cliente, considerando que
+cada registro de tráfico (log) constituye un evento independiente, sin importar la cantidad de
+paquetes asociados.
+
+Clientes estimados en Bolivia: 5 millones (≈11% de 46 millones globales).
+
+Eventos diarios por cliente: 100.
+
+Eventos diarios totales Bolivia:
+
+                               5,000,000 × 100 = 500,000,000
+
+Eventos mensuales Bolivia:
+
+                             500,000,000 × 30 = 15,000,000,000
+
+Este resultado permite dimensionar la capacidad de procesamiento requerida por la
+infraestructura de Tigo Bolivia y constituye un insumo metodológico para el análisis de
+escalabilidad y seguridad.
+APÉNDICE 3: RESULTADOS DEL CUESTIONARIO TÉCNICO ESTRUCTURADO
+
+Objetivo: Recopilar evidencia cuantitativa y técnica sobre las limitaciones operativas
+actuales en la detección de exfiltración de datos en la infraestructura de Tigo Business
+Bolivia, validando la necesidad de implementar un modelo predictivo.
+
+Modalidad: Cuestionario técnico estructurado en línea (vía Google Forms).
+
+Consentimiento Informado: El entrevistado aceptó participar voluntariamente mediante
+validación electrónica en el formulario, autorizando el uso exclusivo de las estimaciones
+proporcionadas para fines académicos e investigativos del presente Proyecto de Grado,
+manteniendo la estricta confidencialidad de la arquitectura y datos sensibles de la empresa.
+
+Datos del Entrevistado:
+
+Cargo: Ingeniero Especialista en Ciberseguridad (SOC).
+
+Fecha de aplicación: 22 de septiembre de 2026
+
+CUESTIONARIO Y RESPUESTAS
+
+1. Considerando la escala de la red, ¿cuál es el volumen estimado de registros (logs)
+de seguridad que el SOC debe procesar e inspeccionar diariamente?
+
+Respuesta: Entre 10 y 100 millones de eventos.
+
+2. De la totalidad de alertas de seguridad generadas por los sistemas IDS/DLP
+tradicionales actuales, ¿qué porcentaje estima que corresponden a Falsos Positivos
+(FPR)?
+
+Respuesta: Más del 75%.
+
+3. ¿Qué porcentaje del tiempo de la jornada laboral de los analistas del SOC se destina
+exclusivamente a la revisión manual y depuración de estas alertas irrelevantes?
+
+Respuesta: Más del 60%.
+
+4. Frente a ataques sigilosos orientados a la exfiltración de datos, ¿cuál es el Tiempo
+Medio de Detección histórico estimado con las herramientas basadas en firmas?
+
+Respuesta: Meses (Más de 60 días).
+
+5. ¿Qué porcentaje del tráfico analizado actualmente se encuentra cifrado, limitando
+la visibilidad de las herramientas de inspección profunda (DPI) heredadas?
+
+Respuesta: Entre el 30% y el 60%.
+6. ¿Cuál es la latencia promedio desde que se registra un evento de red anómalo en
+los dispositivos de borde hasta que la alerta es visible y procesable en el panel del
+SOC?
+
+Respuesta: Más de 1 minuto.
+
+7. En una escala del 1 al 5 (donde 1 es deficiente y 5 es óptimo), ¿cómo calificaría la
+capacidad de las reglas estáticas actuales para detectar técnicas de evasión
+dinámicas (ej. DNS Tunneling)?
+
+Respuesta: 2
+
+8. Para que un nuevo sistema de detección sea considerado un éxito operativo en el
+SOC, ¿qué porcentaje mínimo de reducción de Falsos Positivos debería alcanzar?
+
+Respuesta: Reducción del 40% al 60%.
+
+9. En términos de rendimiento computacional, ¿cuál debería ser el tiempo máximo de
+procesamiento aceptable por cada registro para evitar cuellos de botella en un motor
+de detección asíncrono?
+
+Respuesta: < 50 milisegundos.
+
+10. ¿Cuál es el principal impacto negativo de mantener el esquema reactivo actual
+frente a un incidente de fuga masiva de datos?
+
+Respuesta: Daño reputacional y pérdida de confianza del cliente corporativo.
+                                           ANEXOS
+ANEXO A EVIDENCIA DE LA ESCALA OPERATIVA E INFRAESTRUCTURA
+
+Documento fuente: Millicom International Cellular S.A. – Annual Report 2024.
+
+Sección de referencia: Operational Highlights / About Millicom.
+
+Extracto:
+
+"As of December 31, 2024, we provided services to 41.5 million mobile customers and 4.5
+million customer relationships with a subscription to at least one of our fixed services."
+
+Esta cifra oficial certifica que el universo de tráfico de red y registros (logs) que sustenta la
+metodología de este proyecto (estimado en 1.500 millones de eventos digitales) es
+proporcional a la envergadura de la infraestructura de telecomunicaciones descrita en los
+estados operativos de la compañía.
+

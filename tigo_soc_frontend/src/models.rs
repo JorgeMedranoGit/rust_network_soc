@@ -338,6 +338,12 @@ impl RoleType {
     pub fn is_read_only(&self) -> bool {
         matches!(self, RoleType::Auditor)
     }
+
+    /// Determina si el rol puede ejecutar mitigaciones o rollback destructivos.
+    /// AnalystL1 solo hace triaje — NO puede ejecutar comandos de red.
+    pub fn can_execute_destructive_actions(&self) -> bool {
+        matches!(self, RoleType::Admin | RoleType::SocOperator)
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]

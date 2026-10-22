@@ -1,6 +1,10 @@
 // * * * COMPONENTE PRINCIPAL DE LA APLICACIÓN SPA (LEPTOS WASM) * * *
+// Conexión activa con Backend Axum en :3000 via gloo-net HTTP (polling cada 15s)
 
 use leptos::*;
+use gloo_net::http::Request;
+use gloo_timers::future::IntervalStream;
+use wasm_bindgen_futures::spawn_local;
 
 use crate::components::{
     AlertsTable, BlastRadiusControl, LoginView, MonitoringChart, RealtimeAlerts,
@@ -59,20 +63,6 @@ pub fn App() -> impl IntoView {
             m.pending_manual = count;
         });
     });
-
-    // Selector rápido de usuario para demostración de perfiles y RBAC
-    let handle_switch_user = move |user_id_str: String| {
-        if let Ok(uid) = user_id_str.parse::<i32>() {
-            if let Some(target_user) =
-                users_list.get().into_iter().find(|u| u.user_id == uid)
-            {
-                set_session.update(|s| {
-                    s.current_user = target_user;
-                    s.last_reauth_timestamp = 0.0;
-                });
-            }
-        }
-    };
 
     // Callback de login exitoso
     let on_login_success = Callback::new(move |()| {
@@ -155,37 +145,24 @@ pub fn App() -> impl IntoView {
                                         {move || pending_items.get().len().to_string()}
                                     </span>
                                 </button>
-                                <button
-                                    class=move || if active_tab.get() == ActiveTab::UserManagement { "nav-btn active" } else { "nav-btn" }
-                                    on:click=move |_| set_active_tab.set(ActiveTab::UserManagement)
-                                >
-                                    "👥 Usuarios & RBAC"
-                                </button>
+                                // Pestaña de Gestión de Usuarios — solo visible para Administrador General
+                                {move || {
+                                    if session.get().current_user.role == RoleType::Admin {
+                                        view! {
+                                            <button
+                                                class=move || if active_tab.get() == ActiveTab::UserManagement { "nav-btn active" } else { "nav-btn" }
+                                                on:click=move |_| set_active_tab.set(ActiveTab::UserManagement)
+                                            >
+                                                "👥 Usuarios & RBAC"
+                                            </button>
+                                        }.into_view()
+                                    } else {
+                                        view! {}.into_view()
+                                    }
+                                }}
                             </nav>
 
                             <div class="soc-header-status">
-                                // Selector rápido de perfil activo para pruebas RBAC
-                                <div style="display: flex; align-items: center; gap: 0.4rem;">
-                                    <span style="font-size: 0.75rem; color: var(--ctp-subtext0);">"Perfil:"</span>
-                                    <select
-                                        class="form-control"
-                                        style="padding: 0.2rem 0.5rem; font-size: 0.75rem; width: auto; background-color: var(--ctp-crust);"
-                                        on:change=move |ev| handle_switch_user(event_target_value(&ev))
-                                    >
-                                        {move || {
-                                            users_list.get().into_iter().map(|u| {
-                                                let is_sel =
-                                                    u.user_id == session.get().current_user.user_id;
-                                                view! {
-                                                    <option value=u.user_id.to_string() selected=is_sel>
-                                                        {format!("{} ({})", u.username, u.role.display_name())}
-                                                    </option>
-                                                }
-                                            }).collect_view()
-                                        }}
-                                    </select>
-                                </div>
-
                                 // Badge de usuario autenticado
                                 <div style="display:flex; align-items:center; gap:0.4rem; font-size:0.78rem; color:var(--ctp-subtext0);">
                                     <span style="color:var(--ctp-green);">"✓"</span>
@@ -303,14 +280,47 @@ pub fn App() -> impl IntoView {
                                         <h2 style="font-size: 1.25rem; font-weight: 700; margin-bottom: 1rem; color: var(--ctp-text);">
                                             "Administración de Usuarios, Control de Acceso (RBAC) y Seguridad Zero-Trust"
                                         </h2>
-                                        <UserManagement
-                                            users=users_list
-                                            set_users=set_users_list
-                                            session=session
-                                            set_session=set_session
-                                            security_config=security_config
-                                            set_security_config=set_security_config
-                                        />
+                                        {move || {
+                                            if session.get().current_user.role == RoleType::Admin {
+                                                view! {
+                                                    <UserManagement
+                                                        users=users_list
+                                                        set_users=set_users_list
+                                                        session=session
+                                                        set_session=set_session
+                                                        security_config=security_config
+                                                        set_security_config=set_security_config
+                                                    />
+                                                }.into_view()
+                                            } else {
+                                                view! {
+                                                    <div style="
+                                                        display: flex;
+                                                        flex-direction: column;
+                                                        align-items: center;
+                                                        justify-content: center;
+                                                        padding: 4rem 2rem;
+                                                        text-align: center;
+                                                    ">
+                                                        <div style="font-size: 3.5rem; margin-bottom: 1rem;">"🔒"</div>
+                                                        <h3 style="font-size: 1.5rem; font-weight: 700; color: var(--ctp-red); margin-bottom: 0.5rem;">
+                                                            "403 — Acceso Denegado"
+                                                        </h3>
+                                                        <p style="font-size: 0.9rem; color: var(--ctp-subtext0); max-width: 480px; line-height: 1.6;">
+                                                            "El módulo de administración de usuarios y control RBAC está restringido "
+                                                            "exclusivamente al rol "
+                                                            <strong style="color: var(--ctp-peach);">"Administrador General"</strong>
+                                                            ". Su perfil actual no posee los permisos requeridos (ISO/IEC 27001 — Principio de Mínimo Privilegio)."
+                                                        </p>
+                                                        <div style="margin-top: 1.5rem;">
+                                                            <span class="badge-role badge-role-admin" style="font-size: 0.875rem; padding: 0.4rem 0.75rem;">
+                                                                "Solo Administrador General"
+                                                            </span>
+                                                        </div>
+                                                    </div>
+                                                }.into_view()
+                                            }
+                                        }}
                                     </div>
                                 }.into_view(),
                             }}

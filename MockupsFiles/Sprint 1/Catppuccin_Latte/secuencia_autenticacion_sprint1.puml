@@ -1,0 +1,91 @@
+@startuml
+
+skinparam backgroundColor #EFF1F5
+skinparam defaultFontName Arial
+skinparam defaultFontColor #4C4F69
+skinparam defaultFontSize 10
+skinparam roundcorner 8
+skinparam shadowing false
+skinparam nodesep 40
+skinparam ranksep 45
+skinparam arrow {
+    Color #1E66F5
+    FontColor #6C6F85
+    FontSize 9
+}
+
+skinparam sequence {
+    LifeLineBorderColor #1E66F5
+    LifeLineBackgroundColor #E6E9EF
+    ParticipantBorderColor #1E66F5
+    ParticipantBackgroundColor #FFFFFF
+    ParticipantFontColor #4C4F69
+    GroupBackgroundColor #E6E9EF
+    GroupBorderColor #1E66F5
+    GroupFontColor #4C4F69
+    BoxBackgroundColor #E6E9EF
+    BoxBorderColor #8839EF
+    BoxFontColor #4C4F69
+}
+
+
+autonumber "<b>[00]</b>"
+
+actor "Analista SOC" as User
+participant "Leptos WASM\n(LoginView)" as UI
+participant "Axum API Router\n(/api/v1/auth)" as API
+participant "Security Engine\n(Argon2id & TOTP)" as Sec
+participant "UsersRepository\n(SQLx Pool)" as Repo
+database "PostgreSQL 15\n(user_sessions)" as DB
+
+User -> UI: Ingresa username, password y código TOTP
+activate UI
+UI -> API: POST /api/v1/auth/login {user, pwd, totp}
+activate API
+
+API -> Sec: Verificar Rate Limiting (IP / User)
+activate Sec
+Sec --> API: OK (Intentos fallidos < 5)
+deactivate Sec
+
+API -> Repo: find_by_username(username)
+activate Repo
+Repo -> DB: SELECT * FROM sys_users WHERE username = $1
+activate DB
+DB --> Repo: sys_user record (con password_hash)
+deactivate DB
+Repo --> API: Option<User>
+deactivate Repo
+
+API -> Sec: verify_password(hash, plain_pwd)
+activate Sec
+Sec --> API: true (Argon2id validado)
+API -> Sec: verify_totp_code(secret, totp_code)
+Sec --> API: true (Ventana RFC 6238 OK)
+deactivate Sec
+
+alt ¿Requiere rotación obligatoria de contraseña?
+    API --> UI: HTTP 403 Forbidden {force_password_change: true}
+    UI --> User: Muestra modal de rotación forzada ISO 27001
+else Credenciales y 2FA Válidos
+    API -> Sec: generate_session_token()
+    activate Sec
+    Sec --> API: token_opaco_64_caracteres
+    deactivate Sec
+
+    API -> Repo: create_session(UserSession)
+    activate Repo
+    Repo -> DB: INSERT INTO user_sessions (session_id, user_id, expires_at)\nVALUES ($1, $2, NOW() + 24h)
+    activate DB
+    DB --> Repo: OK
+    deactivate DB
+    Repo --> API: Ok(())
+    deactivate Repo
+
+    API --> UI: HTTP 200 OK {token, role, timeout_secs: 300}
+    deactivate API
+    UI --> User: Redirige al Dashboard SOC con sesión activa
+    deactivate UI
+end
+
+@enduml

@@ -1,0 +1,75 @@
+@startuml
+
+skinparam backgroundColor #EFF1F5
+skinparam defaultFontName Arial
+skinparam defaultFontColor #4C4F69
+skinparam defaultFontSize 10
+skinparam roundcorner 8
+skinparam shadowing false
+skinparam nodesep 40
+skinparam ranksep 45
+skinparam arrow {
+    Color #1E66F5
+    FontColor #6C6F85
+    FontSize 9
+}
+
+skinparam package {
+    BackgroundColor #E6E9EF
+    BorderColor #8839EF
+    FontColor #4C4F69
+    FontStyle bold
+    BorderThickness 1.2
+}
+skinparam rectangle {
+    BackgroundColor #DCE0E8
+    BorderColor #1E66F5
+    FontColor #4C4F69
+    BorderThickness 1.5
+}
+skinparam usecase {
+    BackgroundColor #FFFFFF
+    BorderColor #1E66F5
+    FontColor #4C4F69
+    BorderThickness 1.2
+}
+skinparam actor {
+    BackgroundColor #8839EF
+    BorderColor #1E66F5
+    FontColor #1E66F5
+    FontStyle bold
+}
+
+
+left to right direction
+
+actor "Operador NOC/SOC\n(Monitoreo Activo)" as OperadorSOC
+actor "Sonda eBPF / Driver Red\n(«Sistema Ingestor»)" as SondaKernel
+
+rectangle "Sprint 3: Telemetría de Alta Velocidad, Descubrimiento & Topología AS27839" {
+    package "Ingestión y Captura de Tráfico" {
+        usecase "CU3.1: Capturar Paquetes con eBPF/XDP sin Sobrecarga" as CU3_1
+        usecase "CU3.4: Agregar Métricas por Ventana Temporal (network_traffic_metrics)" as CU3_4
+        usecase "CU3.5: Transmitir Telemetría a 60 FPS vía WebSocket" as CU3_5
+    }
+    
+    package "Descubrimiento de Activos y Topología" {
+        usecase "CU3.2: Descubrir Activos y Resolver Fabricante OUI (ARP/ICMP)" as CU3_2
+        usecase "CU3.3: Registrar Inventario de Nodos de Red (network_nodes)" as CU3_3
+        usecase "CU3.6: Renderizar Topología Interactiva AS27839 en Lienzo" as CU3_6
+        usecase "CU3.7: Configurar Protocolos de Gestión (SNMP/SSH/RESTCONF)" as CU3_7
+    }
+}
+
+SondaKernel --> CU3_1
+CU3_1 ..> CU3_4 : <<include>>
+CU3_4 ..> CU3_5 : <<trigger>>
+SondaKernel --> CU3_2
+CU3_2 ..> CU3_3 : <<include>>
+
+OperadorSOC --> CU3_5
+OperadorSOC --> CU3_6
+OperadorSOC --> CU3_7
+CU3_6 ..> CU3_3 : <<consult>>
+
+@enduml

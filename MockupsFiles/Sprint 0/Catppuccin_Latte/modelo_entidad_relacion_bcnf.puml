@@ -1,0 +1,300 @@
+@startuml
+
+skinparam backgroundColor #EFF1F5
+skinparam defaultFontName Arial
+skinparam defaultFontColor #4C4F69
+skinparam defaultFontSize 10
+skinparam roundcorner 8
+skinparam shadowing false
+skinparam nodesep 50
+skinparam ranksep 55
+
+skinparam package {
+    BackgroundColor #E6E9EF
+    BorderColor #7287FD
+    FontColor #4C4F69
+    FontStyle bold
+    BorderThickness 1.2
+}
+
+skinparam rectangle {
+    BackgroundColor #DCE0E8
+    BorderColor #1E66F5
+    FontColor #4C4F69
+    BorderThickness 1.5
+}
+
+skinparam usecase {
+    BackgroundColor #FFFFFF
+    BorderColor #1E66F5
+    FontColor #4C4F69
+    BorderThickness 1.2
+}
+
+skinparam class {
+    BackgroundColor #FFFFFF
+    BorderColor #1E66F5
+    FontColor #4C4F69
+    HeaderBackgroundColor #E6E9EF
+    BorderThickness 1.2
+}
+
+skinparam entity {
+    BackgroundColor #FFFFFF
+    BorderColor #1E66F5
+    FontColor #4C4F69
+    HeaderBackgroundColor #E6E9EF
+    BorderThickness 1.2
+}
+
+skinparam node {
+    BackgroundColor #E6E9EF
+    BorderColor #1E66F5
+    FontColor #4C4F69
+    BorderThickness 1.2
+}
+
+skinparam component {
+    BackgroundColor #FFFFFF
+    BorderColor #209FB5
+    FontColor #4C4F69
+    BorderThickness 1.2
+}
+
+skinparam artifact {
+    BackgroundColor #FFFFFF
+    BorderColor #8839EF
+    FontColor #4C4F69
+    BorderThickness 1.2
+}
+
+skinparam actor {
+    BackgroundColor #7287FD
+    BorderColor #1E66F5
+    FontColor #1E66F5
+    FontStyle bold
+}
+
+skinparam arrow {
+    Color #1E66F5
+    FontColor #6C6F85
+    FontSize 9
+}
+
+skinparam activity {
+    BackgroundColor #FFFFFF
+    BorderColor #1E66F5
+    FontColor #4C4F69
+    BorderThickness 1.2
+}
+
+
+entity "device_types" as device_types {
+    * type_id : SERIAL <<PK>>
+    --
+    * type_name : VARCHAR(50) <<UNIQUE>>
+}
+
+entity "mgmt_protocols" as mgmt_protocols {
+    * protocol_id : SERIAL <<PK>>
+    --
+    * protocol_name : VARCHAR(20) <<UNIQUE>>
+}
+
+entity "threat_types" as threat_types {
+    * threat_id : SERIAL <<PK>>
+    --
+    * threat_name : VARCHAR(50) <<UNIQUE>>
+    * severity_level : INT
+}
+
+entity "alert_statuses" as alert_statuses {
+    * status_id : SERIAL <<PK>>
+    --
+    * status_name : VARCHAR(20) <<UNIQUE>>
+}
+
+entity "task_statuses" as task_statuses {
+    * status_id : SERIAL <<PK>>
+    --
+    * status_name : VARCHAR(20) <<UNIQUE>>
+}
+
+entity "roles" as roles {
+    * role_id : SERIAL <<PK>>
+    --
+    * role_name : VARCHAR(50) <<UNIQUE>>
+    description : TEXT
+}
+
+entity "permissions" as permissions {
+    * permission_id : SERIAL <<PK>>
+    --
+    * permission_name : VARCHAR(50) <<UNIQUE>>
+    description : TEXT
+}
+
+entity "role_permissions" as role_permissions {
+    * role_id : INT <<PK, FK>>
+    * permission_id : INT <<PK, FK>>
+}
+
+entity "sys_users" as sys_users {
+    * user_id : SERIAL <<PK>>
+    --
+    * username : VARCHAR(50) <<UNIQUE>>
+    * password_hash : VARCHAR(255)
+    role_id : INT <<FK>>
+    created_at : TIMESTAMPTZ
+}
+
+entity "system_parameters" as system_parameters {
+    * param_id : SERIAL <<PK>>
+    --
+    * param_key : VARCHAR(100) <<UNIQUE>>
+    * param_value : TEXT
+    description : TEXT
+    last_updated_by : INT <<FK>>
+    updated_at : TIMESTAMPTZ
+}
+
+entity "user_sessions" as user_sessions {
+    * session_id : VARCHAR(64) <<PK>>
+    --
+    * user_id : INT <<FK>>
+    created_at : TIMESTAMPTZ
+    * expires_at : TIMESTAMPTZ
+    last_activity : TIMESTAMPTZ
+    last_reauth_at : TIMESTAMPTZ
+    is_revoked : BOOLEAN
+    ip_address : VARCHAR(45)
+    user_agent : TEXT
+}
+
+entity "network_nodes" as network_nodes {
+    * node_id : SERIAL <<PK>>
+    --
+    * hostname : VARCHAR(100) <<UNIQUE>>
+    * ip_address : VARCHAR(45) <<UNIQUE>>
+    type_id : INT <<FK>>
+    protocol_id : INT <<FK>>
+    mac_address : VARCHAR(50)
+    vendor : VARCHAR(50)
+}
+
+entity "network_traffic_metrics" as network_traffic_metrics {
+    * metric_id : BIGSERIAL <<PK>>
+    --
+    node_id : INT <<FK>>
+    * window_start : TIMESTAMPTZ
+    * window_end : TIMESTAMPTZ
+    * total_packets : BIGINT
+    * total_bytes : BIGINT
+    created_at : TIMESTAMPTZ
+}
+
+entity "network_logs" as network_logs {
+    * log_id : BIGSERIAL <<PK>>
+    --
+    node_id : INT <<FK>>
+    * source_ip : VARCHAR(45)
+    * destination_ip : VARCHAR(45)
+    * protocol : VARCHAR(10)
+    * packet_size : INT
+    flags : VARCHAR(20)
+    timestamp : TIMESTAMPTZ
+}
+
+entity "feature_store" as feature_store {
+    * feature_id : BIGSERIAL <<PK>>
+    --
+    * log_id : BIGINT <<FK, UNIQUE>>
+    * feature_vector : JSONB
+    processed_at : TIMESTAMPTZ
+}
+
+entity "mitigation_actions" as mitigation_actions {
+    * action_id : SERIAL <<PK>>
+    --
+    * action_name : VARCHAR(100) <<UNIQUE>>
+    * layer_target : VARCHAR(10)
+    description : TEXT
+}
+
+entity "security_alerts" as security_alerts {
+    * alert_id : BIGSERIAL <<PK>>
+    --
+    * feature_id : BIGINT <<FK, UNIQUE>>
+    threat_id : INT <<FK>>
+    status_id : INT <<FK>>
+    * anomaly_score : FLOAT
+    detected_at : TIMESTAMPTZ
+}
+
+entity "execution_queue" as execution_queue {
+    * task_id : BIGSERIAL <<PK>>
+    --
+    alert_id : BIGINT <<FK>>
+    action_id : INT <<FK>>
+    node_id : INT <<FK>>
+    status_id : INT <<FK>>
+    queued_at : TIMESTAMPTZ
+    executed_at : TIMESTAMPTZ
+}
+
+entity "rollback_snapshots" as rollback_snapshots {
+    * snapshot_id : BIGSERIAL <<PK>>
+    --
+    * task_id : BIGINT <<FK, UNIQUE>>
+    * pre_state_json : JSONB
+    * rollback_payload : JSONB
+    created_at : TIMESTAMPTZ
+}
+
+entity "mitigation_audit" as mitigation_audit {
+    * audit_id : BIGSERIAL <<PK>>
+    --
+    task_id : BIGINT <<FK, UNIQUE>>
+    executed_by_user : INT <<FK>>
+    executed_at : TIMESTAMPTZ
+    * result_status : VARCHAR(50)
+}
+
+entity "system_audit_logs" as system_audit_logs {
+    * sys_audit_id : BIGSERIAL <<PK>>
+    --
+    user_id : INT <<FK>>
+    * action : VARCHAR(100)
+    * target_table : VARCHAR(50)
+    target_id : BIGINT
+    timestamp : TIMESTAMPTZ
+}
+
+roles ||--o{ sys_users : "asigna"
+roles ||--o{ role_permissions : "tiene"
+permissions ||--o{ role_permissions : "pertenece"
+sys_users ||--o{ user_sessions : "inicia"
+sys_users ||--o{ system_parameters : "actualiza"
+sys_users ||--o{ system_audit_logs : "registra"
+sys_users ||--o{ mitigation_audit : "ejecuta"
+
+device_types ||--o{ network_nodes : "categoriza"
+mgmt_protocols ||--o{ network_nodes : "gestiona"
+
+network_nodes ||--o{ network_traffic_metrics : "genera_métricas"
+network_nodes ||--o{ network_logs : "origina_logs"
+network_nodes ||--o{ execution_queue : "recibe_mitigación"
+
+network_logs ||--|| feature_store : "vectoriza"
+feature_store ||--o| security_alerts : "evalúa"
+threat_types ||--o{ security_alerts : "tipifica"
+alert_statuses ||--o{ security_alerts : "estado"
+
+security_alerts ||--o{ execution_queue : "desencadena"
+mitigation_actions ||--o{ execution_queue : "define_acción"
+task_statuses ||--o{ execution_queue : "estado_tarea"
+
+execution_queue ||--o| rollback_snapshots : "guarda_snapshot"
+execution_queue ||--o| mitigation_audit : "audita_ejecución"
+
+@enduml

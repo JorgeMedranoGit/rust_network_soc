@@ -1,0 +1,132 @@
+@startuml
+
+skinparam backgroundColor #1E1E2E
+skinparam defaultFontName Arial
+skinparam defaultFontColor #CDD6F4
+skinparam defaultFontSize 10
+skinparam roundcorner 8
+skinparam shadowing false
+skinparam nodesep 40
+skinparam ranksep 45
+skinparam arrow {
+    Color #89B4FA
+    FontColor #A6ADC8
+    FontSize 9
+}
+
+skinparam package {
+    BackgroundColor #181825
+    BorderColor #CBA6F7
+    FontColor #CDD6F4
+    FontStyle bold
+    BorderThickness 1.2
+}
+skinparam class {
+    BackgroundColor #313244
+    BorderColor #89B4FA
+    FontColor #CDD6F4
+    HeaderBackgroundColor #181825
+    BorderThickness 1.2
+}
+
+
+package "Dominio y Modelos de Telemetría (PostgreSQL BCNF)" {
+    class NetworkNode {
+        + Option<i32> node_id
+        + String hostname
+        + String ip_address
+        + Option<i32> type_id
+        + Option<i32> protocol_id
+        + Option<String> mac_address
+        + Option<String> vendor
+        -- Funciones --
+        + new(hostname: &str, ip: &str, mac: Option<&str>): NetworkNode
+        + to_topology_dto(): TopologyNodeDto
+        + update_vendor(vendor_name: &str): void
+        + is_core_router(): bool
+    }
+
+    class NetworkTrafficMetric {
+        + Option<i64> metric_id
+        + i32 node_id
+        + DateTime window_start
+        + DateTime window_end
+        + i64 total_packets
+        + i64 total_bytes
+        + Option<DateTime> created_at
+        -- Funciones --
+        + new(node_id: i32, start: DateTime, end: DateTime): NetworkTrafficMetric
+        + calculate_throughput_mbps(): f64
+        + calculate_pps(): f64
+        + add_packet(packet_bytes: usize): void
+    }
+
+    class NetworkLog {
+        + Option<i64> log_id
+        + i32 node_id
+        + String source_ip
+        + String destination_ip
+        + String protocol
+        + i32 packet_size
+        + Option<String> flags
+        + Option<DateTime> timestamp
+        -- Funciones --
+        + new(src: &str, dst: &str, proto: &str, size: i32): NetworkLog
+        + is_high_volume_destination(): bool
+        + to_feature_candidate(): bool
+    }
+}
+
+package "Servicios de Ingestión y Descubrimiento" {
+    class NetworkAdapter {
+        - String interface_name
+        - usize ring_buffer_size
+        - Arc<AtomicBool> is_active
+        -- Funciones --
+        + new(iface: &str, buffer_size: usize): Self
+        + start_capture(tx: mpsc::Sender<NetworkLog>): Result<()>
+        + parse_ethernet_frame(raw_bytes: &[u8]): Option<NetworkLog>
+        + stop_capture(): void
+    }
+
+    class AssetDiscoveryEngine {
+        - String ip_range_cidr
+        - u64 timeout_millis
+        - HashMap<String, String> oui_database
+        -- Funciones --
+        + new(cidr: &str, oui_db_path: &str): Self
+        + scan_local_subnet(): Result<Vec<NetworkNode>>
+        + resolve_vendor(mac: &str): Option<String>
+        + ping_node(ip: &str): bool
+    }
+
+    class TelemetryStreamHandler {
+        - broadcast::Sender<String> channel_tx
+        - Arc<AtomicUsize> connected_clients
+        -- Funciones --
+        + new(capacity: usize): Self
+        + broadcast_metric(payload: &str): Result<usize>
+        + get_subscriber(): broadcast::Receiver<String>
+        + get_active_listener_count(): usize
+    }
+
+    class TelemetryRepository {
+        - PgPool pool
+        -- Funciones --
+        + new(pool: PgPool): Self
+        + insert_node(node: &NetworkNode): Result<i32>
+        + save_metric_window(metric: &NetworkTrafficMetric): Result<i64>
+        + query_traffic_history(node_id: i32, limit: i64): Result<Vec<NetworkTrafficMetric>>
+        + fetch_active_topology(): Result<Vec<NetworkNode>>
+    }
+}
+
+NetworkAdapter ..> NetworkLog : produce
+NetworkAdapter ..> AssetDiscoveryEngine : consulta_mac
+AssetDiscoveryEngine ..> NetworkNode : descubre
+TelemetryRepository ..> NetworkNode : persiste
+TelemetryRepository ..> NetworkTrafficMetric : persiste
+TelemetryRepository ..> NetworkLog : persiste
+NetworkAdapter ..> TelemetryStreamHandler : emite_metricas
+
+@enduml

@@ -1,0 +1,90 @@
+@startuml
+
+skinparam backgroundColor #1E1E2E
+skinparam defaultFontName Arial
+skinparam defaultFontColor #CDD6F4
+skinparam defaultFontSize 10
+skinparam roundcorner 8
+skinparam shadowing false
+skinparam nodesep 40
+skinparam ranksep 45
+skinparam arrow {
+    Color #89B4FA
+    FontColor #A6ADC8
+    FontSize 9
+}
+
+skinparam swimlane {
+    BorderColor #585B70
+    BorderThickness 1.2
+    TitleFontColor #89B4FA
+    TitleFontSize 11
+    TitleFontStyle bold
+}
+skinparam activity {
+    BackgroundColor #313244
+    BorderColor #89B4FA
+    FontColor #CDD6F4
+    BorderThickness 1.2
+}
+skinparam activityDiamond {
+    BackgroundColor #313244
+    BorderColor #CBA6F7
+    FontColor #CDD6F4
+}
+skinparam activityStart {
+    Color #A6E3A1
+}
+skinparam activityEnd {
+    Color #F38BA8
+}
+skinparam activityBar {
+    Color #89B4FA
+}
+skinparam note {
+    BackgroundColor #313244
+    BorderColor #F9E2AF
+    FontColor #CDD6F4
+    BorderThickness 1.2
+}
+
+
+|#181825|1. Comprensión del Negocio (Business Understanding)|
+start
+:Definir vector de exfiltración en Tigo AS27839;
+:Establecer metas de tesis: MTTD < 1 ms, F1 >= 99%, FPR < 0.5%;
+
+|#1E1E2E|2. Comprensión de los Datos (Data Understanding)|
+:Analizar datasets carrier (CIC-IDS & PCAP sintéticos);
+:Identificar desbalance severo de clases (< 1% exfiltración);
+:Examinar patrones de DNS Tunneling y canales HTTP/S;
+
+|#181825|3. Preparación de Datos (Data Preparation - Polars)|
+:Diseñar pipeline columnar en Rust con Polars SIMD;
+:Extraer 23 características de red en memoria RAM;
+:Normalizar vectores e imputar valores sin copias;
+
+|#1E1E2E|4. Modelado (Modeling - LightGBM GOSS/EFB)|
+:Configurar algoritmo LightGBM con Leaf-wise tree growth;
+:Aplicar Gradient-based One-Side Sampling (GOSS);
+:Aplicar Exclusive Feature Bundling (EFB);
+:Ejecutar Stratified K-Fold Cross Validation (k=5);
+
+|#181825|5. Evaluación (Evaluation - Benchmarking)|
+:Calcular matriz de confusión, precisión (99.42%) y recall;
+:Verificar latencia de inferencia (0.08 ms) frente a XGBoost y CatBoost;
+:Extraer importancia de características XAI (SHAP & Gain);
+if (¿Cumple criterios de calidad y latencia?) then (Sí)
+    |#1E1E2E|6. Implementación (Deployment - Rust C-API)|
+    :Exportar modelo optimizado (mejor_modelo_kfold.txt);
+    :Encapsular en BoosterWrapper Send + Sync;
+    :Integrar en pool de Tokio asíncrono sin GIL;
+    :Habilitar inferencia multihilo a velocidad de cable;
+    stop
+else (No)
+    |#181825|1. Comprensión del Negocio (Business Understanding)|
+    :Reajustar hiperparámetros o ingeniería de features;
+    detach
+endif
+
+@enduml

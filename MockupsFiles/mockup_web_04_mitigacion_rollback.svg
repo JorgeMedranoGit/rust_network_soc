@@ -1,0 +1,64 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1440" height="900" viewBox="0 0 1440 900">
+  <!-- Fondo con Overlay Atenuado (Cumple WCAG 2.1 Focus Trap & Dialog Nativo) -->
+  <rect width="1440" height="900" fill="#04070D" opacity="0.92"/>
+
+  <!-- Ventana Modal Central (<dialog> accesible) -->
+  <g transform="translate(420, 180)">
+    <!-- Marco Exterior Concéntrico (Radio 8px, padding 24px) -->
+    <rect width="600" height="490" rx="8" fill="#0F172A" stroke="#DC2626" stroke-width="2"/>
+    
+    <!-- Encabezado del Modal -->
+    <path d="M 0 8 Q 0 0 8 0 L 592 0 Q 600 0 600 8 L 600 64 L 0 64 Z" fill="#450A0A"/>
+    <line x1="0" y1="64" x2="600" y2="64" stroke="#DC2626" stroke-width="1"/>
+    
+    <text x="32" y="38" fill="#FCA5A5" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif" font-size="16" font-weight="700">Autorización de Directiva Crítica de Mitigación</text>
+    <text x="32" y="54" fill="#94A3B8" font-family="'SF Mono', 'Fira Code', 'Roboto Mono', Consolas, monospace" font-size="11">MÓDULO: ACL_BLACKHOLE_L3_L4 | HOST: 192.168.100.50</text>
+
+    <!-- Contenido del Diálogo -->
+    <g transform="translate(32, 90)">
+      <text x="0" y="0" fill="#F8FAFC" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif" font-size="13" font-weight="600">Comando a inyectar en la infraestructura perimetral:</text>
+      
+      <!-- Terminal Técnica para Comando (Sin cursores falsos) -->
+      <rect x="0" y="14" width="536" height="54" rx="4" fill="#080C14" stroke="#334155" stroke-width="1"/>
+      <text x="16" y="36" fill="#16A34A" font-family="'SF Mono', 'Fira Code', 'Roboto Mono', Consolas, monospace" font-size="12"># iptables -I DOCKER-USER -s 192.168.100.50 -j DROP</text>
+      <text x="16" y="52" fill="#64748B" font-family="'SF Mono', 'Fira Code', 'Roboto Mono', Consolas, monospace" font-size="11">Target Chain: DOCKER-USER (Filtrado de capa perimetral en host)</text>
+
+      <!-- Parámetro de Re-autenticación de 300 segundos -->
+      <rect x="0" y="86" width="536" height="74" rx="6" fill="#1E293B" stroke="#1E293B" stroke-width="1"/>
+      <text x="16" y="110" fill="#D97706" font-family="'SF Mono', 'Fira Code', 'Roboto Mono', Consolas, monospace" font-size="11" font-weight="700">VENTANA DE RE-AUTENTICACIÓN REQUERIDA (CRITICAL_ACTION_TIMEOUT)</text>
+      <text x="16" y="128" fill="#94A3B8" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif" font-size="12">Para prevenir mitigaciones no autorizadas, ingrese su contraseña de operador.</text>
+      <text x="16" y="144" fill="#64748B" font-family="'SF Mono', 'Fira Code', 'Roboto Mono', Consolas, monospace" font-size="11">Tiempo restante de la ventana actual: 0s (Caducado - Requiere contraseña).</text>
+
+      <!-- Input de Contraseña de Re-autenticación con Foco Visible Accesible -->
+      <text x="0" y="188" fill="#F8FAFC" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif" font-size="12" font-weight="600">CONFIRMAR CON CONTRASEÑA DE USUARIO (admin_soc)</text>
+      <rect x="0" y="198" width="536" height="44" rx="6" fill="#080C14" stroke="#0284C7" stroke-width="2"/>
+      <text x="16" y="226" fill="#F8FAFC" font-family="'SF Mono', 'Fira Code', 'Roboto Mono', Consolas, monospace" font-size="16" letter-spacing="4">••••••••••••</text>
+      <rect x="490" y="210" width="30" height="20" rx="3" fill="#052E16"/>
+      <text x="505" y="224" fill="#16A34A" font-family="'SF Mono', 'Fira Code', 'Roboto Mono', Consolas, monospace" font-size="11" font-weight="700" text-anchor="middle">OK</text>
+
+      <!-- Historial de Rollback y Registro -->
+      <text x="0" y="264" fill="#64748B" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif" font-size="11">Se creará un registro forense en la tabla task_statuses (Estado inicial: QUEUED).</text>
+
+      <!-- Botones de Acción (Fácil alcance, foco de teclado garantizado) -->
+      <g transform="translate(0, 310)">
+        <!-- Botón Cancelar -->
+        <rect x="0" y="0" width="160" height="46" rx="6" fill="#1E293B" stroke="#334155" stroke-width="1"/>
+        <text x="80" y="28" fill="#94A3B8" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif" font-size="13" font-weight="600" text-anchor="middle">CANCELAR (Esc)</text>
+
+        <!-- Botón Confirmar Acción Crítica -->
+        <rect x="180" y="0" width="356" height="46" rx="6" fill="#DC2626"/>
+        <text x="358" y="28" fill="#FFFFFF" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif" font-size="13" font-weight="700" text-anchor="middle">CONFIRMAR Y DESPACHAR REGLA</text>
+      </g>
+    </g>
+  </g>
+
+  <!-- Anotación Técnica de Accesibilidad WCAG (Modal Compliance) -->
+  <g transform="translate(60, 400)">
+    <rect width="320" height="150" rx="6" fill="#0F172A" stroke="#16A34A" stroke-width="1" stroke-dasharray="4"/>
+    <text x="16" y="26" fill="#16A34A" font-family="'SF Mono', 'Fira Code', 'Roboto Mono', Consolas, monospace" font-size="11" font-weight="700">ACCESIBILIDAD WCAG 2.2 / MODAL</text>
+    <text x="16" y="50" fill="#94A3B8" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif" font-size="11">1. Foco atrapado estrictamente en el diálogo.</text>
+    <text x="16" y="70" fill="#94A3B8" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif" font-size="11">2. Tecla Escape retorna foco al invocador.</text>
+    <text x="16" y="90" fill="#94A3B8" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif" font-size="11">3. Semántica nativa aria-modal="true".</text>
+    <text x="16" y="110" fill="#94A3B8" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif" font-size="11">4. Sin desbordamientos de scroll infinito.</text>
+  </g>
+</svg>

@@ -1,0 +1,80 @@
+@startuml
+
+skinparam backgroundColor #1E1E2E
+skinparam defaultFontName Arial
+skinparam defaultFontColor #CDD6F4
+skinparam defaultFontSize 10
+skinparam roundcorner 8
+skinparam shadowing false
+skinparam nodesep 40
+skinparam ranksep 45
+skinparam arrow {
+    Color #89B4FA
+    FontColor #A6ADC8
+    FontSize 9
+}
+
+skinparam swimlane {
+    BorderColor #585B70
+    BorderThickness 1.2
+    TitleFontColor #89B4FA
+    TitleFontSize 11
+    TitleFontStyle bold
+}
+skinparam activity {
+    BackgroundColor #313244
+    BorderColor #89B4FA
+    FontColor #CDD6F4
+    BorderThickness 1.2
+}
+skinparam activityDiamond {
+    BackgroundColor #313244
+    BorderColor #CBA6F7
+    FontColor #CDD6F4
+}
+skinparam activityStart {
+    Color #A6E3A1
+}
+skinparam activityEnd {
+    Color #F38BA8
+}
+skinparam activityBar {
+    Color #89B4FA
+}
+skinparam note {
+    BackgroundColor #313244
+    BorderColor #F9E2AF
+    FontColor #CDD6F4
+    BorderThickness 1.2
+}
+
+
+|Sonda eBPF / Kernel NIC|
+start
+:Captura de frames en anillo circular de memoria RAM;
+:Filtrado eBPF en nivel XDP (descarte de paquetes corruptos);
+
+|NetworkAdapter (Rust Asíncrono)|
+:Lectura sin copia (zero-copy) mediante AF_PACKET;
+:Extracción de encabezados L2 (MAC), L3 (IP) y L4 (TCP/UDP);
+
+|Motor AssetDiscovery|
+if (¿Dirección MAC/IP existe en inventario local?) then (Sí)
+    :Actualizar contador de actividad del nodo;
+else (No)
+    :Consultar tabla OUI y resolver fabricante (Cisco, MikroTik, etc.);
+    :Registrar nuevo nodo en PostgreSQL (network_nodes);
+endif
+
+|Agregador y Repositorio SQLx|
+:Acumular total de paquetes y bytes en ventana de 1 segundo;
+:Ejecutar inserción por lotes en network_traffic_metrics;
+
+|Canal Tokio & Frontend Leptos WASM|
+:Serializar métricas a JSON comprimido;
+:Difundir por canal WebSocket Tokio Broadcast;
+:Recepción en navegador web (Leptos WASM);
+:Actualizar reactivamente gráficos y topología interactiva (60 FPS);
+stop
+
+@enduml

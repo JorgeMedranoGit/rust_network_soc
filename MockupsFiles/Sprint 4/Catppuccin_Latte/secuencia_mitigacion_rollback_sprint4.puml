@@ -1,0 +1,99 @@
+@startuml
+
+skinparam backgroundColor #EFF1F5
+skinparam defaultFontName Arial
+skinparam defaultFontColor #4C4F69
+skinparam defaultFontSize 10
+skinparam roundcorner 8
+skinparam shadowing false
+skinparam nodesep 40
+skinparam ranksep 45
+skinparam arrow {
+    Color #1E66F5
+    FontColor #6C6F85
+    FontSize 9
+}
+
+skinparam sequence {
+    LifeLineBorderColor #1E66F5
+    LifeLineBackgroundColor #E6E9EF
+    ParticipantBorderColor #1E66F5
+    ParticipantBackgroundColor #FFFFFF
+    ParticipantFontColor #4C4F69
+    GroupBackgroundColor #E6E9EF
+    GroupBorderColor #1E66F5
+    GroupFontColor #4C4F69
+    BoxBackgroundColor #E6E9EF
+    BoxBorderColor #8839EF
+    BoxFontColor #4C4F69
+}
+
+
+autonumber "<b>[00]</b>"
+
+actor "Operador del SOC\n(L2 Incident Response)" as OperadorSOC
+participant "MitigationOrchestrator\n(Tokio Worker)" as Orchestrator
+participant "RadiusCoaClient\n(L2 Isolation)" as Radius
+participant "AclBlackholeClient\n(L3/L4 Cisco/MikroTik)" as AclClient
+participant "OrchestrationRepo\n(SQLx PgPool)" as Repo
+database "PostgreSQL 15\n(execution_queue & snapshots)" as DB
+participant "Switch / Router BGP\n(Infraestructura Red AS27839)" as NetworkDevice
+
+OperadorSOC -> Orchestrator : [01] trigger_mitigation(alert_id: 104, action_type: "ISOLATE_L2_RADIUS")
+activate Orchestrator
+
+Orchestrator -> Orchestrator : [02] evaluate_blast_radius(alert_id)
+note right: Verifica que el nodo afectado NO sea\nDefault Gateway o Servidor Core de Tigo
+
+alt ¿Requiere Re-autenticación Crítica?
+    Orchestrator -> OperadorSOC : [03] Request Re-auth Token (Ventana de 300 segundos)
+    OperadorSOC -> Orchestrator : [04] Submit Valid TOTP / Master Credential
+end
+
+Orchestrator -> Repo : [05] create_task_and_snapshot(alert_id, action_id, pre_state_json)
+activate Repo
+Repo -> DB : [06] INSERT INTO execution_queue (status='IN_PROGRESS') RETURNING task_id
+Repo -> DB : [07] INSERT INTO rollback_snapshots (task_id, pre_state_json, rollback_payload)
+DB --> Repo : [08] Ok(task_id: 501, snapshot_id: 220)
+Repo --> Orchestrator : [09] Ok(task_id: 501, snapshot_id: 220)
+deactivate Repo
+
+alt Vector L2: RADIUS CoA (Port Bounce / Sandbox VLAN 999)
+    Orchestrator -> Radius : [10] send_disconnect_or_quarantine(mac, vlan: 999)
+    activate Radius
+    Radius -> NetworkDevice : [11] RADIUS CoA Disconnect Packet (Port 3799)
+    NetworkDevice --> Radius : [12] CoA-ACK (Host re-autenticado en VLAN 999 aislada)
+    Radius --> Orchestrator : [13] Ok(DeviceIsolated)
+    deactivate Radius
+else Vector L3/L4: BGP Blackhole / ACL
+    Orchestrator -> AclClient : [14] inject_blackhole_route(malicious_ip)
+    activate AclClient
+    AclClient -> NetworkDevice : [15] SSH/RESTCONF: ip route <malicious_ip> 255.255.255.255 Null0
+    NetworkDevice --> AclClient : [16] Command Executed (Route Dropped)
+    AclClient --> Orchestrator : [17] Ok(RouteBlackholed)
+    deactivate AclClient
+end
+
+Orchestrator -> Repo : [18] complete_mitigation(task_id, result_status='APPLIED_SUCCESS')
+activate Repo
+Repo -> DB : [19] UPDATE execution_queue SET status_id=COMPLETED, executed_at=NOW()
+Repo -> DB : [20] INSERT INTO mitigation_audit (task_id, user_id, result_status)
+DB --> Repo : [21] Ok()
+Repo --> Orchestrator : [22] Ok()
+deactivate Repo
+
+Orchestrator --> OperadorSOC : [23] Mitigación Aplicada. Temporizador de Reversión activo (300s).
+
+opt En caso de Falso Positivo: Reversión Manual Inmediata (Rollback)
+    OperadorSOC -> Orchestrator : [24] execute_rollback(snapshot_id: 220)
+    Orchestrator -> Repo : [25] fetch_rollback_snapshot(snapshot_id: 220)
+    Repo --> Orchestrator : [26] RollbackSnapshot { rollback_payload }
+    Orchestrator -> NetworkDevice : [27] Aplicar rollback_payload (Restaurar VLAN original / Borrar Null0)
+    NetworkDevice --> Orchestrator : [28] Estado Original Restaurado
+    Orchestrator -> Repo : [29] INSERT INTO mitigation_audit (task_id, result_status='ROLLED_BACK_BY_USER')
+    Repo -> DB : [30] UPDATE mitigation_audit
+    Orchestrator --> OperadorSOC : [31] Rollback confirmado: Conectividad restablecida
+end
+deactivate Orchestrator
+
+@enduml
