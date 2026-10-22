@@ -1,0 +1,128 @@
+@startuml
+
+skinparam backgroundColor #EFF1F5
+skinparam defaultFontName Arial
+skinparam defaultFontColor #4C4F69
+skinparam defaultFontSize 10
+skinparam roundcorner 8
+skinparam shadowing false
+skinparam nodesep 40
+skinparam ranksep 45
+skinparam arrow {
+    Color #1E66F5
+    FontColor #6C6F85
+    FontSize 9
+}
+
+skinparam package {
+    BackgroundColor #E6E9EF
+    BorderColor #8839EF
+    FontColor #4C4F69
+    FontStyle bold
+    BorderThickness 1.2
+}
+skinparam class {
+    BackgroundColor #FFFFFF
+    BorderColor #1E66F5
+    FontColor #4C4F69
+    HeaderBackgroundColor #E6E9EF
+    BorderThickness 1.2
+}
+
+
+class User {
+    +Option<i32> user_id
+    +String username
+    +String password_hash
+    +Option<i32> role_id
+    +DateTime created_at
+    __ Funciones __
+    +new(username: &str, hash: &str, role_id: i32): User
+    +verify_password(plain_text: &str): bool
+    +is_admin(): bool
+    +validate_credentials_entropy(): bool
+}
+
+class UserSession {
+    +String session_id
+    +i32 user_id
+    +DateTime created_at
+    +DateTime expires_at
+    +DateTime last_activity
+    +Option<DateTime> last_reauth_at
+    +bool is_revoked
+    +Option<String> ip_address
+    +Option<String> user_agent
+    __ Funciones __
+    +generate(user_id: i32, ip: &str, ua: &str, ttl_hours: i64): UserSession
+    +is_valid(): bool
+    +requires_reauth(timeout_secs: i64): bool
+    +refresh_activity(): void
+    +revoke(): void
+}
+
+class Role {
+    +Option<i32> role_id
+    +String role_name
+    +Option<String> description
+    __ Funciones __
+    +new(name: &str, desc: Option<&str>): Role
+    +has_permission(perm_name: &str): bool
+}
+
+class Permission {
+    +Option<i32> permission_id
+    +String permission_name
+    +Option<String> description
+    __ Funciones __
+    +new(name: &str, desc: Option<&str>): Permission
+}
+
+class SystemParameter {
+    +Option<i32> param_id
+    +String param_key
+    +String param_value
+    +Option<String> description
+    +Option<i32> last_updated_by
+    +DateTime updated_at
+    __ Funciones __
+    +get_timeout_secs(): i64
+    +update_parameter(new_value: &str, user_id: i32): void
+}
+
+class UsersRepository {
+    -PgPool pool
+    __ Funciones __
+    +new(pool: PgPool): Self
+    +find_by_username(username: &str): Result<Option<User>>
+    +create_user(username: &str, hash: &str, role_id: i32): Result<User>
+    +update_role(user_id: i32, role_id: i32): Result<()>
+    +delete_user(user_id: i32): Result<()>
+    +create_session(session: &UserSession): Result<()>
+    +get_session(token: &str): Result<Option<UserSession>>
+    +reauth_session(token: &str): Result<()>
+    +revoke_session(token: &str): Result<()>
+    +update_critical_timeout(timeout: i64): Result<()>
+    +get_critical_timeout(): Result<i64>
+}
+
+class Argon2SecurityEngine {
+    -u32 memory_cost_kib
+    -u32 iterations
+    -u32 parallelism
+    __ Funciones __
+    +hash_password(plain_pwd: &str): Result<String>
+    +verify_password(hash: &str, plain_pwd: &str): bool
+    +calculate_entropy_bits(pwd: &str): f64
+    +verify_totp_code(secret: &str, code: &str): bool
+}
+
+User "1" o-- "0..*" UserSession : posee
+Role "1" o-- "0..*" User : asignado
+Role "*" o-- "*" Permission : contiene
+SystemParameter --> User : actualizado_por
+UsersRepository ..> User : persiste
+UsersRepository ..> UserSession : valida
+UsersRepository ..> Argon2SecurityEngine : delega_hashing
+
+@enduml

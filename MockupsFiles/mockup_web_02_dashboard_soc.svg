@@ -1,0 +1,247 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1440" height="900" viewBox="0 0 1440 900">
+  <!-- Fondo General -->
+  <rect width="1440" height="900" fill="#080C14"/>
+
+  <!-- Barra Superior de Navegación y Telemetría del Sistema -->
+  <rect width="1440" height="52" fill="#0F172A" stroke="#334155" stroke-width="1"/>
+  <text x="24" y="32" fill="#F8FAFC" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif" font-size="16" font-weight="800" letter-spacing="1">TIGO SOC</text>
+  <line x1="120" y1="16" x2="120" y2="36" stroke="#334155" stroke-width="1"/>
+  <text x="136" y="32" fill="#94A3B8" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif" font-size="13">CONSOLA DE MANDO DE CIBERSEGURIDAD</text>
+
+  <!-- Telemetría en Vivo del Motor Rust -->
+  <g transform="translate(520, 16)">
+    <circle cx="8" cy="10" r="4" fill="#16A34A"/>
+    <text x="20" y="14" fill="#94A3B8" font-family="'SF Mono', 'Fira Code', 'Roboto Mono', Consolas, monospace" font-size="11">libpcap: any (1,842 pkts/s)</text>
+    <text x="190" y="14" fill="#64748B" font-family="'SF Mono', 'Fira Code', 'Roboto Mono', Consolas, monospace" font-size="11">|</text>
+    <text x="206" y="14" fill="#94A3B8" font-family="'SF Mono', 'Fira Code', 'Roboto Mono', Consolas, monospace" font-size="11">ML: LightGBM v4.1 (Online)</text>
+    <text x="390" y="14" fill="#64748B" font-family="'SF Mono', 'Fira Code', 'Roboto Mono', Consolas, monospace" font-size="11">|</text>
+    <text x="406" y="14" fill="#D97706" font-family="'SF Mono', 'Fira Code', 'Roboto Mono', Consolas, monospace" font-size="11">Re-auth: 264s</text>
+  </g>
+
+  <!-- Usuario y Perfil -->
+  <rect x="1270" y="10" width="146" height="32" rx="4" fill="#1E293B" stroke="#334155" stroke-width="1"/>
+  <text x="1282" y="30" fill="#F8FAFC" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif" font-size="12" font-weight="600">admin_soc</text>
+  <rect x="1352" y="14" width="56" height="24" rx="3" fill="#0284C7"/>
+  <text x="1380" y="30" fill="#FFFFFF" font-family="'SF Mono', 'Fira Code', 'Roboto Mono', Consolas, monospace" font-size="10" font-weight="700" text-anchor="middle">ADMIN</text>
+
+  <!-- Sidebar Lateral Izquierdo -->
+  <rect x="0" y="52" width="220" height="848" fill="#0F172A" stroke="#334155" stroke-width="1"/>
+  
+  <!-- Items del Sidebar -->
+  <g transform="translate(0, 68)">
+    <!-- Item 1: Activo -->
+    <rect x="8" y="0" width="204" height="40" rx="4" fill="#1E293B"/>
+    <line x1="8" y1="0" x2="8" y2="40" stroke="#0284C7" stroke-width="3"/>
+    <text x="24" y="25" fill="#F8FAFC" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif" font-size="13" font-weight="700">Dashboard General</text>
+
+    <!-- Item 2 -->
+    <text x="24" y="65" fill="#94A3B8" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif" font-size="13">Alertas Forenses</text>
+    <rect x="176" y="49" width="24" height="20" rx="10" fill="#DC2626"/>
+    <text x="188" y="63" fill="#FFFFFF" font-family="'SF Mono', 'Fira Code', 'Roboto Mono', Consolas, monospace" font-size="10" font-weight="700" text-anchor="middle">3</text>
+
+    <!-- Item 3 -->
+    <text x="24" y="105" fill="#94A3B8" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif" font-size="13">Mitigación &amp; Rollback</text>
+    
+    <!-- Item 4 -->
+    <text x="24" y="145" fill="#94A3B8" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif" font-size="13">Topología de Red</text>
+    <text x="180" y="145" fill="#64748B" font-family="'SF Mono', 'Fira Code', 'Roboto Mono', Consolas, monospace" font-size="11">12</text>
+
+    <!-- Item 5 -->
+    <text x="24" y="185" fill="#94A3B8" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif" font-size="13">Gestión de Usuarios RBAC</text>
+
+    <!-- Item 6 -->
+    <text x="24" y="225" fill="#94A3B8" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif" font-size="13">Auditoría del Sistema</text>
+  </g>
+
+  <!-- Sección de Recursos del Host en Sidebar -->
+  <g transform="translate(16, 750)">
+    <text x="0" y="0" fill="#64748B" font-family="'SF Mono', 'Fira Code', 'Roboto Mono', Consolas, monospace" font-size="10" font-weight="700">MÉTRICAS DEL HOST</text>
+    <text x="0" y="22" fill="#94A3B8" font-family="'SF Mono', 'Fira Code', 'Roboto Mono', Consolas, monospace" font-size="11">CPU: 18.4% | RAM: 1.4 GB</text>
+    <text x="0" y="40" fill="#94A3B8" font-family="'SF Mono', 'Fira Code', 'Roboto Mono', Consolas, monospace" font-size="11">Latencia Sniffer: 0.12 ms</text>
+    <text x="0" y="58" fill="#16A34A" font-family="'SF Mono', 'Fira Code', 'Roboto Mono', Consolas, monospace" font-size="11">Topología GNS3 / ISP OK</text>
+  </g>
+
+  <!-- CONTENIDO PRINCIPAL -->
+  <g transform="translate(244, 72)">
+    
+    <!-- Franja de Métricas Principales (Sin Cardocalypse: Espaciado semántico y divisores verticales) -->
+    <rect x="0" y="0" width="1172" height="88" rx="6" fill="#0F172A" stroke="#334155" stroke-width="1"/>
+    
+    <!-- Métrica 1 -->
+    <g transform="translate(32, 20)">
+      <text x="0" y="0" fill="#64748B" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif" font-size="11" font-weight="700">TASA DE TRÁFICO INSPECCIONADO</text>
+      <text x="0" y="34" fill="#F8FAFC" font-family="'SF Mono', 'Fira Code', 'Roboto Mono', Consolas, monospace" font-size="28" font-weight="700">1,842</text>
+      <text x="82" y="34" fill="#64748B" font-family="'SF Mono', 'Fira Code', 'Roboto Mono', Consolas, monospace" font-size="14">pkts/s</text>
+      <text x="0" y="52" fill="#16A34A" font-family="'SF Mono', 'Fira Code', 'Roboto Mono', Consolas, monospace" font-size="11">+12.4% vs promedio</text>
+    </g>
+    <line x1="280" y1="16" x2="280" y2="72" stroke="#334155" stroke-width="1"/>
+
+    <!-- Métrica 2 -->
+    <g transform="translate(312, 20)">
+      <text x="0" y="0" fill="#64748B" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif" font-size="11" font-weight="700">AMENAZAS DETECTADAS ACTIVAS</text>
+      <text x="0" y="34" fill="#DC2626" font-family="'SF Mono', 'Fira Code', 'Roboto Mono', Consolas, monospace" font-size="28" font-weight="700">3</text>
+      <text x="24" y="34" fill="#64748B" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif" font-size="14">incidentes</text>
+      <text x="0" y="52" fill="#DC2626" font-family="'SF Mono', 'Fira Code', 'Roboto Mono', Consolas, monospace" font-size="11">2 Críticas | 1 Media</text>
+    </g>
+    <line x1="560" y1="16" x2="560" y2="72" stroke="#334155" stroke-width="1"/>
+
+    <!-- Métrica 3 -->
+    <g transform="translate(592, 20)">
+      <text x="0" y="0" fill="#64748B" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif" font-size="11" font-weight="700">DIRECTIVAS DE MITIGACIÓN L2/L3/L7</text>
+      <text x="0" y="34" fill="#F8FAFC" font-family="'SF Mono', 'Fira Code', 'Roboto Mono', Consolas, monospace" font-size="28" font-weight="700">4</text>
+      <text x="24" y="34" fill="#64748B" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif" font-size="14">despachos</text>
+      <text x="0" y="52" fill="#16A34A" font-family="'SF Mono', 'Fira Code', 'Roboto Mono', Consolas, monospace" font-size="11">3 Exitosas | 1 En Cola</text>
+    </g>
+    <line x1="860" y1="16" x2="860" y2="72" stroke="#334155" stroke-width="1"/>
+
+    <!-- Métrica 4 -->
+    <g transform="translate(892, 20)">
+      <text x="0" y="0" fill="#64748B" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif" font-size="11" font-weight="700">NODOS DE RED SUPERVISADOS</text>
+      <text x="0" y="34" fill="#F8FAFC" font-family="'SF Mono', 'Fira Code', 'Roboto Mono', Consolas, monospace" font-size="28" font-weight="700">12</text>
+      <text x="36" y="34" fill="#64748B" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif" font-size="14">hosts ISP</text>
+      <text x="0" y="52" fill="#D97706" font-family="'SF Mono', 'Fira Code', 'Roboto Mono', Consolas, monospace" font-size="11">1 Aislado | 11 Operativos</text>
+    </g>
+
+    <!-- Fila Central: Gráfico de Telemetría + Distribución de Amenazas -->
+    <g transform="translate(0, 106)">
+      <!-- Panel de Gráfico (68% ancho) -->
+      <rect x="0" y="0" width="790" height="280" rx="6" fill="#0F172A" stroke="#334155" stroke-width="1"/>
+      <text x="24" y="30" fill="#F8FAFC" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif" font-size="14" font-weight="700">Flujo de Tráfico y Umbral de Inferencia ML</text>
+      <text x="24" y="48" fill="#64748B" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif" font-size="11">Inspección de anomalías en ventana móvil de 15 minutos (Valores tabulares)</text>
+
+      <!-- Gráfico SVG Técnico (Líneas sobrias de red, sin púrpuras) -->
+      <g transform="translate(40, 70)">
+        <!-- Ejes y Líneas Guía -->
+        <line x1="0" y1="0" x2="710" y2="0" stroke="#1E293B" stroke-width="1"/>
+        <text x="-30" y="4" fill="#64748B" font-family="'SF Mono', 'Fira Code', 'Roboto Mono', Consolas, monospace" font-size="10">2.5k</text>
+
+        <line x1="0" y1="50" x2="710" y2="50" stroke="#1E293B" stroke-width="1"/>
+        <text x="-30" y="54" fill="#64748B" font-family="'SF Mono', 'Fira Code', 'Roboto Mono', Consolas, monospace" font-size="10">2.0k</text>
+
+        <!-- Umbral de Alerta ML (Línea discontinua ámbar) -->
+        <line x1="0" y1="75" x2="710" y2="75" stroke="#D97706" stroke-width="1" stroke-dasharray="4"/>
+        <text x="610" y="70" fill="#D97706" font-family="'SF Mono', 'Fira Code', 'Roboto Mono', Consolas, monospace" font-size="10">Umbral ML: 1.8k p/s</text>
+
+        <line x1="0" y1="100" x2="710" y2="100" stroke="#1E293B" stroke-width="1"/>
+        <text x="-30" y="104" fill="#64748B" font-family="'SF Mono', 'Fira Code', 'Roboto Mono', Consolas, monospace" font-size="10">1.0k</text>
+
+        <line x1="0" y1="150" x2="710" y2="150" stroke="#334155" stroke-width="1"/>
+        <text x="-30" y="154" fill="#64748B" font-family="'SF Mono', 'Fira Code', 'Roboto Mono', Consolas, monospace" font-size="10">0.0k</text>
+
+        <!-- Curva Normal de Tráfico (Azul Técnico) -->
+        <polyline points="0,120 70,110 140,115 210,105 280,125 350,95 420,110 490,40 560,25 630,35 700,45" 
+                  fill="none" stroke="#0284C7" stroke-width="2"/>
+
+        <!-- Pico Anómalo / Ataque SYN Flood Resaltado en Rojo -->
+        <polyline points="420,110 490,40 560,25 630,35" 
+                  fill="none" stroke="#DC2626" stroke-width="3"/>
+        <circle cx="560" cy="25" r="5" fill="#DC2626"/>
+        <rect x="520" y="-8" width="100" height="20" rx="3" fill="#450A0A" stroke="#DC2626" stroke-width="1"/>
+        <text x="570" y="6" fill="#FCA5A5" font-family="'SF Mono', 'Fira Code', 'Roboto Mono', Consolas, monospace" font-size="10" font-weight="700" text-anchor="middle">SYN FLOOD 99.2%</text>
+
+        <!-- Etiquetas de Tiempo -->
+        <text x="0" y="170" fill="#64748B" font-family="'SF Mono', 'Fira Code', 'Roboto Mono', Consolas, monospace" font-size="10">16:45</text>
+        <text x="175" y="170" fill="#64748B" font-family="'SF Mono', 'Fira Code', 'Roboto Mono', Consolas, monospace" font-size="10">16:50</text>
+        <text x="350" y="170" fill="#64748B" font-family="'SF Mono', 'Fira Code', 'Roboto Mono', Consolas, monospace" font-size="10">16:55</text>
+        <text x="525" y="170" fill="#64748B" font-family="'SF Mono', 'Fira Code', 'Roboto Mono', Consolas, monospace" font-size="10">17:00 (Ahora)</text>
+      </g>
+    </g>
+
+    <!-- Panel de Vectores de Amenaza (32% ancho) -->
+    <g transform="translate(806, 106)">
+      <rect x="0" y="0" width="366" height="280" rx="6" fill="#0F172A" stroke="#334155" stroke-width="1"/>
+      <text x="20" y="30" fill="#F8FAFC" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif" font-size="14" font-weight="700">Distribución de Amenazas (24h)</text>
+      
+      <!-- Vector 1: DDoS SYN Flood -->
+      <g transform="translate(20, 60)">
+        <text x="0" y="0" fill="#F8FAFC" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif" font-size="12" font-weight="600">DDoS SYN Flood</text>
+        <text x="326" y="0" fill="#DC2626" font-family="'SF Mono', 'Fira Code', 'Roboto Mono', Consolas, monospace" font-size="12" font-weight="700" text-anchor="end">48% (12)</text>
+        <rect x="0" y="8" width="326" height="6" rx="3" fill="#1E293B"/>
+        <rect x="0" y="8" width="156" height="6" rx="3" fill="#DC2626"/>
+      </g>
+
+      <!-- Vector 2: DNS C2 Exfiltration -->
+      <g transform="translate(20, 110)">
+        <text x="0" y="0" fill="#F8FAFC" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif" font-size="12" font-weight="600">DNS C2 Tunneling</text>
+        <text x="326" y="0" fill="#D97706" font-family="'SF Mono', 'Fira Code', 'Roboto Mono', Consolas, monospace" font-size="12" font-weight="700" text-anchor="end">32% (8)</text>
+        <rect x="0" y="8" width="326" height="6" rx="3" fill="#1E293B"/>
+        <rect x="0" y="8" width="104" height="6" rx="3" fill="#D97706"/>
+      </g>
+
+      <!-- Vector 3: Port Scanning Recon -->
+      <g transform="translate(20, 160)">
+        <text x="0" y="0" fill="#F8FAFC" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif" font-size="12" font-weight="600">Port Scan Recon L4</text>
+        <text x="326" y="0" fill="#94A3B8" font-family="'SF Mono', 'Fira Code', 'Roboto Mono', Consolas, monospace" font-size="12" font-weight="700" text-anchor="end">20% (5)</text>
+        <rect x="0" y="8" width="326" height="6" rx="3" fill="#1E293B"/>
+        <rect x="0" y="8" width="65" height="6" rx="3" fill="#0284C7"/>
+      </g>
+
+      <!-- Resumen del Modelo -->
+      <rect x="20" y="200" width="326" height="60" rx="4" fill="#1E293B" stroke="#1E293B" stroke-width="1"/>
+      <text x="32" y="222" fill="#94A3B8" font-family="'SF Mono', 'Fira Code', 'Roboto Mono', Consolas, monospace" font-size="11">Modelo: LightGBM Multiclase</text>
+      <text x="32" y="240" fill="#64748B" font-family="'SF Mono', 'Fira Code', 'Roboto Mono', Consolas, monospace" font-size="11">Precisión: 99.4% | F1-Score: 0.989</text>
+    </g>
+
+    <!-- Fila Inferior: Tabla de Incidentes y Alertas en Streaming -->
+    <g transform="translate(0, 402)">
+      <rect x="0" y="0" width="1172" height="390" rx="6" fill="#0F172A" stroke="#334155" stroke-width="1"/>
+      
+      <!-- Cabecera de Tabla -->
+      <text x="24" y="32" fill="#F8FAFC" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif" font-size="14" font-weight="700">Cola Forense de Incidentes Prioritarios</text>
+      <text x="24" y="50" fill="#64748B" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif" font-size="11">Streaming en tiempo real desde sniffer libpcap y base de datos PostgreSQL</text>
+
+      <!-- Columnas -->
+      <g transform="translate(24, 70)">
+        <rect x="0" y="0" width="1124" height="32" fill="#1E293B"/>
+        <text x="16" y="21" fill="#64748B" font-family="'SF Mono', 'Fira Code', 'Roboto Mono', Consolas, monospace" font-size="11" font-weight="700">ID ALERTA</text>
+        <text x="130" y="21" fill="#64748B" font-family="'SF Mono', 'Fira Code', 'Roboto Mono', Consolas, monospace" font-size="11" font-weight="700">TIMESTAMP</text>
+        <text x="230" y="21" fill="#64748B" font-family="'SF Mono', 'Fira Code', 'Roboto Mono', Consolas, monospace" font-size="11" font-weight="700">SEVERIDAD</text>
+        <text x="340" y="21" fill="#64748B" font-family="'SF Mono', 'Fira Code', 'Roboto Mono', Consolas, monospace" font-size="11" font-weight="700">VECTOR DE AMENAZA</text>
+        <text x="530" y="21" fill="#64748B" font-family="'SF Mono', 'Fira Code', 'Roboto Mono', Consolas, monospace" font-size="11" font-weight="700">IP ORIGEN (ATACANTE)</text>
+        <text x="730" y="21" fill="#64748B" font-family="'SF Mono', 'Fira Code', 'Roboto Mono', Consolas, monospace" font-size="11" font-weight="700">IP DESTINO (OBJETIVO)</text>
+        <text x="910" y="21" fill="#64748B" font-family="'SF Mono', 'Fira Code', 'Roboto Mono', Consolas, monospace" font-size="11" font-weight="700">SCORE ML</text>
+        <text x="1020" y="21" fill="#64748B" font-family="'SF Mono', 'Fira Code', 'Roboto Mono', Consolas, monospace" font-size="11" font-weight="700">ACCIÓN</text>
+
+        <!-- Fila 1 (Crítica - Bajo Ataque) -->
+        <rect x="0" y="34" width="1124" height="52" fill="#450A0A" stroke="#DC2626" stroke-width="1"/>
+        <text x="16" y="65" fill="#F8FAFC" font-family="'SF Mono', 'Fira Code', 'Roboto Mono', Consolas, monospace" font-size="12" font-weight="700">ALT-2026-0891</text>
+        <text x="130" y="65" fill="#94A3B8" font-family="'SF Mono', 'Fira Code', 'Roboto Mono', Consolas, monospace" font-size="12">16:54:12</text>
+        <rect x="230" y="48" width="90" height="24" rx="3" fill="#DC2626"/>
+        <text x="275" y="64" fill="#FFFFFF" font-family="'SF Mono', 'Fira Code', 'Roboto Mono', Consolas, monospace" font-size="10" font-weight="700" text-anchor="middle">CRÍTICA (5)</text>
+        <text x="340" y="65" fill="#FCA5A5" font-family="'SF Mono', 'Fira Code', 'Roboto Mono', Consolas, monospace" font-size="12" font-weight="700">DDOS_SYN_FLOOD</text>
+        <text x="530" y="65" fill="#F8FAFC" font-family="'SF Mono', 'Fira Code', 'Roboto Mono', Consolas, monospace" font-size="12">192.168.100.50 (Kali)</text>
+        <text x="730" y="65" fill="#F8FAFC" font-family="'SF Mono', 'Fira Code', 'Roboto Mono', Consolas, monospace" font-size="12">192.168.1.15 (Alpine5)</text>
+        <text x="910" y="65" fill="#DC2626" font-family="'SF Mono', 'Fira Code', 'Roboto Mono', Consolas, monospace" font-size="12" font-weight="700">99.2%</text>
+        <rect x="1010" y="46" width="100" height="28" rx="4" fill="#DC2626"/>
+        <text x="1060" y="64" fill="#FFFFFF" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif" font-size="11" font-weight="700" text-anchor="middle">MITIGAR L3</text>
+
+        <!-- Fila 2 (Crítica - Exfiltración) -->
+        <rect x="0" y="88" width="1124" height="52" fill="#0F172A"/>
+        <line x1="0" y1="140" x2="1124" y2="140" stroke="#1E293B" stroke-width="1"/>
+        <text x="16" y="119" fill="#F8FAFC" font-family="'SF Mono', 'Fira Code', 'Roboto Mono', Consolas, monospace" font-size="12">ALT-2026-0890</text>
+        <text x="130" y="119" fill="#94A3B8" font-family="'SF Mono', 'Fira Code', 'Roboto Mono', Consolas, monospace" font-size="12">16:52:05</text>
+        <rect x="230" y="102" width="90" height="24" rx="3" fill="#D97706"/>
+        <text x="275" y="118" fill="#FFFFFF" font-family="'SF Mono', 'Fira Code', 'Roboto Mono', Consolas, monospace" font-size="10" font-weight="700" text-anchor="middle">CRÍTICA (5)</text>
+        <text x="340" y="119" fill="#F8FAFC" font-family="'SF Mono', 'Fira Code', 'Roboto Mono', Consolas, monospace" font-size="12">DNS_C2_EXFILTRATION</text>
+        <text x="530" y="119" fill="#F8FAFC" font-family="'SF Mono', 'Fira Code', 'Roboto Mono', Consolas, monospace" font-size="12">192.168.1.12 (Alpine2)</text>
+        <text x="730" y="119" fill="#F8FAFC" font-family="'SF Mono', 'Fira Code', 'Roboto Mono', Consolas, monospace" font-size="12">208.67.222.222 (DNS)</text>
+        <text x="910" y="119" fill="#D97706" font-family="'SF Mono', 'Fira Code', 'Roboto Mono', Consolas, monospace" font-size="12" font-weight="700">97.8%</text>
+        <rect x="1010" y="100" width="100" height="28" rx="4" fill="#1E293B" stroke="#334155" stroke-width="1"/>
+        <text x="1060" y="118" fill="#F8FAFC" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif" font-size="11" font-weight="600" text-anchor="middle">INSPECCIONAR</text>
+
+        <!-- Fila 3 (Mitigada) -->
+        <rect x="0" y="142" width="1124" height="52" fill="#1E293B"/>
+        <line x1="0" y1="194" x2="1124" y2="194" stroke="#1E293B" stroke-width="1"/>
+        <text x="16" y="173" fill="#64748B" font-family="'SF Mono', 'Fira Code', 'Roboto Mono', Consolas, monospace" font-size="12">ALT-2026-0889</text>
+        <text x="130" y="173" fill="#64748B" font-family="'SF Mono', 'Fira Code', 'Roboto Mono', Consolas, monospace" font-size="12">16:48:33</text>
+        <rect x="230" y="156" width="90" height="24" rx="3" fill="#052E16" stroke="#16A34A" stroke-width="1"/>
+        <text x="275" y="172" fill="#16A34A" font-family="'SF Mono', 'Fira Code', 'Roboto Mono', Consolas, monospace" font-size="10" font-weight="700" text-anchor="middle">MITIGADA</text>
+        <text x="340" y="173" fill="#94A3B8" font-family="'SF Mono', 'Fira Code', 'Roboto Mono', Consolas, monospace" font-size="12">PORT_SCAN (Recon L4)</text>
+        <text x="530" y="173" fill="#94A3B8" font-family="'SF Mono', 'Fira Code', 'Roboto Mono', Consolas, monospace" font-size="12">192.168.100.50 (Kali)</text>
+        <text x="730" y="173" fill="#94A3B8" font-family="'SF Mono', 'Fira Code', 'Roboto Mono', Consolas, monospace" font-size="12">192.168.1.1 (Gateway)</text>
+        <text x="910" y="173" fill="#64748B" font-family="'SF Mono', 'Fira Code', 'Roboto Mono', Consolas, monospace" font-size="12">88.5%</text>
+        <text x="1060" y="173" fill="#16A34A" font-family="'SF Mono', 'Fira Code', 'Roboto Mono', Consolas, monospace" font-size="11" font-weight="700" text-anchor="middle">L3 NULL ROUTE</text>
+      </g>
+    </g>
+  </g>
+</svg>

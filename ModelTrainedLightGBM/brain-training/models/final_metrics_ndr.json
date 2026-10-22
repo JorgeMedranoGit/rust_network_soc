@@ -1,0 +1,1 @@
+{"feature_importance":{"IN_BYTES":8288.0,"IN_PKTS":2568.0,"L4_DST_PORT":5565.0,"L7_PROTO":4151.0,"OUT_BYTES":7725.0,"OUT_PKTS":2280.0,"PROTOCOL":923.0},"proyecto":"NDR Tigo Bolivia","resultados":{"f1_score_maximo":0.7047818234132568,"mejor_umbral_f1":0.10000000149011612,"tiempo_total":"2003.32s","total_registros":75987976}}

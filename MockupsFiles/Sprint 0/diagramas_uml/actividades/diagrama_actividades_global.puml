@@ -1,0 +1,79 @@
+@startuml diagrama_actividades_global
+!theme vibrant
+skinparam roundcorner 6
+skinparam defaultFontName Arial
+skinparam defaultFontSize 10
+
+|Red Carrier AS27839 / Sondas eBPF|
+start
+:Capturar trama de red a velocidad de cable;
+:Filtrar tráfico por socket RAW / AF_PACKET;
+
+|#F4F7FC|Motor de Feature Engineering (Polars)|
+:Agrupar eventos en ventana temporal deslizante;
+:Extraer 23 características de red en formato columnar;
+note right
+  Calcula en < 500 us:
+  * Tamaños y cabeceras
+  * Varianza de TTL
+  * Ratios de flags TCP (SYN, ACK, FIN, RST)
+  * Entropía de bytes de payload
+  * Frecuencia de consultas DNS
+end note
+:Generar vector normalizado de características;
+
+|#E8EEF5|Motor Analítico de IA (LightGBM C-API)|
+:Alimentar vector al Booster LightGBM (C-API libre de GIL);
+:Calcular probabilidad de anomalía de exfiltración;
+if (¿Probabilidad >= Umbral de Amenaza [0.85]?) then (No - Tráfico Legítimo)
+    |Persistencia & Telemetría (PostgreSQL BCNF)|
+    :Acumular en métricas periódicas agregadas
+(network_traffic_metrics);
+    stop
+else (Sí - Exfiltración Detectada)
+    :Tipificar amenaza (DNS Tunneling / HTTPS Leak);
+    :Generar registro forense aislado (network_logs);
+    :Calcular hash criptográfico SHA-256 de evidencia;
+    :Registrar alerta de seguridad (security_alerts);
+    
+    |Consola SOC & Orquestador de Mitigaciones|
+    :Despachar alerta en vivo vía WebSocket y Push FCM;
+    :Evaluar Radio de Impacto (Blast Radius);
+    if (¿Impacto Masivo o Capa 7?) then (Sí - Requiere Aprobación)
+        :Encolar tarea en estado PENDING_MANUAL;
+        :Exigir re-autenticación al Operador L2;
+        :Analista inspecciona payload y confirma mitigación;
+    else (No - Impacto Singular / Host Aislado)
+        :Despachar cuarentena automática inmediata;
+    endif
+
+    :Generar instantánea JSON de estado previo (Rollback Snapshot);
+    fork
+        if (¿Vector L2?) then (Sí)
+            :Ejecutar desconexión RADIUS CoA en Switch;
+        endif
+    fork again
+        if (¿Vector L3/L4?) then (Sí)
+            :Inyectar BGP RTBH / ACL DROP en Core;
+        endif
+    fork again
+        if (¿Vector L7 DNS?) then (Sí)
+            :Activar DNS Sinkhole hacia IP controlada;
+        endif
+    end fork
+
+    :Iniciar temporizador preventivo de 300 segundos;
+    :Registrar acción en auditoría inmutable (mitigation_audit);
+    
+    if (¿Operador detecta Falso Positivo o Expira Timer?) then (Revertir)
+        :Ejecutar carga útil de Rollback JSON;
+        :Restaurar configuración de red original;
+        :Marcar alerta como FALSE_POSITIVE;
+    else (Confirmado)
+        :Consolidar bloqueo definitivo;
+        :Marcar alerta como MITIGATED;
+    endif
+    stop
+endif
+
+@enduml

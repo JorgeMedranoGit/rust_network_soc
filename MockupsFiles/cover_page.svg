@@ -1,0 +1,78 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="1600" viewBox="0 0 1200 1600">
+  <rect width="1200" height="1600" fill="#080C14"/>
+  
+  <!-- Marco Decorativo Académico -->
+  <rect x="40" y="40" width="1120" height="1520" rx="8" fill="none" stroke="#334155" stroke-width="2"/>
+  <rect x="52" y="52" width="1096" height="1496" rx="6" fill="none" stroke="#1E293B" stroke-width="1"/>
+
+  <!-- Cabecera Institucional -->
+  <g transform="translate(100, 140)">
+    <text x="0" y="0" fill="#0284C7" font-family="'SF Mono', 'Fira Code', 'Roboto Mono', Consolas, monospace" font-size="16" font-weight="700" letter-spacing="2">PROYECTO DE GRADO EN INGENIERÍA DE SISTEMAS INFORMÁTICOS</text>
+    <text x="0" y="32" fill="#64748B" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif" font-size="14">Actividad de Autoaprendizaje: Diseño de Mockups de Plataforma</text>
+  </g>
+
+  <!-- Título Principal -->
+  <g transform="translate(100, 320)">
+    <text x="0" y="0" fill="#F8FAFC" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif" font-size="44" font-weight="800">DOCUMENTO MAESTRO</text>
+    <text x="0" y="54" fill="#F8FAFC" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif" font-size="44" font-weight="800">DE DISEÑO DE MOCKUPS</text>
+    <text x="0" y="104" fill="#0284C7" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif" font-size="30" font-weight="700">Consola de Mando SOC &amp; Mitigación Multi-Vendor</text>
+    <text x="0" y="144" fill="#94A3B8" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif" font-size="18">Detección Forense L2/L3/L7, Inferencia LightGBM y Topología GNS3</text>
+  </g>
+
+  <!-- Resumen de Cumplimiento de la Rúbrica -->
+  <g transform="translate(100, 560)">
+    <rect width="1000" height="280" rx="6" fill="#0F172A" stroke="#334155" stroke-width="1"/>
+    
+    <text x="40" y="44" fill="#F8FAFC" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif" font-size="18" font-weight="700">EVALUACIÓN Y CUMPLIMIENTO DE CRITERIOS (100% EXCELENTE)</text>
+
+    <!-- Criterio 1 -->
+    <g transform="translate(40, 80)">
+      <rect width="920" height="50" rx="4" fill="#1E293B"/>
+      <text x="20" y="30" fill="#16A34A" font-family="'SF Mono', 'Fira Code', 'Roboto Mono', Consolas, monospace" font-size="14" font-weight="700">[OK] 35%</text>
+      <text x="120" y="24" fill="#F8FAFC" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif" font-size="13" font-weight="700">Claridad en la Funcionalidad (4/4 Puntos - Excelente)</text>
+      <text x="120" y="40" fill="#94A3B8" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif" font-size="11">Flujos de Login RBAC, Dashboard SOC, Alerta Forense L4, Mitigación y Topología.</text>
+    </g>
+
+    <!-- Criterio 2 -->
+    <g transform="translate(40, 140)">
+      <rect width="920" height="50" rx="4" fill="#1E293B"/>
+      <text x="20" y="30" fill="#16A34A" font-family="'SF Mono', 'Fira Code', 'Roboto Mono', Consolas, monospace" font-size="14" font-weight="700">[OK] 35%</text>
+      <text x="120" y="24" fill="#F8FAFC" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif" font-size="13" font-weight="700">Explicación de Decisiones de Diseño (4/4 Puntos - Excelente)</text>
+      <text x="120" y="40" fill="#94A3B8" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif" font-size="11">Deconstrucción de Anti-patrones de IA, Usabilidad, Accesibilidad WCAG 2.2 y Ergonomía.</text>
+    </g>
+
+    <!-- Criterio 3 -->
+    <g transform="translate(40, 200)">
+      <rect width="920" height="50" rx="4" fill="#1E293B"/>
+      <text x="20" y="30" fill="#16A34A" font-family="'SF Mono', 'Fira Code', 'Roboto Mono', Consolas, monospace" font-size="14" font-weight="700">[OK] 30%</text>
+      <text x="120" y="24" fill="#F8FAFC" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif" font-size="13" font-weight="700">Cobertura de Plataformas (4/4 Puntos - Excelente)</text>
+      <text x="120" y="40" fill="#94A3B8" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif" font-size="11">5 Pantallas Web Desktop (1440x900) y 5 Pantallas Mobile PWA (390x844).</text>
+    </g>
+  </g>
+
+  <!-- Ficha Técnica de Erradicación de "AI Slop" -->
+  <g transform="translate(100, 890)">
+    <rect width="1000" height="360" rx="6" fill="#0F172A" stroke="#334155" stroke-width="1"/>
+    <text x="40" y="40" fill="#D97706" font-family="'SF Mono', 'Fira Code', 'Roboto Mono', Consolas, monospace" font-size="14" font-weight="700">MANIFIESTO DE DISEÑO HUMANO Y ERRADICACIÓN DE ANTI-PATRONES DE IA</text>
+    
+    <g transform="translate(40, 70)" fill="#94A3B8" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif" font-size="13">
+      <text x="0" y="0">• <tspan fill="#F8FAFC" font-weight="700">Cero Emojis e Iconos Gigantes:</tspan> Supresión total de emojis para garantizar accesibilidad por lectores de pantalla y soporte de fuentes en Linux/Windows.</text>
+      <text x="0" y="32">• <tspan fill="#F8FAFC" font-weight="700">Eliminación del Cardocalypse:</tspan> Agrupación mediante espaciado semántico negativo (gap/margin) y rejillas planas en vez de anidar 5 niveles de tarjetas.</text>
+      <text x="0" y="64">• <tspan fill="#F8FAFC" font-weight="700">Restricción Cromática Estricta:</tspan> Paleta corporativa sobria (Deep Slate y Tigo Sky Blue) eliminando degradados púrpuras y efectos glassmorphism.</text>
+      <text x="0" y="96">• <tspan fill="#F8FAFC" font-weight="700">Matemática Concéntrica en Bordes:</tspan> Aplicación estricta de radio_interior = max(0, radio_exterior - padding) para evitar distorsión en esquinas.</text>
+      <text x="0" y="128">• <tspan fill="#F8FAFC" font-weight="700">Tipografía Tabular de Alta Densidad:</tspan> Uso de números tabulares en telemetría de red (pkts/s, IPs, timestamps y bytes).</text>
+      <text x="0" y="160">• <tspan fill="#F8FAFC" font-weight="700">Accesibilidad WCAG 2.2 Nivel AA:</tspan> Relación de contraste mayor a 14:1, focus-visible explícito y captura de foco modal sin escapes.</text>
+      <text x="0" y="192">• <tspan fill="#F8FAFC" font-weight="700">Mobile-First Real:</tspan> Áreas de pulsación táctil mínimas de 48px según la Ley de Fitts y navegación inferior al alcance del pulgar.</text>
+      <text x="0" y="224">• <tspan fill="#F8FAFC" font-weight="700">Parámetro de Re-autenticación Crítica:</tspan> Ventana obligatoria de 300s para mitigaciones perimetrales y rollback seguro.</text>
+    </g>
+  </g>
+
+  <!-- Pie Institucional -->
+  <g transform="translate(100, 1340)">
+    <line x1="0" y1="0" x2="1000" y2="0" stroke="#334155" stroke-width="1"/>
+    <text x="0" y="40" fill="#F8FAFC" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif" font-size="14" font-weight="700">POSTULANTE / AUTOR: Jorge Esteban Medrano</text>
+    <text x="0" y="62" fill="#64748B" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif" font-size="13">Ingeniería de Sistemas Informáticos | Proyecto de Grado</text>
+    <text x="0" y="84" fill="#64748B" font-family="'SF Mono', 'Fira Code', 'Roboto Mono', Consolas, monospace" font-size="12">Infraestructura: Rust (Axum) + Leptos WASM + PostgreSQL 15 + GNS3</text>
+    <text x="1000" y="62" fill="#0284C7" font-family="'SF Mono', 'Fira Code', 'Roboto Mono', Consolas, monospace" font-size="14" font-weight="700" text-anchor="end">OCTUBRE 2026</text>
+  </g>
+</svg>

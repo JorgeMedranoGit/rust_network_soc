@@ -1,0 +1,962 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Tigo SOC - Wireframes & Mockups Interactivos (Moqups Ready)</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Courier+Prime:ital,wght@0,400;0,700;1,400&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet" />
+    <style>
+        :root {
+            --wf-bg: #FFFFFF;
+            --wf-panel: #F8FAFC;
+            --wf-panel-alt: #F1F5F9;
+            --wf-border: #475569;
+            --wf-border-light: #94A3B8;
+            --wf-border-dash: #64748B;
+            --wf-text: #0F172A;
+            --wf-text-muted: #64748B;
+            --wf-action: #0284C7;
+            --wf-btn-bg: #E2E8F0;
+            --wf-btn-active: #CBD5E1;
+            --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            --font-mono: 'JetBrains Mono', 'Courier Prime', Courier, monospace;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: #E2E8F0;
+            color: var(--wf-text);
+            font-family: var(--font-sans);
+            padding: 0;
+            margin: 0;
+            min-height: 100vh;
+        }
+
+        /* --- Barra Superior de Control para Extracción con Moqups --- */
+        .moqups-control-bar {
+            position: sticky;
+            top: 0;
+            z-index: 10000;
+            background-color: #0F172A;
+            color: #FFFFFF;
+            padding: 10px 20px;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            border-bottom: 2px solid #334155;
+        }
+
+        .moqups-brand {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .moqups-badge {
+            background-color: #0284C7;
+            color: #FFFFFF;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 700;
+            font-family: var(--font-mono);
+        }
+
+        .moqups-selectors {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .ctrl-btn {
+            background-color: #1E293B;
+            color: #F8FAFC;
+            border: 1px solid #475569;
+            padding: 6px 12px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+
+        .ctrl-btn:hover {
+            background-color: #334155;
+            border-color: #0284C7;
+        }
+
+        .ctrl-btn.active {
+            background-color: #0284C7;
+            color: #FFFFFF;
+            border-color: #38BDF8;
+        }
+
+        .viewport-select {
+            background-color: #1E293B;
+            color: #F8FAFC;
+            border: 1px solid #475569;
+            padding: 6px 10px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        /* --- Contenedor del Viewport --- */
+        .stage-wrapper {
+            padding: 30px 20px;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: calc(100vh - 65px);
+            overflow-x: auto;
+        }
+
+        .viewport-canvas {
+            background-color: var(--wf-bg);
+            border: 2px solid var(--wf-border);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            transition: width 0.3s ease;
+            position: relative;
+        }
+
+        .viewport-pc {
+            width: 1440px;
+            min-height: 900px;
+        }
+
+        .viewport-tablet {
+            width: 1024px;
+            min-height: 768px;
+        }
+
+        .viewport-mobile {
+            width: 390px;
+            min-height: 844px;
+            border-radius: 36px;
+            border-width: 4px;
+            overflow: hidden;
+            margin: 0 auto;
+        }
+
+        .viewport-fluid {
+            width: 100%;
+            min-height: 900px;
+        }
+
+        /* --- Componentes de Wireframe --- */
+        .wf-header {
+            background-color: var(--wf-panel-alt);
+            border-bottom: 2px solid var(--wf-border);
+            padding: 12px 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+        }
+
+        .wf-logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .wf-logo-box {
+            width: 36px;
+            height: 36px;
+            border: 1.5px solid var(--wf-border);
+            background-color: var(--wf-bg);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        .wf-logo-box::before, .wf-logo-box::after {
+            content: '';
+            position: absolute;
+            background-color: var(--wf-border-light);
+        }
+        .wf-logo-box::before { width: 100%; height: 1px; transform: rotate(45deg); }
+        .wf-logo-box::after { width: 100%; height: 1px; transform: rotate(-45deg); }
+
+        .wf-nav {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+
+        .wf-nav-item {
+            background-color: var(--wf-bg);
+            border: 1.5px solid var(--wf-border);
+            padding: 6px 10px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 700;
+            cursor: pointer;
+            text-align: center;
+            line-height: 1.2;
+        }
+
+        .wf-nav-item.active {
+            background-color: var(--wf-btn-active);
+            border-width: 2px;
+        }
+
+        .wf-action-sub {
+            display: block;
+            font-family: var(--font-mono);
+            font-size: 7.5px;
+            color: var(--wf-action);
+            margin-top: 2px;
+        }
+
+        .wf-header-status {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .wf-dropdown {
+            background-color: var(--wf-bg);
+            border: 1.5px solid var(--wf-border);
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-family: var(--font-sans);
+        }
+
+        .wf-btn {
+            background-color: var(--wf-btn-bg);
+            border: 1.5px solid var(--wf-border);
+            padding: 6px 14px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 700;
+            cursor: pointer;
+            text-align: center;
+            display: inline-block;
+        }
+
+        .wf-btn-primary {
+            background-color: var(--wf-btn-active);
+            border-width: 2px;
+        }
+
+        .wf-placeholder-box {
+            background-color: var(--wf-panel-alt);
+            border: 1.5px solid var(--wf-border);
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        .wf-placeholder-box svg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+        }
+
+        .wf-placeholder-label {
+            background-color: var(--wf-bg);
+            border: 1px solid var(--wf-border);
+            padding: 6px 14px;
+            border-radius: 4px;
+            font-family: var(--font-mono);
+            font-size: 11px;
+            font-weight: 700;
+            z-index: 2;
+            color: var(--wf-text);
+        }
+
+        .wf-input-group {
+            margin-bottom: 14px;
+        }
+
+        .wf-input-label {
+            font-size: 11px;
+            font-weight: 700;
+            margin-bottom: 4px;
+            display: block;
+            text-transform: uppercase;
+        }
+
+        .wf-input-field {
+            width: 100%;
+            border: 1.5px solid var(--wf-border);
+            background-color: var(--wf-bg);
+            padding: 8px 12px;
+            border-radius: 4px;
+            font-family: var(--font-mono);
+            font-size: 12px;
+            color: var(--wf-text);
+        }
+
+        .wf-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 11px;
+            margin-top: 10px;
+        }
+
+        .wf-table th, .wf-table td {
+            border: 1px solid var(--wf-border);
+            padding: 8px 12px;
+            text-align: left;
+        }
+
+        .wf-table th {
+            background-color: var(--wf-panel-alt);
+            font-family: var(--font-mono);
+            font-weight: 700;
+        }
+
+        .wf-table tr:nth-child(even) {
+            background-color: var(--wf-panel);
+        }
+
+        .wf-kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .wf-kpi-card {
+            border: 1.5px solid var(--wf-border);
+            background-color: var(--wf-panel);
+            padding: 14px;
+            border-radius: 4px;
+        }
+
+        .wf-kpi-val {
+            font-family: var(--font-mono);
+            font-size: 24px;
+            font-weight: 800;
+            margin: 4px 0;
+        }
+
+        /* Vistas Ocultables */
+        .page-view {
+            display: none;
+            padding: 24px;
+        }
+
+        .page-view.active-view {
+            display: block;
+        }
+
+        /* Dispositivos Móviles */
+        .mobile-frame-bar {
+            background-color: var(--wf-panel-alt);
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 16px;
+            border-bottom: 1px solid var(--wf-border);
+            font-family: var(--font-mono);
+            font-size: 10px;
+            font-weight: 700;
+        }
+
+        .mobile-bottom-bar {
+            background-color: var(--wf-panel-alt);
+            border-top: 1.5px solid var(--wf-border);
+            height: 54px;
+            display: flex;
+            align-items: center;
+            justify-content: space-around;
+            font-size: 10px;
+            font-weight: 700;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ── BARRA DE CONTROL PARA EXTRACTOR MOQUPS ────────────────────── -->
+    <div class="moqups-control-bar">
+        <div class="moqups-brand">
+            <span class="moqups-badge">MOQUPS EXTRACTOR</span>
+            <strong style="font-size: 13px;">Tigo SOC Wireframes (Tema Claro)</strong>
+        </div>
+
+        <!-- Selector de Páginas de tigo_soc_frontend -->
+        <div class="moqups-selectors">
+            <span style="font-size: 11px; color: #94A3B8;">Página:</span>
+            <select id="pageSelect" class="viewport-select" onchange="switchPage(this.value)">
+                <option value="p1">1. LoginView (Acceso Seguro)</option>
+                <option value="p2" selected>2. Dashboard (Panel de Control)</option>
+                <option value="p3">3. Topology3D (Topología 3D)</option>
+                <option value="p4">4. MonitoringCharts (Gráficas)</option>
+                <option value="p5">5. RealtimeStream (Flujo en Vivo)</option>
+                <option value="p6">6. AlertsTable (Alertas Forenses)</option>
+                <option value="p7">7. BlastRadius (Blast Radius & Re-auth)</option>
+                <option value="p8">8. UserManagement (Usuarios & RBAC)</option>
+                <option value="all">⚡ Ver Todas (Secuencial)</option>
+            </select>
+
+            <span style="font-size: 11px; color: #94A3B8; margin-left: 10px;">Viewport:</span>
+            <button class="ctrl-btn active" onclick="setViewport('pc', this)">🖥️ PC (1440px)</button>
+            <button class="ctrl-btn" onclick="setViewport('tablet', this)">📱 Tablet (1024px)</button>
+            <button class="ctrl-btn" onclick="setViewport('mobile', this)">📲 Celular (390px)</button>
+            <button class="ctrl-btn" onclick="setViewport('fluid', this)">↔️ 100% Fluido</button>
+        </div>
+
+        <div>
+            <a href="/style-ff76039bd3b531f1.css" target="_blank" class="ctrl-btn" style="text-decoration: none;">CSS Raw</a>
+            <a href="/" class="ctrl-btn" style="background-color: #0284C7; border-color: #38BDF8; text-decoration: none;">Ir a SPA WASM</a>
+        </div>
+    </div>
+
+    <!-- ── CONTENEDOR DE VISUALIZACIÓN DE WIREFRAMES ───────────────────── -->
+    <div class="stage-wrapper">
+        <div id="canvasBox" class="viewport-canvas viewport-pc">
+
+            <!-- ══════════════════════════════════════════════════════════
+                 HEADER GLOBAL DEL SISTEMA (Presente en Páginas 2 a 8)
+                 ══════════════════════════════════════════════════════════ -->
+            <header id="globalHeader" class="wf-header">
+                <div class="wf-logo">
+                    <div class="wf-logo-box"></div>
+                    <div>
+                        <h1 style="font-size: 14px; font-weight: 800; letter-spacing: 0.5px;">TIGO SOC MONITOR</h1>
+                        <span style="font-size: 9px; font-family: var(--font-mono); color: var(--wf-text-muted);">
+                            [ Placeholder: Escudo Logo ] | Rust Tokio + Leptos WASM
+                        </span>
+                    </div>
+                </div>
+
+                <!-- Pestañas de Navegación del Sistema -->
+                <nav class="wf-nav">
+                    <button class="wf-nav-item active" onclick="switchPage('p2')">
+                        📊 Panel de Control
+                        <span class="wf-action-sub">&lt;ActiveTab::Dashboard&gt;</span>
+                    </button>
+                    <button class="wf-nav-item" onclick="switchPage('p3')">
+                        🌐 Topología 3D
+                        <span class="wf-action-sub">&lt;ActiveTab::Topology&gt;</span>
+                    </button>
+                    <button class="wf-nav-item" onclick="switchPage('p4')">
+                        📈 Gráficas
+                        <span class="wf-action-sub">&lt;ActiveTab::MonitoringCharts&gt;</span>
+                    </button>
+                    <button class="wf-nav-item" onclick="switchPage('p5')">
+                        ⚡ Flujo en Vivo
+                        <span class="wf-action-sub">&lt;ActiveTab::RealtimeStream&gt;</span>
+                    </button>
+                    <button class="wf-nav-item" onclick="switchPage('p6')">
+                        🚨 Alertas
+                        <span class="wf-action-sub">&lt;ActiveTab::Alerts&gt;</span>
+                    </button>
+                    <button class="wf-nav-item" onclick="switchPage('p7')">
+                        ⚠️ Blast Radius [3]
+                        <span class="wf-action-sub">&lt;ActiveTab::BlastRadius&gt;</span>
+                    </button>
+                    <button class="wf-nav-item" onclick="switchPage('p8')">
+                        👥 Usuarios &amp; RBAC
+                        <span class="wf-action-sub">&lt;ActiveTab::UserManagement&gt;</span>
+                    </button>
+                </nav>
+
+                <!-- Estado y Perfil de Usuario -->
+                <div class="wf-header-status">
+                    <div>
+                        <select class="wf-dropdown">
+                            <option>[ Dropdown: admin_soc (SOC_ADMIN) ]</option>
+                            <option>[ Dropdown: operador_red (SOC_OPERATOR) ]</option>
+                            <option>[ Dropdown: auditor_seguridad (SOC_AUDITOR) ]</option>
+                        </select>
+                        <span class="wf-action-sub" style="text-align: right;">-&gt; Conmuta Perfil</span>
+                    </div>
+
+                    <span style="border: 1.5px solid var(--wf-border); padding: 4px 8px; border-radius: 12px; font-size: 9px; font-weight: 700; font-family: var(--font-mono);">
+                        ● EN LÍNEA
+                    </span>
+
+                    <button class="wf-btn" onclick="switchPage('p1')" title="Cierra sesión">
+                        ⏏ SALIR
+                        <span class="wf-action-sub">-&gt; Logout API</span>
+                    </button>
+                </div>
+            </header>
+
+            <!-- ══════════════════════════════════════════════════════════
+                 PÁGINA 1: LoginView.rs (Sin Header Global)
+                 ══════════════════════════════════════════════════════════ -->
+            <section id="p1" class="page-view">
+                <div style="max-width: 480px; margin: 40px auto; border: 2px solid var(--wf-border); background-color: var(--wf-panel); padding: 32px; border-radius: 6px;">
+                    <div style="height: 80px; margin-bottom: 20px;" class="wf-placeholder-box">
+                        <svg><line x1="0" y1="0" x2="100%" y2="100%" stroke="#94A3B8" stroke-dasharray="4"/><line x1="0" y1="100%" x2="100%" y2="0" stroke="#94A3B8" stroke-dasharray="4"/></svg>
+                        <span class="wf-placeholder-label">[ Placeholder: Logo Tigo SOC ]</span>
+                    </div>
+
+                    <h2 style="font-size: 16px; font-weight: 800; text-align: center; margin-bottom: 4px;">ACCESO A CONSOLA SOC</h2>
+                    <p style="font-size: 11px; text-align: center; color: var(--wf-text-muted); font-family: var(--font-mono); margin-bottom: 20px;">
+                        Autenticación RBAC Zero-Trust / Sesión Servidor
+                    </p>
+
+                    <!-- Pestañas Conmutables -->
+                    <div style="display: flex; margin-bottom: 16px; border: 1.5px solid var(--wf-border); border-radius: 4px; overflow: hidden;">
+                        <button class="wf-btn wf-btn-primary" style="flex: 1; border: none; border-radius: 0;">[ Tab: Iniciar Sesión ]</button>
+                        <button class="wf-btn" style="flex: 1; border: none; border-radius: 0;">[ Tab: Registrarse ]</button>
+                    </div>
+
+                    <div class="wf-input-group">
+                        <label class="wf-input-label">Usuario Operativo:</label>
+                        <input type="text" class="wf-input-field" value="admin_soc" placeholder="[ Placeholder: Nombre de Usuario | Ej: admin_soc ]" />
+                    </div>
+
+                    <div class="wf-input-group">
+                        <label class="wf-input-label">Contraseña de Acceso:</label>
+                        <input type="password" class="wf-input-field" value="••••••••••••" placeholder="[ Placeholder: Credencial | Ej: admin ]" />
+                    </div>
+
+                    <div class="wf-input-group">
+                        <label class="wf-input-label">Perfil RBAC Inicial:</label>
+                        <select class="wf-input-field">
+                            <option>[ Dropdown: SOC_ADMIN (Nivel 5 - Acceso Total) ]</option>
+                            <option>[ Dropdown: SOC_OPERATOR (Mitigación & Rollback) ]</option>
+                        </select>
+                        <span class="wf-action-sub">&lt;Select: Conmuta rol inicial en catálogo DB&gt;</span>
+                    </div>
+
+                    <button class="wf-btn wf-btn-primary" style="width: 100%; padding: 12px; margin-top: 10px;" onclick="switchPage('p2')">
+                        [ Botón: INICIAR SESIÓN ]
+                        <span class="wf-action-sub">-&gt; Valida credenciales contra POST /api/v1/auth/login</span>
+                    </button>
+
+                    <div style="margin-top: 24px; text-align: center;">
+                        <a href="#" style="font-size: 11px; color: var(--wf-action); text-decoration: underline;">
+                            &lt; Enlace: "¿Olvidó sus credenciales? Soporte SOC" -&gt; Modal &gt;
+                        </a>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ══════════════════════════════════════════════════════════
+                 PÁGINA 2: Dashboard (Panel de Control Principal)
+                 ══════════════════════════════════════════════════════════ -->
+            <section id="p2" class="page-view active-view">
+                <h2 style="font-size: 15px; font-weight: 800; margin-bottom: 12px;">
+                    PANEL DE CONTROL GENERAL (ActiveTab::Dashboard / SystemStatus + MonitoringChart + AlertsTable)
+                </h2>
+
+                <!-- SystemStatus KPIs -->
+                <div class="wf-kpi-grid">
+                    <div class="wf-kpi-card">
+                        <span style="font-size: 10px; font-weight: 700; color: var(--wf-text-muted);">TOTAL ALERTAS:</span>
+                        <div class="wf-kpi-val">[ Ej: 1,420 ]</div>
+                        <span class="wf-action-sub">&lt;Métrica: metrics.total_alerts&gt;</span>
+                    </div>
+                    <div class="wf-kpi-card">
+                        <span style="font-size: 10px; font-weight: 700; color: var(--wf-text-muted);">MITIGADAS CON ÉXITO:</span>
+                        <div class="wf-kpi-val">[ Ej: 984 ]</div>
+                        <span class="wf-action-sub">&lt;Métrica: metrics.mitigated&gt;</span>
+                    </div>
+                    <div class="wf-kpi-card">
+                        <span style="font-size: 10px; font-weight: 700; color: var(--wf-text-muted);">AMENAZAS CRÍTICAS:</span>
+                        <div class="wf-kpi-val" style="color: #DC2626;">[ Ej: 3 ]</div>
+                        <span class="wf-action-sub">&lt;Métrica: metrics.critical_threats&gt;</span>
+                    </div>
+                    <div class="wf-kpi-card">
+                        <span style="font-size: 10px; font-weight: 700; color: var(--wf-text-muted);">NODOS EN TOPOLOGÍA:</span>
+                        <div class="wf-kpi-val">[ Ej: 12 ]</div>
+                        <span class="wf-action-sub">&lt;Métrica: metrics.active_nodes&gt;</span>
+                    </div>
+                    <div class="wf-kpi-card">
+                        <span style="font-size: 10px; font-weight: 700; color: var(--wf-text-muted);">TASA SNIFFER LIBPCAP:</span>
+                        <div class="wf-kpi-val">[ Ej: 1,842 pkts/s ]</div>
+                        <span class="wf-action-sub">&lt;Métrica: metrics.packets_per_second&gt;</span>
+                    </div>
+                </div>
+
+                <!-- MonitoringChart Placeholder -->
+                <div style="height: 240px; margin-bottom: 20px;" class="wf-placeholder-box">
+                    <svg><line x1="0" y1="0" x2="100%" y2="100%" stroke="#94A3B8" stroke-dasharray="4"/><line x1="0" y1="100%" x2="100%" y2="0" stroke="#94A3B8" stroke-dasharray="4"/></svg>
+                    <span class="wf-placeholder-label">[ Placeholder Gráfico: Tráfico pkts/s vs Detecciones LightGBM ]</span>
+                </div>
+
+                <!-- AlertsTable -->
+                <div style="border: 1.5px solid var(--wf-border); padding: 16px; background-color: var(--wf-panel); border-radius: 4px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                        <h3 style="font-size: 13px; font-weight: 700;">Últimas Detecciones de Seguridad Multi-Vendor (AlertsTable.rs)</h3>
+                        <button class="wf-btn" onclick="switchPage('p6')">[ Ver Todas las Alertas -&gt; ActiveTab::Alerts ]</button>
+                    </div>
+
+                    <table class="wf-table">
+                        <thead>
+                            <tr>
+                                <th>ID ALERTA</th>
+                                <th>TIMESTAMP</th>
+                                <th>SEVERIDAD</th>
+                                <th>VECTOR DE AMENAZA</th>
+                                <th>IP ORIGEN (ATACANTE)</th>
+                                <th>IP DESTINO (VÍCTIMA)</th>
+                                <th>ACCIONES OPERATIVAS</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><strong>[Ej: ALT-001]</strong></td>
+                                <td>[Ej: 16:54:12]</td>
+                                <td style="font-weight: 700; color: #DC2626;">[Ej: CRITICAL (5)]</td>
+                                <td>[Ej: DDOS_SYN_FLOOD]</td>
+                                <td>[Ej: 192.168.100.50 (Kali)]</td>
+                                <td>[Ej: 192.168.1.15 : 80]</td>
+                                <td>
+                                    <button class="wf-btn wf-btn-primary" onclick="switchPage('p7')">[ Mitigar -&gt; Blast Radius ]</button>
+                                    <button class="wf-btn">[ Detalle ]</button>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><strong>[Ej: ALT-002]</strong></td>
+                                <td>[Ej: 16:52:05]</td>
+                                <td style="font-weight: 700; color: #D97706;">[Ej: HIGH (4)]</td>
+                                <td>[Ej: DNS_C2_EXFILTRATION]</td>
+                                <td>[Ej: 192.168.1.12 (Alpine2)]</td>
+                                <td>[Ej: 208.67.222.222:53]</td>
+                                <td>
+                                    <button class="wf-btn wf-btn-primary" onclick="switchPage('p7')">[ Mitigar ]</button>
+                                    <button class="wf-btn">[ Detalle ]</button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- ══════════════════════════════════════════════════════════
+                 PÁGINA 3: Topology3D (Topología de Red)
+                 ══════════════════════════════════════════════════════════ -->
+            <section id="p3" class="page-view">
+                <h2 style="font-size: 15px; font-weight: 800; margin-bottom: 12px;">
+                    TOPOLOGÍA DE RED GNS3 / DOCKER (ActiveTab::Topology / Topology3D.rs)
+                </h2>
+
+                <div style="display: flex; gap: 8px; margin-bottom: 12px; background-color: var(--wf-panel); padding: 8px; border: 1px solid var(--wf-border);">
+                    <button class="wf-btn">[ Resetear Cámara ]</button>
+                    <button class="wf-btn">[ Pausar Rotación ]</button>
+                    <button class="wf-btn">[ Centrar Atacante (192.168.100.50) ]</button>
+                    <button class="wf-btn">[ Centrar Víctimas Alpine ]</button>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 16px;">
+                    <!-- Canvas 3D Placeholder -->
+                    <div style="height: 520px;" class="wf-placeholder-box">
+                        <svg><line x1="0" y1="0" x2="100%" y2="100%" stroke="#94A3B8" stroke-dasharray="4"/><line x1="0" y1="100%" x2="100%" y2="0" stroke="#94A3B8" stroke-dasharray="4"/></svg>
+                        <span class="wf-placeholder-label">[ Placeholder: Canvas WebGL / Topología 3D de 12 Nodos ]</span>
+                    </div>
+
+                    <!-- Inspector Lateral -->
+                    <div style="border: 1.5px solid var(--wf-border); padding: 16px; background-color: var(--wf-panel);">
+                        <h3 style="font-size: 13px; font-weight: 700; margin-bottom: 10px;">Inspector de Nodo</h3>
+                        <p style="font-size: 11px; margin-bottom: 6px;"><strong>HOSTNAME:</strong> [Ej: "VictimeAlpine5"]</p>
+                        <p style="font-size: 11px; margin-bottom: 6px;"><strong>IP:</strong> [Ej: "192.168.1.15 / 24"]</p>
+                        <p style="font-size: 11px; margin-bottom: 6px;"><strong>MAC:</strong> [Ej: "02:42:ac:11:00:0f"]</p>
+                        <p style="font-size: 11px; margin-bottom: 6px;"><strong>VENDOR:</strong> [Ej: "GNS3 Alpine Container"]</p>
+                        <p style="font-size: 11px; margin-bottom: 14px;"><strong>PROTOCOLO:</strong> [Ej: "SSH / NETCONF"]</p>
+
+                        <button class="wf-btn" style="width: 100%; margin-bottom: 8px;">[ Botón: Aislar Nodo vía RADIUS CoA ]</button>
+                        <button class="wf-btn" style="width: 100%; margin-bottom: 8px;">[ Botón: Bloquear IP en iptables ]</button>
+                        <button class="wf-btn" style="width: 100%;">[ Botón: Iniciar Sniffer PCAP en eth0 ]</button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ══════════════════════════════════════════════════════════
+                 PÁGINA 4: MonitoringCharts (Gráficas y Telemetría GBDT)
+                 ══════════════════════════════════════════════════════════ -->
+            <section id="p4" class="page-view">
+                <h2 style="font-size: 15px; font-weight: 800; margin-bottom: 12px;">
+                    GRÁFICAS DE MONITOREO Y TELEMETRÍA GBDT (ActiveTab::MonitoringCharts)
+                </h2>
+
+                <div style="display: flex; gap: 8px; margin-bottom: 14px; background-color: var(--wf-panel); padding: 8px; border: 1px solid var(--wf-border);">
+                    <span style="font-size: 11px; font-weight: 700; margin-right: 6px;">Rango Temporal:</span>
+                    <button class="wf-btn">[ 5m ]</button>
+                    <button class="wf-btn wf-btn-primary">[ 15m ]</button>
+                    <button class="wf-btn">[ 1h ]</button>
+                    <button class="wf-btn">[ 24h ]</button>
+                </div>
+
+                <div style="height: 280px; margin-bottom: 16px;" class="wf-placeholder-box">
+                    <svg><line x1="0" y1="0" x2="100%" y2="100%" stroke="#94A3B8" stroke-dasharray="4"/><line x1="0" y1="100%" x2="100%" y2="0" stroke="#94A3B8" stroke-dasharray="4"/></svg>
+                    <span class="wf-placeholder-label">[ Placeholder Gráfico: Tasa de Paquetes vs Umbral de Inferencia ]</span>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                    <div style="border: 1.5px solid var(--wf-border); padding: 16px; background-color: var(--wf-panel);">
+                        <h4 style="font-size: 12px; font-weight: 700; margin-bottom: 8px;">Estadísticas del Motor LightGBM</h4>
+                        <p style="font-size: 11px; margin-bottom: 4px;">Latencia Inferencia: [Ej: 0.142 ms / flujo]</p>
+                        <p style="font-size: 11px; margin-bottom: 4px;">Variables Evaluadas: [Ej: 22 features L2/L4]</p>
+                        <p style="font-size: 11px;">Tasa Falsos Positivos: [Ej: 0.2%]</p>
+                    </div>
+
+                    <div style="height: 140px;" class="wf-placeholder-box">
+                        <svg><line x1="0" y1="0" x2="100%" y2="100%" stroke="#94A3B8" stroke-dasharray="4"/><line x1="0" y1="100%" x2="100%" y2="0" stroke="#94A3B8" stroke-dasharray="4"/></svg>
+                        <span class="wf-placeholder-label">[ Placeholder: Histograma Clases de Ataque ]</span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ══════════════════════════════════════════════════════════
+                 PÁGINA 5: RealtimeStream (Flujo Continuo en Vivo)
+                 ══════════════════════════════════════════════════════════ -->
+            <section id="p5" class="page-view">
+                <h2 style="font-size: 15px; font-weight: 800; margin-bottom: 12px;">
+                    FLUJO CONTINUO DE EVENTOS EN STREAMING (ActiveTab::RealtimeStream)
+                </h2>
+
+                <div style="display: flex; gap: 8px; margin-bottom: 12px; background-color: var(--wf-panel); padding: 8px; border: 1px solid var(--wf-border);">
+                    <button class="wf-btn">[ Pausar Feed ]</button>
+                    <button class="wf-btn">[ Limpiar Eventos ]</button>
+                    <button class="wf-btn">[ Exportar PCAP Stream ]</button>
+                    <input type="text" class="wf-input-field" style="width: 250px; padding: 4px 8px;" placeholder="[ Filtrar por IP / Vector... ]" />
+                </div>
+
+                <div style="border: 2px solid var(--wf-border); background-color: #FFFFFF; padding: 16px; font-family: var(--font-mono); font-size: 11px; min-height: 480px;">
+                    <p style="margin-bottom: 8px;">[16:54:12.829] [PKT_INSPECT] IFACE=eth0 PROTO=TCP(6) SRC=192.168.100.50:48291 DST=192.168.1.15:80 FLAGS=[SYN]</p>
+                    <p style="margin-bottom: 16px; color: var(--wf-action); padding-left: 20px;">-&gt; [ML_EVAL: LightGBM] Vector=DDOS_SYN_FLOOD Score=0.992 ActionRequired=YES</p>
+                    <hr style="border: 0.5px dashed var(--wf-border-light); margin-bottom: 12px;" />
+                    <p style="margin-bottom: 8px;">[16:54:13.104] [DNS_QUERY] SRC=192.168.1.12:53210 DST=208.67.222.222:53 QUERY="exfil.attacker.tigo.net"</p>
+                    <p style="margin-bottom: 16px; color: var(--wf-action); padding-left: 20px;">-&gt; [ML_EVAL: LightGBM] Entropía alta (4.82) -&gt; DNS_C2_EXFILTRATION (0.978)</p>
+                    <hr style="border: 0.5px dashed var(--wf-border-light); margin-bottom: 12px;" />
+                    <p style="color: var(--wf-text-muted);">[ Placeholder Stream: Escuchando nuevos eventos por WebSocket /api/v1/stream... ]</p>
+                </div>
+            </section>
+
+            <!-- ══════════════════════════════════════════════════════════
+                 PÁGINA 6: AlertsTable (Alertas Forenses)
+                 ══════════════════════════════════════════════════════════ -->
+            <section id="p6" class="page-view">
+                <h2 style="font-size: 15px; font-weight: 800; margin-bottom: 12px;">
+                    MONITOREO FORENSE DE ALERTAS (ActiveTab::Alerts / AlertsTable.rs)
+                </h2>
+
+                <div style="display: flex; gap: 8px; margin-bottom: 12px; background-color: var(--wf-panel); padding: 8px; border: 1px solid var(--wf-border);">
+                    <button class="wf-btn wf-btn-primary">[ Todos ]</button>
+                    <button class="wf-btn">[ Crítica (5) ]</button>
+                    <button class="wf-btn">[ Alta (4) ]</button>
+                    <button class="wf-btn">[ Media (3) ]</button>
+                    <input type="text" class="wf-input-field" style="width: 300px; padding: 4px 8px;" placeholder="[ Buscar por IP / Host / Tipo... ]" />
+                    <button class="wf-btn">[ Exportar CSV ]</button>
+                    <button class="wf-btn">[ Exportar PDF ]</button>
+                </div>
+
+                <table class="wf-table">
+                    <thead>
+                        <tr>
+                            <th>ID ALERTA</th>
+                            <th>FECHA/HORA</th>
+                            <th>SEVERIDAD</th>
+                            <th>AMENAZA</th>
+                            <th>ORIGEN (ATACANTE)</th>
+                            <th>DESTINO (VÍCTIMA)</th>
+                            <th>ESTADO</th>
+                            <th>ACCIONES</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>[Ej: ALT-2026-001]</td>
+                            <td>[Ej: 16:54:12]</td>
+                            <td style="color: #DC2626; font-weight: 700;">CRITICAL (5)</td>
+                            <td>DDOS_SYN_FLOOD</td>
+                            <td>192.168.100.50</td>
+                            <td>192.168.1.15 : 80</td>
+                            <td>PENDING_MANUAL</td>
+                            <td>
+                                <button class="wf-btn wf-btn-primary" onclick="switchPage('p7')">[ Mitigar ]</button>
+                                <button class="wf-btn">[ Analizar L4 ]</button>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>[Ej: ALT-2026-002]</td>
+                            <td>[Ej: 16:52:05]</td>
+                            <td style="color: #D97706; font-weight: 700;">HIGH (4)</td>
+                            <td>DNS_C2_EXFILTRATION</td>
+                            <td>192.168.1.12</td>
+                            <td>208.67.222.222:53</td>
+                            <td>CONFIRMED</td>
+                            <td>
+                                <button class="wf-btn wf-btn-primary" onclick="switchPage('p7')">[ Mitigar ]</button>
+                                <button class="wf-btn">[ Analizar DNS ]</button>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </section>
+
+            <!-- ══════════════════════════════════════════════════════════
+                 PÁGINA 7: BlastRadius (Blast Radius & Re-auth)
+                 ══════════════════════════════════════════════════════════ -->
+            <section id="p7" class="page-view">
+                <h2 style="font-size: 15px; font-weight: 800; margin-bottom: 12px;">
+                    CONTROL DE BLAST RADIUS Y RE-AUTENTICACIÓN (ActiveTab::BlastRadius)
+                </h2>
+
+                <div style="border: 2px solid var(--wf-border); padding: 14px; background-color: var(--wf-panel); margin-bottom: 16px;">
+                    <h3 style="font-size: 12px; font-weight: 800;">POLÍTICA ZERO-TRUST: RE-AUTENTICACIÓN CRÍTICA (300 SEGUNDOS)</h3>
+                    <p style="font-size: 11px; color: var(--wf-text-muted);">
+                        Mitigaciones retenidas manualmente para proteger infraestructura core. Ingrese su clave para autorizar.
+                    </p>
+                </div>
+
+                <!-- Diálogo Modal Superpuesto Accesible -->
+                <div style="max-width: 600px; margin: 20px auto; border: 2.5px solid var(--wf-border); background-color: #FFFFFF; padding: 24px; box-shadow: 0 8px 24px rgba(0,0,0,0.1);">
+                    <h3 style="font-size: 14px; font-weight: 800; margin-bottom: 12px; border-bottom: 1.5px solid var(--wf-border); padding-bottom: 6px;">
+                        MODAL: AUTORIZAR MITIGACIÓN PERIMETRAL (&lt;dialog&gt;)
+                    </h3>
+                    
+                    <p style="font-size: 11px; margin-bottom: 8px;"><strong>DIRECTIVA:</strong> [Ej: ACL_BLACKHOLE_L3_L4]</p>
+                    <div style="background-color: var(--wf-panel-alt); padding: 8px; font-family: var(--font-mono); font-size: 11px; border: 1px solid var(--wf-border); margin-bottom: 14px;">
+                        # iptables -I DOCKER-USER -s 192.168.100.50 -j DROP
+                    </div>
+
+                    <div class="wf-input-group">
+                        <label class="wf-input-label">Contraseña de Operador (admin_soc):</label>
+                        <input type="password" class="wf-input-field" value="••••••••••••" placeholder="[ Placeholder: Clave para autorizar ]" />
+                        <span class="wf-action-sub">&lt;Enforce: critical_action_timeout_secs = 300&gt;</span>
+                    </div>
+
+                    <div style="display: flex; gap: 10px; margin-top: 14px;">
+                        <button class="wf-btn" style="flex: 1;" onclick="switchPage('p2')">[ Cancelar (Esc) ]</button>
+                        <button class="wf-btn wf-btn-primary" style="flex: 2;">[ Confirmar y Aplicar Regla L3 ]</button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ══════════════════════════════════════════════════════════
+                 PÁGINA 8: UserManagement (Usuarios y RBAC)
+                 ══════════════════════════════════════════════════════════ -->
+            <section id="p8" class="page-view">
+                <h2 style="font-size: 15px; font-weight: 800; margin-bottom: 12px;">
+                    ADMINISTRACIÓN DE USUARIOS Y CONTROL DE ACCESO RBAC (ActiveTab::UserManagement)
+                </h2>
+
+                <div style="display: grid; grid-template-columns: 1fr 2fr; gap: 20px;">
+                    <!-- Formulario Operador -->
+                    <div style="border: 1.5px solid var(--wf-border); padding: 16px; background-color: var(--wf-panel);">
+                        <h3 style="font-size: 13px; font-weight: 700; margin-bottom: 12px;">Crear / Editar Operador</h3>
+                        <div class="wf-input-group">
+                            <label class="wf-input-label">Usuario:</label>
+                            <input type="text" class="wf-input-field" value="analista_triaje" placeholder="[ Placeholder: Nombre ]" />
+                        </div>
+                        <div class="wf-input-group">
+                            <label class="wf-input-label">Contraseña Inicial:</label>
+                            <input type="password" class="wf-input-field" value="••••••••••••" />
+                        </div>
+                        <div class="wf-input-group">
+                            <label class="wf-input-label">Rol Asignado:</label>
+                            <select class="wf-input-field">
+                                <option>[ Dropdown: SOC_OPERATOR v ]</option>
+                                <option>[ Dropdown: SOC_ADMIN v ]</option>
+                                <option>[ Dropdown: SOC_AUDITOR v ]</option>
+                            </select>
+                        </div>
+                        <button class="wf-btn wf-btn-primary" style="width: 100%;">[ Botón: GUARDAR USUARIO ]</button>
+                    </div>
+
+                    <!-- Tabla de Operadores -->
+                    <div style="border: 1.5px solid var(--wf-border); padding: 16px; background-color: var(--wf-panel);">
+                        <h3 style="font-size: 13px; font-weight: 700; margin-bottom: 10px;">Catálogo de Usuarios RBAC</h3>
+                        <table class="wf-table">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>USUARIO</th>
+                                    <th>ROL</th>
+                                    <th>PERMISOS</th>
+                                    <th>GESTIÓN</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>1</td>
+                                    <td><strong>admin_soc</strong></td>
+                                    <td>SOC_ADMIN</td>
+                                    <td>Acceso Total / Bypass</td>
+                                    <td><button class="wf-btn">[ Editar ]</button></td>
+                                </tr>
+                                <tr>
+                                    <td>2</td>
+                                    <td><strong>operador_red</strong></td>
+                                    <td>SOC_OPERATOR</td>
+                                    <td>Mitigar / Rollback</td>
+                                    <td><button class="wf-btn">[ Editar ]</button></td>
+                                </tr>
+                                <tr>
+                                    <td>3</td>
+                                    <td><strong>auditor_seguridad</strong></td>
+                                    <td>SOC_AUDITOR</td>
+                                    <td>Solo Lectura Forense</td>
+                                    <td><button class="wf-btn">[ Editar ]</button></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+        </div>
+    </div>
+
+    <!-- Script de Control Interactivo -->
+    <script>
+        function switchPage(pageId) {
+            const select = document.getElementById('pageSelect');
+            select.value = pageId;
+
+            const header = document.getElementById('globalHeader');
+            if (pageId === 'p1') {
+                header.style.display = 'none'; // LoginView no lleva header global
+            } else {
+                header.style.display = 'flex';
+            }
+
+            const views = document.querySelectorAll('.page-view');
+            if (pageId === 'all') {
+                views.forEach(v => v.classList.add('active-view'));
+                header.style.display = 'flex';
+            } else {
+                views.forEach(v => v.classList.remove('active-view'));
+                const target = document.getElementById(pageId);
+                if (target) target.classList.add('active-view');
+            }
+
+            // Actualizar pestañas activas del header
+            const navItems = document.querySelectorAll('.wf-nav-item');
+            navItems.forEach(n => n.classList.remove('active'));
+            const map = { p2: 0, p3: 1, p4: 2, p5: 3, p6: 4, p7: 5, p8: 6 };
+            if (map[pageId] !== undefined && navItems[map[pageId]]) {
+                navItems[map[pageId]].classList.add('active');
+            }
+        }
+
+        function setViewport(mode, btn) {
+            const canvas = document.getElementById('canvasBox');
+            canvas.className = 'viewport-canvas viewport-' + mode;
+
+            document.querySelectorAll('.ctrl-btn').forEach(b => b.classList.remove('active'));
+            if (btn) btn.classList.add('active');
+        }
+    </script>
+</body>
+</html>

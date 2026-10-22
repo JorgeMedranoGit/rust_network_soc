@@ -1,0 +1,3 @@
+[env]
+LIBCLANG_PATH = "/home/bando/.local/usr/lib"
+BINDGEN_EXTRA_CLANG_ARGS = "-I/home/bando/.local/usr/lib/clang/22/include"

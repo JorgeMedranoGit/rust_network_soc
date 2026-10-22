@@ -1,0 +1,361 @@
+// * * * ADAPTADOR DE CAPTURA DE RED ASÍNCRONA (PRODUCER-CONSUMER CON PCAP) * * *
+
+use std::net::IpAddr;
+use std::thread;
+use chrono::Utc;
+use etherparse::{NetSlice, SlicedPacket, TransportSlice};
+use pcap::{Capture, Linktype};
+use tokio::sync::mpsc;
+use crate::domain::models::{
+    L4Protocol, NetworkEvent, TCP_FLAG_ACK, TCP_FLAG_FIN, TCP_FLAG_PSH, TCP_FLAG_RST, TCP_FLAG_SYN,
+    TCP_FLAG_URG,
+};
+
+use std::sync::Arc;
+use crate::infrastructure::asset_discovery::AssetDiscoveryEngine;
+
+pub struct NetworkAdapter {
+    pub interface_name: String,
+    pub asset_engine: Option<Arc<AssetDiscoveryEngine>>,
+}
+
+impl NetworkAdapter {
+    pub fn new(interface_name: &str) -> Self {
+        Self {
+            interface_name: interface_name.to_string(),
+            asset_engine: None,
+        }
+    }
+
+    pub fn with_asset_discovery(interface_name: &str, asset_engine: Arc<AssetDiscoveryEngine>) -> Self {
+        Self {
+            interface_name: interface_name.to_string(),
+            asset_engine: Some(asset_engine),
+        }
+    }
+
+    // * * * INICIAR HILO PRODUCTOR DEDICADO PARA CAPTURA DE PAQUETES CON PCAP * * *
+    pub fn start_capture(&self, buffer_size: usize) -> mpsc::Receiver<NetworkEvent> {
+        let (tx, rx) = mpsc::channel(buffer_size);
+        let iface = self.interface_name.clone();
+        let asset_engine_opt = self.asset_engine.clone();
+
+        println!(
+            "|- INSTRUCCION -| Iniciando captura de red en la interfaz: '{}' (Patrón Productor-Consumidor)",
+            iface
+        );
+
+        // * * * HILO BLOQUEANTE DEDICADO CON LIBPCAP * * *
+        thread::spawn(move || {
+            let mut cap = match Capture::from_device(iface.as_str()) {
+                Ok(builder) => match builder
+                    .promisc(true)
+                    .snaplen(65535)
+                    .timeout(1000)
+                    .open()
+                {
+                    Ok(cap) => cap,
+                    Err(e) => {
+                        eprintln!(
+                            "|- INSTRUCCION -| [ERROR] Error al abrir interfaz '{}': {}. Revisa permisos o network_mode: host.",
+                            iface, e
+                        );
+                        return;
+                    }
+                },
+                Err(e) => {
+                    eprintln!(
+                        "|- INSTRUCCION -| [WARN] No se encontró el dispositivo de red '{}': {}. El sniffer quedará a la espera.",
+                        iface, e
+                    );
+                    return;
+                }
+            };
+
+            let datalink = cap.get_datalink();
+            println!(
+                "|- INSTRUCCION -| Productor activo en '{}' (LinkType ID: {:?})",
+                iface, datalink
+            );
+
+            loop {
+                match cap.next_packet() {
+                    Ok(packet) => {
+                        if let Some(ref engine) = asset_engine_opt {
+                            inspect_asset_from_raw(packet.data, datalink, engine);
+                        }
+                        if let Some(event) = parse_raw_packet(datalink, packet.data, packet.header.len as i32) {
+                            if tx.blocking_send(event).is_err() {
+                                println!("|- INSTRUCCION -| Canal de telemetría cerrado. Deteniendo captura.");
+                                break;
+                            }
+                        }
+                    }
+                    Err(pcap::Error::TimeoutExpired) => {
+                        continue;
+                    }
+                    Err(e) => {
+                        eprintln!("|- INSTRUCCION -| [ERROR] Error capturando paquete: {}", e);
+                        thread::sleep(std::time::Duration::from_millis(500));
+                    }
+                }
+            }
+        });
+
+        rx
+    }
+}
+
+// * * * PARSEO MULTI-LINKTYPE DE TRAMAS DE RED (ETHERNET, SLL, SLL2, RAW IP) * * *
+fn parse_raw_packet(datalink: Linktype, data: &[u8], packet_len: i32) -> Option<NetworkEvent> {
+    // 1. Linux Cooked Capture (interfaz 'any': SLL = 113, SLL2 = 276)
+    if (datalink.0 == 113 || datalink.0 == 276) && data.len() > 16 {
+        let offset = if datalink.0 == 113 { 16 } else { 20 };
+        if data.len() > offset {
+            if let Ok(sliced) = SlicedPacket::from_ip(&data[offset..]) {
+                if let Some(event) = extract_event(&sliced, packet_len) {
+                    return Some(event);
+                }
+                // Decapsulación de túneles ubridge GNS3 (UDP sobre loopback)
+                if let Some(TransportSlice::Udp(udp)) = &sliced.transport {
+                    let payload = udp.payload();
+                    if payload.len() >= 14 {
+                        if let Ok(inner_sliced) = SlicedPacket::from_ethernet(payload) {
+                            if let Some(event) = extract_event(&inner_sliced, payload.len() as i32) {
+                                return Some(event);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    // 2. Ethernet estándar (Linktype = 1)
+    if let Ok(sliced) = SlicedPacket::from_ethernet(data) {
+        if let Some(event) = extract_event(&sliced, packet_len) {
+            return Some(event);
+        }
+        if let Some(TransportSlice::Udp(udp)) = &sliced.transport {
+            let payload = udp.payload();
+            if payload.len() >= 14 {
+                if let Ok(inner_sliced) = SlicedPacket::from_ethernet(payload) {
+                    if let Some(event) = extract_event(&inner_sliced, payload.len() as i32) {
+                        return Some(event);
+                    }
+                }
+            }
+        }
+    }
+
+    // 3. BSD Loopback (Linktype = 0)
+    if datalink.0 == 0 && data.len() > 4 {
+        if let Ok(sliced) = SlicedPacket::from_ip(&data[4..]) {
+            if let Some(event) = extract_event(&sliced, packet_len) {
+                return Some(event);
+            }
+            if let Some(TransportSlice::Udp(udp)) = &sliced.transport {
+                let payload = udp.payload();
+                if payload.len() >= 14 {
+                    if let Ok(inner_sliced) = SlicedPacket::from_ethernet(payload) {
+                        if let Some(event) = extract_event(&inner_sliced, payload.len() as i32) {
+                            return Some(event);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    // 4. Intentar directamente como IP puro (Linktype = 12 / 101)
+    if let Ok(sliced) = SlicedPacket::from_ip(data) {
+        if let Some(event) = extract_event(&sliced, packet_len) {
+            return Some(event);
+        }
+    }
+
+    None
+}
+
+// * * * EXTRACCIÓN DE METADATOS Y FILTRADO ESTRICTO DE AUTO-CAPTURA * * *
+fn extract_event(sliced: &SlicedPacket, packet_len: i32) -> Option<NetworkEvent> {
+    let (src_ip, dst_ip, proto, header_len, ttl) = match &sliced.net {
+        Some(NetSlice::Ipv4(ipv4)) => {
+            let p = match ipv4.header().protocol() {
+                etherparse::IpNumber::TCP => L4Protocol::TCP,
+                etherparse::IpNumber::UDP => L4Protocol::UDP,
+                etherparse::IpNumber::ICMP => L4Protocol::ICMP,
+                _ => L4Protocol::Other,
+            };
+            (
+                IpAddr::V4(ipv4.header().source_addr()),
+                IpAddr::V4(ipv4.header().destination_addr()),
+                p,
+                ipv4.header().ihl() * 4,
+                ipv4.header().ttl(),
+            )
+        }
+        Some(NetSlice::Ipv6(ipv6)) => {
+            let p = match ipv6.header().next_header() {
+                etherparse::IpNumber::TCP => L4Protocol::TCP,
+                etherparse::IpNumber::UDP => L4Protocol::UDP,
+                etherparse::IpNumber::ICMP => L4Protocol::ICMP,
+                _ => L4Protocol::Other,
+            };
+            (
+                IpAddr::V6(ipv6.header().source_addr()),
+                IpAddr::V6(ipv6.header().destination_addr()),
+                p,
+                40u8,
+                ipv6.header().hop_limit(),
+            )
+        }
+        _ => return None,
+    };
+
+    let (flags, src_port, dst_port) = match &sliced.transport {
+        Some(TransportSlice::Tcp(tcp)) => {
+            let mut f = 0u8;
+            if tcp.syn() { f |= TCP_FLAG_SYN; }
+            if tcp.ack() { f |= TCP_FLAG_ACK; }
+            if tcp.fin() { f |= TCP_FLAG_FIN; }
+            if tcp.rst() { f |= TCP_FLAG_RST; }
+            if tcp.psh() { f |= TCP_FLAG_PSH; }
+            if tcp.urg() { f |= TCP_FLAG_URG; }
+            (f, tcp.source_port(), tcp.destination_port())
+        }
+        Some(TransportSlice::Udp(udp)) => {
+            (0u8, udp.source_port(), udp.destination_port())
+        }
+        _ => (0u8, 0u16, 0u16),
+    };
+
+    // * * * FILTRAR TRÁFICO INTERNO DEL SOC PARA EVITAR BUCLES DE AUTO-CAPTURA * * *
+    // * * * 1. IGNORAR PUERTOS INTERNOS: POSTGRESQL (5432) Y API AXUM (3000) * * *
+    if src_port == 5432 || dst_port == 5432 || src_port == 3000 || dst_port == 3000 {
+        return None;
+    }
+    // * * * 2. IGNORAR TRÁFICO LOOPBACK LOCAL (127.0.0.1 / ::1) * * *
+    if src_ip.is_loopback() || dst_ip.is_loopback() {
+        return None;
+    }
+    // * * * 3. IGNORAR TRÁFICO INTERNO DE LA SUBRED BRIDGE DE DOCKER * * *
+    let is_docker_bridge = |ip: &IpAddr| match ip {
+        IpAddr::V4(v4) => {
+            let octets = v4.octets();
+            octets[0] == 172 && (16..=31).contains(&octets[1])
+        }
+        _ => false,
+    };
+    if is_docker_bridge(&src_ip) && is_docker_bridge(&dst_ip) {
+        return None;
+    }
+
+    // * * * 4. AISLAMIENTO ESTRICTO DEL ALCANCE DE RED DEL LABORATORIO SOC * * *
+    // Monitorear únicamente tráfico perteneciente a la topología SOC/GNS3 (192.168.1.0/24 y 192.168.100.0/24)
+    // Descarta tráfico de navegación personal (WiFi wlo1 192.168.0.x, VPN WARP, IPv6 público, etc.)
+    let is_monitored_soc_network = |ip: &IpAddr| match ip {
+        IpAddr::V4(v4) => {
+            let octets = v4.octets();
+            // Subred del laboratorio SOC GNS3: 192.168.1.x y atacante Kali 192.168.100.x
+            octets[0] == 192 && octets[1] == 168 && (octets[2] == 1 || octets[2] == 100)
+        }
+        IpAddr::V6(_) => false,
+    };
+
+    if !is_monitored_soc_network(&src_ip) && !is_monitored_soc_network(&dst_ip) {
+        return None;
+    }
+
+    Some(NetworkEvent {
+        source_ip: src_ip,
+        destination_ip: dst_ip,
+        source_port: src_port,
+        destination_port: dst_port,
+        protocol: proto,
+        packet_size: packet_len.clamp(0, u16::MAX as i32) as u16,
+        header_length: header_len,
+        ttl,
+        flags,
+        anomaly_score: None,
+        timestamp: Utc::now(),
+    })
+}
+
+// * * * EXTRACCIÓN PASIVA DE PARES (IP, MAC) PARA DESCUBRIMIENTO DE ACTIVOS * * *
+fn inspect_asset_from_raw(data: &[u8], datalink: Linktype, engine: &AssetDiscoveryEngine) {
+    // 1. Linux Cooked Capture SLL / SLL2 (interfaz 'any': 113 o 276)
+    if (datalink.0 == 113 || datalink.0 == 276) && data.len() >= 36 {
+        let offset = if datalink.0 == 113 { 16 } else { 20 };
+        if data.len() > offset {
+            let src_mac = [data[6], data[7], data[8], data[9], data[10], data[11]];
+            let proto = u16::from_be_bytes([data[offset - 2], data[offset - 1]]);
+
+            if proto == 0x0800 && data.len() >= offset + 20 {
+                // IPv4: IP origen en offset + 12
+                let ip_bytes = &data[offset + 12..offset + 16];
+                let ip_str = format!("{}.{}.{}.{}", ip_bytes[0], ip_bytes[1], ip_bytes[2], ip_bytes[3]);
+                engine.observe_asset(&ip_str, src_mac);
+            } else if proto == 0x0806 && data.len() >= offset + 28 {
+                // ARP: Sender MAC en offset + 8, Sender IP en offset + 14
+                let sender_mac = [
+                    data[offset + 8],
+                    data[offset + 9],
+                    data[offset + 10],
+                    data[offset + 11],
+                    data[offset + 12],
+                    data[offset + 13],
+                ];
+                let sender_ip = &data[offset + 14..offset + 18];
+                let ip_str = format!("{}.{}.{}.{}", sender_ip[0], sender_ip[1], sender_ip[2], sender_ip[3]);
+                engine.observe_asset(&ip_str, sender_mac);
+            }
+        }
+    }
+
+    // 2. Ethernet estándar (Linktype 1)
+    if (datalink.0 == 1 || datalink.0 == 0) && data.len() >= 34 {
+        let offset = if datalink.0 == 0 { 4 } else { 0 };
+        if data.len() >= offset + 14 {
+            let eth = &data[offset..];
+            let src_mac = [eth[6], eth[7], eth[8], eth[9], eth[10], eth[11]];
+            let ether_type = u16::from_be_bytes([eth[12], eth[13]]);
+
+            if ether_type == 0x0800 && eth.len() >= 34 {
+                // IPv4
+                let ip_bytes = &eth[26..30];
+                let ip_str = format!("{}.{}.{}.{}", ip_bytes[0], ip_bytes[1], ip_bytes[2], ip_bytes[3]);
+                engine.observe_asset(&ip_str, src_mac);
+            } else if ether_type == 0x0806 && eth.len() >= 42 {
+                // ARP
+                let sender_mac = [eth[22], eth[23], eth[24], eth[25], eth[26], eth[27]];
+                let sender_ip = &eth[28..32];
+                let ip_str = format!("{}.{}.{}.{}", sender_ip[0], sender_ip[1], sender_ip[2], sender_ip[3]);
+                engine.observe_asset(&ip_str, sender_mac);
+            }
+        }
+    }
+
+    // 3. Decapsular túneles UDP ubridge (GNS3 sobre loopback)
+    if let Ok(sliced) = SlicedPacket::from_ethernet(data) {
+        if let Some(TransportSlice::Udp(udp)) = &sliced.transport {
+            let payload = udp.payload();
+            if payload.len() >= 34 {
+                let inner_mac = [payload[6], payload[7], payload[8], payload[9], payload[10], payload[11]];
+                let inner_type = u16::from_be_bytes([payload[12], payload[13]]);
+
+                if inner_type == 0x0800 && payload.len() >= 34 {
+                    let ip_bytes = &payload[26..30];
+                    let ip_str = format!("{}.{}.{}.{}", ip_bytes[0], ip_bytes[1], ip_bytes[2], ip_bytes[3]);
+                    engine.observe_asset(&ip_str, inner_mac);
+                } else if inner_type == 0x0806 && payload.len() >= 42 {
+                    let sender_mac = [payload[22], payload[23], payload[24], payload[25], payload[26], payload[27]];
+                    let sender_ip = &payload[28..32];
+                    let ip_str = format!("{}.{}.{}.{}", sender_ip[0], sender_ip[1], sender_ip[2], sender_ip[3]);
+                    engine.observe_asset(&ip_str, sender_mac);
+                }
+            }
+        }
+    }
+}
+

@@ -1,0 +1,405 @@
+@startuml
+
+skinparam backgroundColor #1E1E2E
+skinparam defaultFontName Arial
+skinparam defaultFontColor #CDD6F4
+skinparam defaultFontSize 10
+skinparam roundcorner 8
+skinparam shadowing false
+skinparam nodesep 50
+skinparam ranksep 55
+
+skinparam package {
+    BackgroundColor #181825
+    BorderColor #CBA6F7
+    FontColor #CDD6F4
+    FontStyle bold
+    BorderThickness 1.2
+}
+
+skinparam rectangle {
+    BackgroundColor #11111B
+    BorderColor #89B4FA
+    FontColor #CDD6F4
+    BorderThickness 1.5
+}
+
+skinparam usecase {
+    BackgroundColor #313244
+    BorderColor #89B4FA
+    FontColor #CDD6F4
+    BorderThickness 1.2
+}
+
+skinparam class {
+    BackgroundColor #313244
+    BorderColor #89B4FA
+    FontColor #CDD6F4
+    HeaderBackgroundColor #181825
+    BorderThickness 1.2
+}
+
+skinparam entity {
+    BackgroundColor #313244
+    BorderColor #89B4FA
+    FontColor #CDD6F4
+    HeaderBackgroundColor #181825
+    BorderThickness 1.2
+}
+
+skinparam node {
+    BackgroundColor #181825
+    BorderColor #89B4FA
+    FontColor #CDD6F4
+    BorderThickness 1.2
+}
+
+skinparam component {
+    BackgroundColor #313244
+    BorderColor #94E2D5
+    FontColor #CDD6F4
+    BorderThickness 1.2
+}
+
+skinparam artifact {
+    BackgroundColor #313244
+    BorderColor #CBA6F7
+    FontColor #CDD6F4
+    BorderThickness 1.2
+}
+
+skinparam actor {
+    BackgroundColor #CBA6F7
+    BorderColor #89B4FA
+    FontColor #89B4FA
+    FontStyle bold
+}
+
+skinparam arrow {
+    Color #89B4FA
+    FontColor #A6ADC8
+    FontSize 9
+}
+
+skinparam activity {
+    BackgroundColor #313244
+    BorderColor #89B4FA
+    FontColor #CDD6F4
+    BorderThickness 1.2
+}
+
+
+package "Domain Entities (Mapeo BCNF bd/init.sql)" {
+
+    class User {
+        + user_id: Option<i32>
+        + username: String
+        + password_hash: String
+        + role_id: Option<i32>
+        + created_at: DateTime<Utc>
+        __ Funciones __
+        + new(username: &str, hash: &str, role_id: i32): User
+        + verify_password(plain_text: &str): bool
+        + is_admin(): bool
+        + validate_credentials_entropy(): bool
+    }
+
+    class UserSession {
+        + session_id: String
+        + user_id: i32
+        + created_at: DateTime<Utc>
+        + expires_at: DateTime<Utc>
+        + last_activity: DateTime<Utc>
+        + last_reauth_at: Option<DateTime<Utc>>
+        + is_revoked: bool
+        + ip_address: Option<String>
+        + user_agent: Option<String>
+        __ Funciones __
+        + generate(user_id: i32, ip: &str, ua: &str, ttl_hours: i64): UserSession
+        + is_valid(): bool
+        + requires_reauth(timeout_secs: i64): bool
+        + refresh_activity(): void
+        + revoke(): void
+    }
+
+    class Role {
+        + role_id: Option<i32>
+        + role_name: String
+        + description: Option<String>
+        __ Funciones __
+        + new(name: &str, desc: Option<&str>): Role
+        + has_permission(perm_name: &str): bool
+    }
+
+    class Permission {
+        + permission_id: Option<i32>
+        + permission_name: String
+        + description: Option<String>
+        __ Funciones __
+        + new(name: &str, desc: Option<&str>): Permission
+    }
+
+    class NetworkNode {
+        + node_id: Option<i32>
+        + hostname: String
+        + ip_address: String
+        + type_id: Option<i32>
+        + protocol_id: Option<i32>
+        + mac_address: Option<String>
+        + vendor: Option<String>
+        __ Funciones __
+        + new(hostname: &str, ip: &str, mac: Option<&str>, vendor: Option<&str>): NetworkNode
+        + is_critical_core(): bool
+        + get_management_endpoint(): String
+    }
+
+    class NetworkTrafficMetric {
+        + metric_id: Option<i64>
+        + node_id: i32
+        + window_start: DateTime<Utc>
+        + window_end: DateTime<Utc>
+        + total_packets: i64
+        + total_bytes: i64
+        + created_at: DateTime<Utc>
+        __ Funciones __
+        + calculate_throughput_mbps(): f64
+        + calculate_pps(): f64
+    }
+
+    class NetworkLog {
+        + log_id: Option<i64>
+        + node_id: i32
+        + source_ip: String
+        + destination_ip: String
+        + protocol: String
+        + packet_size: i32
+        + flags: Option<String>
+        + timestamp: DateTime<Utc>
+        __ Funciones __
+        + is_dns_traffic(): bool
+        + is_suspicious_payload_size(): bool
+    }
+
+    class FeatureStoreEntry {
+        + feature_id: Option<i64>
+        + log_id: i64
+        + feature_vector: Value
+        + processed_at: DateTime<Utc>
+        __ Funciones __
+        + get_vector_slice(): Vec<f32>
+        + compute_sha256_hash(): String
+    }
+
+    class SecurityAlert {
+        + alert_id: Option<i64>
+        + feature_id: i64
+        + threat_id: i32
+        + status_id: i32
+        + anomaly_score: f64
+        + detected_at: DateTime<Utc>
+        __ Funciones __
+        + is_exfiltration_confirmed(): bool
+        + requires_immediate_mitigation(threshold: f64): bool
+        + generate_forensic_payload(): Value
+    }
+
+    class MitigationAction {
+        + action_id: Option<i32>
+        + action_name: String
+        + layer_target: String
+        + description: Option<String>
+        __ Funciones __
+        + is_layer_2(): bool
+        + is_layer_7(): bool
+        + get_execution_protocol(): String
+    }
+
+    class ExecutionQueueTask {
+        + task_id: Option<i64>
+        + alert_id: i64
+        + action_id: i32
+        + node_id: i32
+        + status_id: i32
+        + queued_at: DateTime<Utc>
+        + executed_at: Option<DateTime<Utc>>
+        __ Funciones __
+        + mark_executing(): void
+        + mark_completed(): void
+        + mark_failed(reason: &str): void
+    }
+
+    class RollbackSnapshot {
+        + snapshot_id: Option<i64>
+        + task_id: i64
+        + pre_state_json: Value
+        + rollback_payload: Value
+        + created_at: DateTime<Utc>
+        __ Funciones __
+        + new(task_id: i64, pre_state: Value, payload: Value): RollbackSnapshot
+        + validate_payload_integrity(): bool
+        + get_reverse_commands(): Vec<String>
+    }
+
+    class MitigationAudit {
+        + audit_id: Option<i64>
+        + task_id: Option<i64>
+        + executed_by_user: Option<i32>
+        + executed_at: DateTime<Utc>
+        + result_status: String
+        __ Funciones __
+        + is_success(): bool
+        + get_audit_summary(): String
+    }
+}
+
+package "Analytics & Machine Learning Engine" {
+
+    class PolarsFeatureEngine {
+        __ Funciones __
+        + extract_features_columnar(events: &[NetworkEvent]): Result<(ExtractedFeatures, f64)>
+        + build_polars_dataframe(events: &[NetworkEvent]): Result<DataFrame>
+        + compute_entropy(bytes: &[u8]): f64
+        + calculate_flag_ratios(df: &DataFrame): Result<(f64, f64, f64, f64)>
+        + calculate_inter_arrival_times(df: &DataFrame): Result<Series>
+    }
+
+    class ThreatDetector {
+        + anomaly_threshold: f32
+        - booster: Arc<BoosterWrapper>
+        - evaluations_counter: Arc<AtomicU64>
+        - anomalies_counter: Arc<AtomicU64>
+        - stats_mutex: Arc<Mutex<Tuple>>
+        __ Funciones __
+        + from_file(model_path: &str, threshold: f32): Result<Self>
+        + evaluate_anomaly(features: &ExtractedFeatures): Result<ThreatEvaluation>
+        + get_realtime_stats(): ThreatDetectorStats
+        + reset_metrics(): void
+    }
+
+    class BoosterWrapper {
+        + booster: Booster
+        __ Funciones __
+        + predict(input: &[f32]): Result<f64>
+        + get_num_features(): u32
+    }
+}
+
+package "Infrastructure Repositories (Acceso a Datos SQLx)" {
+
+    class UsersRepository {
+        - pool: PgPool
+        __ Funciones __
+        + new(pool: PgPool): Self
+        + find_by_username(username: &str): Result<Option<User>>
+        + create_user(username: &str, hash: &str, role_id: i32): Result<User>
+        + update_role(user_id: i32, role_id: i32): Result<()>
+        + delete_user(user_id: i32): Result<()>
+        + create_session(session: &UserSession): Result<()>
+        + get_session(token: &str): Result<Option<UserSession>>
+        + reauth_session(token: &str): Result<()>
+        + revoke_session(token: &str): Result<()>
+        + update_critical_timeout(timeout: i64): Result<()>
+        + get_critical_timeout(): Result<i64>
+    }
+
+    class InventoryRepository {
+        - pool: PgPool
+        __ Funciones __
+        + new(pool: PgPool): Self
+        + get_all_nodes(): Result<Vec<NetworkNode>>
+        + get_node_by_ip(ip: &str): Result<Option<NetworkNode>>
+        + register_discovered_node(node: &NetworkNode): Result<i32>
+        + update_node_status(node_id: i32, is_active: bool): Result<()>
+    }
+
+    class TelemetryRepository {
+        - pool: PgPool
+        __ Funciones __
+        + new(pool: PgPool): Self
+        + insert_aggregate_metric(node_id: i32, start: DateTime<Utc>, end: DateTime<Utc>, packets: i64, bytes: i64): Result<()>
+        + save_network_log(log: &NetworkLog): Result<i64>
+        + store_feature_vector(log_id: i64, vector: &Value): Result<i64>
+        + create_security_alert(feature_id: i64, threat_id: i32, score: f64): Result<i64>
+        + get_recent_alerts(limit: i64): Result<Vec<SecurityAlert>>
+        + get_alert_by_id(alert_id: i64): Result<Option<SecurityAlert>>
+    }
+
+    class OrchestrationRepository {
+        - pool: PgPool
+        __ Funciones __
+        + new(pool: PgPool): Self
+        + queue_mitigation_task(alert_id: i64, action_id: i32, node_id: i32): Result<i64>
+        + save_rollback_snapshot(task_id: i64, pre_state: &Value, rollback_payload: &Value): Result<i64>
+        + get_rollback_snapshot(task_id: i64): Result<Option<RollbackSnapshot>>
+        + log_mitigation_audit(task_id: i64, user_id: Option<i32>, status: &str): Result<()>
+        + get_pending_tasks(): Result<Vec<ExecutionQueueTask>>
+    }
+}
+
+package "Mitigation Orchestration Clients" {
+
+    class AclBlackholeClient {
+        - router_endpoint: String
+        __ Funciones __
+        + new(endpoint: &str): Self
+        + apply_full_mitigation(ip: &str, mac: &str): Result<Value, String>
+        + execute_rollback(payload: &Value): Result<(), String>
+    }
+
+    class DnsSinkholeClient {
+        - sinkhole_ip: String
+        __ Funciones __
+        + new(sinkhole_ip: &str): Self
+        + apply_sinkhole(domain: &str): Result<Value, String>
+        + revert_sinkhole(domain: &str): Result<(), String>
+    }
+
+    class RadiusCoaClient {
+        - server_address: String
+        - secret: String
+        __ Funciones __
+        + new(address: &str, secret: &str): Self
+        + disconnect_client(mac: &str): Result<Value, String>
+        + isolate_vlan(mac: &str, vlan: u16): Result<Value, String>
+    }
+
+    class NgfwRestconfClient {
+        - base_url: String
+        - auth_token: String
+        __ Funciones __
+        + new(url: &str, token: &str): Self
+        + inject_acl_rule(rule_name: &str, src_ip: &str, action: &str): Result<Value, String>
+        + remove_acl_rule(rule_name: &str): Result<(), String>
+    }
+}
+
+User "1" o-- "0..*" UserSession : posee
+Role "1" o-- "0..*" User : asignado
+Role "*" o-- "*" Permission : contiene
+
+NetworkNode "1" o-- "0..*" NetworkTrafficMetric : genera
+NetworkNode "1" o-- "0..*" NetworkLog : registra
+NetworkLog "1" -- "1" FeatureStoreEntry : preprocesado_en
+FeatureStoreEntry "1" -- "0..1" SecurityAlert : evalúa
+
+SecurityAlert "1" o-- "0..*" ExecutionQueueTask : detona
+ExecutionQueueTask "1" -- "0..1" RollbackSnapshot : respalda
+ExecutionQueueTask "1" -- "0..1" MitigationAudit : audita
+MitigationAction "1" o-- "*" ExecutionQueueTask : clasifica
+
+ThreatDetector ..> PolarsFeatureEngine : consume_features
+ThreatDetector *-- BoosterWrapper : delega_inferencia
+
+TelemetryRepository ..> SecurityAlert : persiste
+TelemetryRepository ..> FeatureStoreEntry : persiste
+OrchestrationRepository ..> ExecutionQueueTask : encola
+OrchestrationRepository ..> RollbackSnapshot : almacena
+UsersRepository ..> User : gestiona
+UsersRepository ..> UserSession : valida
+
+ExecutionQueueTask ..> AclBlackholeClient : ejecuta_L3_L4
+ExecutionQueueTask ..> DnsSinkholeClient : ejecuta_L7
+ExecutionQueueTask ..> RadiusCoaClient : ejecuta_L2
+ExecutionQueueTask ..> NgfwRestconfClient : ejecuta_ACL
+
+@enduml

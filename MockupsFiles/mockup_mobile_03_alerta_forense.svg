@@ -1,0 +1,93 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="390" height="844" viewBox="0 0 390 844">
+  <!-- Fondo y Chasis de Smartphone -->
+  <rect width="390" height="844" rx="44" fill="#080C14" stroke="#2D3B54" stroke-width="4"/>
+  
+  <!-- Barra de Estado Móvil (16:54, 5G, Batería 94%) -->
+  <g transform="translate(0, 0)">
+    <!-- Notch / Dynamic Island -->
+    <rect x="135" y="10" width="120" height="26" rx="13" fill="#03060B"/>
+    <circle cx="230" cy="23" r="5" fill="#111B2C"/>
+    
+    <text x="36" y="28" fill="#F8FAFC" font-family="'SF Mono', 'Fira Code', 'Roboto Mono', Consolas, monospace" font-size="13" font-weight="700">16:54</text>
+    <text x="314" y="28" fill="#94A3B8" font-family="'SF Mono', 'Fira Code', 'Roboto Mono', Consolas, monospace" font-size="12">5G</text>
+    <!-- Batería -->
+    <rect x="338" y="18" width="22" height="12" rx="2" fill="none" stroke="#94A3B8" stroke-width="1.5"/>
+    <rect x="340" y="20" width="15" height="8" rx="1" fill="#16A34A"/>
+    <rect x="361" y="22" width="2" height="4" fill="#94A3B8"/>
+  </g>
+
+  <!-- CONTENIDO DE LA PANTALLA MÓVIL -->
+  
+  <!-- Cabecera con Botón de Retroceso Touch -->
+  <g transform="translate(20, 52)">
+    <rect x="0" y="4" width="36" height="36" rx="6" fill="#0F172A" stroke="#334155" stroke-width="1"/>
+    <polyline points="20,16 14,22 20,28" fill="none" stroke="#F8FAFC" stroke-width="2"/>
+    <text x="48" y="28" fill="#F8FAFC" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif" font-size="16" font-weight="700">Triaje Forense Móvil</text>
+  </g>
+
+  <!-- Pestañas Segmentadas Táctiles (Incidente / Evidencia / Acción) -->
+  <g transform="translate(20, 104)">
+    <rect width="350" height="38" rx="6" fill="#1E293B"/>
+    <rect x="2" y="2" width="114" height="34" rx="4" fill="#0284C7"/>
+    <text x="59" y="23" fill="#FFFFFF" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif" font-size="11" font-weight="700" text-anchor="middle">INCIDENTE</text>
+    <text x="175" y="23" fill="#94A3B8" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif" font-size="11" text-anchor="middle">EVIDENCIA L4</text>
+    <text x="291" y="23" fill="#94A3B8" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif" font-size="11" text-anchor="middle">MITIGAR</text>
+  </g>
+
+  <!-- Contenido Forense del Incidente ALT-2026-0891 -->
+  <g transform="translate(20, 156)">
+    <!-- Tarjeta de Diagnóstico -->
+    <rect width="350" height="240" rx="6" fill="#0F172A" stroke="#334155" stroke-width="1"/>
+    <path d="M 0 6 Q 0 0 6 0 L 344 0 Q 350 0 350 6 L 350 40 L 0 40 Z" fill="#450A0A"/>
+    <text x="16" y="26" fill="#FCA5A5" font-family="'SF Mono', 'Fira Code', 'Roboto Mono', Consolas, monospace" font-size="12" font-weight="700">DDOS_SYN_FLOOD [NIVEL 5]</text>
+    <text x="334" y="26" fill="#F8FAFC" font-family="'SF Mono', 'Fira Code', 'Roboto Mono', Consolas, monospace" font-size="12" font-weight="700" text-anchor="end">99.2% ML</text>
+
+    <g transform="translate(16, 56)">
+      <text x="0" y="0" fill="#64748B" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif" font-size="10" font-weight="700">ATACANTE (OFFENSIVE HOST)</text>
+      <text x="0" y="18" fill="#F8FAFC" font-family="'SF Mono', 'Fira Code', 'Roboto Mono', Consolas, monospace" font-size="13" font-weight="700">192.168.100.50</text>
+      <text x="0" y="34" fill="#94A3B8" font-family="'SF Mono', 'Fira Code', 'Roboto Mono', Consolas, monospace" font-size="11">AttackerKali | MAC: 00:00:0c:aa:bb:cc</text>
+
+      <line x1="0" y1="46" x2="318" y2="46" stroke="#1E293B" stroke-width="1"/>
+
+      <text x="0" y="64" fill="#64748B" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif" font-size="10" font-weight="700">OBJETIVO (VICTIM HOST)</text>
+      <text x="0" y="82" fill="#F8FAFC" font-family="'SF Mono', 'Fira Code', 'Roboto Mono', Consolas, monospace" font-size="13" font-weight="700">192.168.1.15 : 80 [HTTP]</text>
+      <text x="0" y="98" fill="#94A3B8" font-family="'SF Mono', 'Fira Code', 'Roboto Mono', Consolas, monospace" font-size="11">VictimeAlpine5 | MAC: 02:42:ac:11:00:0f</text>
+
+      <line x1="0" y1="110" x2="318" y2="110" stroke="#1E293B" stroke-width="1"/>
+
+      <text x="0" y="128" fill="#64748B" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif" font-size="10" font-weight="700">FIRMA Y PROTOCOLO</text>
+      <text x="0" y="146" fill="#94A3B8" font-family="'SF Mono', 'Fira Code', 'Roboto Mono', Consolas, monospace" font-size="11">Tasa SYN: 4,890 p/s | Ratio ACK/SYN: 0.001</text>
+      <text x="0" y="164" fill="#DC2626" font-family="'SF Mono', 'Fira Code', 'Roboto Mono', Consolas, monospace" font-size="11">Saturación inminente de tabla de sockets</text>
+    </g>
+
+    <!-- Resumen de Paquete Inspeccionado -->
+    <g transform="translate(0, 256)">
+      <rect width="350" height="150" rx="6" fill="#0F172A" stroke="#334155" stroke-width="1"/>
+      <text x="16" y="24" fill="#F8FAFC" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif" font-size="12" font-weight="700">DECODIFICADOR MÓVIL L3 / L4</text>
+      
+      <rect x="16" y="36" width="318" height="96" rx="4" fill="#080C14" stroke="#1E293B" stroke-width="1"/>
+      <g transform="translate(26, 56)" fill="#94A3B8" font-family="'SF Mono', 'Fira Code', 'Roboto Mono', Consolas, monospace" font-size="10">
+        <text x="0" y="0">Proto: TCP (6) | Flags: [SYN]</text>
+        <text x="0" y="18">Window Size: 1024 | Seq: 3829104812</text>
+        <text x="0" y="36" fill="#DC2626">Hex: 02 42 ac 11 00 0f 00 00 0c aa</text>
+        <text x="0" y="54" fill="#64748B">Timestamp: 2026-10-17 16:54:12.829</text>
+      </g>
+    </g>
+
+    <!-- Tarjeta de Directiva Sugerida -->
+    <g transform="translate(0, 422)">
+      <rect width="350" height="140" rx="6" fill="#1E293B" stroke="#0284C7" stroke-width="1"/>
+      <text x="16" y="24" fill="#F8FAFC" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif" font-size="12" font-weight="700">MITIGACIÓN RECOMENDADA</text>
+      <text x="16" y="44" fill="#0284C7" font-family="'SF Mono', 'Fira Code', 'Roboto Mono', Consolas, monospace" font-size="12" font-weight="700">ACL_BLACKHOLE_L3_L4</text>
+      <text x="16" y="62" fill="#94A3B8" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif" font-size="11">Regla: iptables Null Route en borde ISP</text>
+      <text x="16" y="78" fill="#64748B" font-family="'SF Mono', 'Fira Code', 'Roboto Mono', Consolas, monospace" font-size="10">Descarte de 192.168.100.50 en microsegundos</text>
+
+      <rect x="16" y="92" width="318" height="36" rx="4" fill="#DC2626"/>
+      <text x="175" y="115" fill="#FFFFFF" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif" font-size="12" font-weight="700" text-anchor="middle">DESPACHAR MITIGACIÓN INMEDIATA</text>
+    </g>
+  </g>
+
+
+  <!-- Barra de Inicio Inferior (Home Indicator de iOS/Android) -->
+  <rect x="125" y="828" width="140" height="5" rx="2.5" fill="#64748B"/>
+</svg>

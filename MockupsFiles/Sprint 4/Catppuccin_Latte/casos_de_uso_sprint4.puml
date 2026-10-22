@@ -1,0 +1,89 @@
+@startuml
+
+skinparam backgroundColor #EFF1F5
+skinparam defaultFontName Arial
+skinparam defaultFontColor #4C4F69
+skinparam defaultFontSize 10
+skinparam roundcorner 8
+skinparam shadowing false
+skinparam nodesep 40
+skinparam ranksep 45
+skinparam arrow {
+    Color #1E66F5
+    FontColor #6C6F85
+    FontSize 9
+}
+
+skinparam package {
+    BackgroundColor #E6E9EF
+    BorderColor #8839EF
+    FontColor #4C4F69
+    FontStyle bold
+    BorderThickness 1.2
+}
+skinparam rectangle {
+    BackgroundColor #DCE0E8
+    BorderColor #1E66F5
+    FontColor #4C4F69
+    BorderThickness 1.5
+}
+skinparam usecase {
+    BackgroundColor #FFFFFF
+    BorderColor #1E66F5
+    FontColor #4C4F69
+    BorderThickness 1.2
+}
+skinparam actor {
+    BackgroundColor #8839EF
+    BorderColor #1E66F5
+    FontColor #1E66F5
+    FontStyle bold
+}
+
+
+left to right direction
+
+actor "Operador del SOC\n(Analista L2/L3)" as OperadorSOC
+actor "Motor Autónomo de Mitigación\n(«Sistema Reactivo»)" as MotorMitigacion
+
+rectangle "Sprint 4: Orquestación de Mitigación Multivector & Rollback Inmediato" {
+    package "Validación de Seguridad y Blast Radius" {
+        usecase "CU4.1: Analizar Radio de Impacto (Blast Radius)" as CU4_1
+        usecase "CU4.2: Solicitar Re-autenticación Crítica (Timeout 300s)" as CU4_2
+        usecase "CU4.6: Capturar Snapshot Pre-Estado y Rollback JSON" as CU4_6
+    }
+    
+    package "Ejecución Multivector de Contención" {
+        usecase "CU4.3: Aislar Host vía RADIUS CoA / Desconexión Port" as CU4_3
+        usecase "CU4.4: Inyectar Rutas Nulas y ACLs BGP Blackhole" as CU4_4
+        usecase "CU4.5: Redirigir Tráfico Malicioso con DNS Sinkhole" as CU4_5
+    }
+
+    package "Resiliencia y Trazabilidad" {
+        usecase "CU4.7: Ejecutar Reversión Inmediata (Rollback)" as CU4_7
+        usecase "CU4.8: Auditar Respuesta ante Incidentes (mitigation_audit)" as CU4_8
+    }
+}
+
+MotorMitigacion --> CU4_1
+CU4_1 ..> CU4_6 : <<include>>
+CU4_1 ..> CU4_2 : <<trigger if critical>>
+
+OperadorSOC --> CU4_2
+CU4_2 ..> CU4_3 : <<authorize>>
+CU4_2 ..> CU4_4 : <<authorize>>
+CU4_2 ..> CU4_5 : <<authorize>>
+
+MotorMitigacion --> CU4_3
+MotorMitigacion --> CU4_4
+MotorMitigacion --> CU4_5
+
+CU4_3 ..> CU4_8 : <<audit>>
+CU4_4 ..> CU4_8 : <<audit>>
+CU4_5 ..> CU4_8 : <<audit>>
+
+OperadorSOC --> CU4_7
+CU4_7 ..> CU4_6 : <<consume_payload>>
+CU4_7 ..> CU4_8 : <<audit>>
+
+@enduml

@@ -1,0 +1,172 @@
+@startuml
+
+skinparam backgroundColor #EFF1F5
+skinparam defaultFontName Arial
+skinparam defaultFontColor #4C4F69
+skinparam defaultFontSize 10
+skinparam roundcorner 8
+skinparam shadowing false
+skinparam nodesep 50
+skinparam ranksep 55
+
+skinparam package {
+    BackgroundColor #E6E9EF
+    BorderColor #7287FD
+    FontColor #4C4F69
+    FontStyle bold
+    BorderThickness 1.2
+}
+
+skinparam rectangle {
+    BackgroundColor #DCE0E8
+    BorderColor #1E66F5
+    FontColor #4C4F69
+    BorderThickness 1.5
+}
+
+skinparam usecase {
+    BackgroundColor #FFFFFF
+    BorderColor #1E66F5
+    FontColor #4C4F69
+    BorderThickness 1.2
+}
+
+skinparam class {
+    BackgroundColor #FFFFFF
+    BorderColor #1E66F5
+    FontColor #4C4F69
+    HeaderBackgroundColor #E6E9EF
+    BorderThickness 1.2
+}
+
+skinparam entity {
+    BackgroundColor #FFFFFF
+    BorderColor #1E66F5
+    FontColor #4C4F69
+    HeaderBackgroundColor #E6E9EF
+    BorderThickness 1.2
+}
+
+skinparam node {
+    BackgroundColor #E6E9EF
+    BorderColor #1E66F5
+    FontColor #4C4F69
+    BorderThickness 1.2
+}
+
+skinparam component {
+    BackgroundColor #FFFFFF
+    BorderColor #209FB5
+    FontColor #4C4F69
+    BorderThickness 1.2
+}
+
+skinparam artifact {
+    BackgroundColor #FFFFFF
+    BorderColor #8839EF
+    FontColor #4C4F69
+    BorderThickness 1.2
+}
+
+skinparam actor {
+    BackgroundColor #7287FD
+    BorderColor #1E66F5
+    FontColor #1E66F5
+    FontStyle bold
+}
+
+skinparam arrow {
+    Color #1E66F5
+    FontColor #6C6F85
+    FontSize 9
+}
+
+skinparam activity {
+    BackgroundColor #FFFFFF
+    BorderColor #1E66F5
+    FontColor #4C4F69
+    BorderThickness 1.2
+}
+
+
+left to right direction
+
+actor "Analista SOC L1\n(Triaje e Inspección)" as L1
+actor "Ingeniero SOC L2\n(Operador de Mitigación)" as L2
+actor "Administrador SOC\n(Gestor de Gobernanza)" as Admin
+
+actor "Red Carrier Tigo\n(AS27839 / eBPF)" as Carrier << Sistema >>
+actor "Controlador Cisco ISE\n/ RADIUS CoA" as ISE << Sistema >>
+actor "Firewall Perimetral\nNGFW RESTCONF" as NGFW << Sistema >>
+
+L1 <|-- L2
+L2 <|-- Admin
+
+rectangle "Sistema Web NDR Tigo Business (Sprint 0 - Límite del Sistema)" {
+
+    package "Paquete 1: Gobernanza Zero-Trust y RBAC" {
+        usecase "CU01: Autenticarse con 2FA y Rate-Limiting" as CU01
+        usecase "CU02: Rotar Contraseña y Validar Entropía" as CU02
+        usecase "CU03: Gestionar Usuarios y Roles RBAC" as CU03
+        usecase "CU04: Re-autenticarse para Acciones Críticas" as CU04
+    }
+
+    package "Paquete 2: Motor Analítico LightGBM & CRISP-DM" {
+        usecase "CU05: Extraer 23 Características con Polars" as CU05
+        usecase "CU06: Clasificar Tráfico con LightGBM" as CU06
+        usecase "CU07: Consultar Métricas XAI y Matriz de Confusión" as CU07
+    }
+
+    package "Paquete 3: Telemetría eBPF & Topología Carrier" {
+        usecase "CU08: Capturar Flujos a Velocidad de Cable" as CU08
+        usecase "CU09: Visualizar Streaming en Vivo y Filtros BPF" as CU09
+        usecase "CU10: Explorar Grafo de Topología de Red AS27839" as CU10
+    }
+
+    package "Paquete 4: Mitigación, Blast Radius & Sandbox" {
+        usecase "CU11: Evaluar Alertas y Hashes Forenses SHA-256" as CU11
+        usecase "CU12: Autorizar Mitigación Masiva (Blast Radius)" as CU12
+        usecase "CU13: Ejecutar Aislamiento L2 (RADIUS CoA)" as CU13
+        usecase "CU14: Despachar BGP Blackholing L3/L4" as CU14
+        usecase "CU15: Activar DNS Sinkholing L7" as CU15
+        usecase "CU16: Ejecutar Reversión Preventiva (Rollback 300s)" as CU16
+        usecase "CU17: Probar Reglas en Sandbox Aislada (VLAN 999)" as CU17
+    }
+
+    package "Paquete 5: Consolidación Multiplataforma Leptos" {
+        usecase "CU18: Conmutar Modo Claro y Modo Oscuro" as CU18
+        usecase "CU19: Auditar Pistas de Seguridad Inmutables" as CU19
+    }
+}
+
+L1 --> CU01
+L1 --> CU02
+L1 --> CU07
+L1 --> CU09
+L1 --> CU10
+L1 --> CU11
+L1 --> CU18
+
+L2 --> CU04
+L2 --> CU12
+L2 --> CU16
+L2 --> CU17
+
+Admin --> CU03
+Admin --> CU19
+
+Carrier --> CU08
+CU08 ..> CU05 : <<include>>
+CU05 ..> CU06 : <<include>>
+CU06 ..> CU11 : <<trigger>>
+
+CU12 ..> CU04 : <<include>>
+CU12 ..> CU13 : <<extend>>
+CU12 ..> CU14 : <<extend>>
+CU12 ..> CU15 : <<extend>>
+
+CU13 --> ISE
+CU14 --> NGFW
+CU15 --> Carrier
+
+@enduml

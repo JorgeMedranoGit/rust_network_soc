@@ -1,0 +1,277 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[top=2.5cm, bottom=2.5cm, left=2.5cm, right=2.5cm]{geometry}
+\usepackage[utf8]{inputenc}
+\usepackage{amsmath,amssymb}
+\usepackage{microtype}
+\usepackage{booktabs}
+\usepackage{xcolor}
+\usepackage{enumitem}
+\usepackage{tabularx}
+\usepackage{titlesec}
+\usepackage{fancyhdr}
+\usepackage{hyperref}
+
+% Paleta Formal de Ciberseguridad Tigo
+\definecolor{tigoBlue}{HTML}{0284C7}
+\definecolor{tigoDark}{HTML}{0369A1}
+\definecolor{slate900}{HTML}{0F172A}
+\definecolor{slate700}{HTML}{334155}
+\definecolor{slate500}{HTML}{64748B}
+\definecolor{slate300}{HTML}{CBD5E1}
+\definecolor{slate100}{HTML}{F1F5F9}
+\definecolor{successGreen}{HTML}{16A34A}
+\definecolor{criticalRed}{HTML}{DC2626}
+
+% Configuración de Encabezados y Pies de Página
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\small\scshape\color{slate500} Proyecto de Grado --- Ing. de Sistemas Informáticos}
+\fancyhead[R]{\small\scshape\color{tigoBlue} Tigo SOC Defense Platform}
+\fancyfoot[L]{\small\color{slate500} AS27839 Carrier Security}
+\fancyfoot[R]{\small\color{slate500} Página \thepage}
+\renewcommand{\headrulewidth}{0.5pt}
+\renewcommand{\footrulewidth}{0.5pt}
+
+% Formato de Títulos
+\titleformat{\section}{\large\bfseries\color{tigoDark}}{\thesection.}{0.8em}{}[\color{tigoBlue}\titlerule]
+\titleformat{\subsection}{\normalsize\bfseries\color{slate900}}{\thesubsection.}{0.6em}{}
+
+\hypersetup{
+    colorlinks=true,
+    linkcolor=tigoDark,
+    urlcolor=tigoBlue,
+    citecolor=successGreen
+}
+
+\begin{document}
+
+% ── PORTADA INSTITUCIONAL FORMAL ──────────────────────────────────────────
+\begin{titlepage}
+    \centering
+    \vspace*{1cm}
+    {\scshape\Large Universidad Católica Boliviana ``San Pablo''\par}
+    {\scshape\large Departamento de Ingenierías y Ciencias Exactas\par}
+    {\scshape\normalsize Carrera de Ingeniería de Sistemas Informáticos\par}
+    \vspace{2cm}
+    
+    {\Huge\bfseries\color{tigoDark} MANUAL TÉCNICO Y ESPECIFICACIÓN FORMAL DE MOCKUPS MULTIPLATAFORMA\par}
+    \vspace{0.8cm}
+    {\Large\color{slate700} Sistema de Detección y Mitigación de Ataques de Red en Tiempo Real para Infraestructura Crítica ISP (Tigo SOC --- AS27839)\par}
+    \vspace{2.5cm}
+    
+    \noindent\fbox{%
+    \parbox{0.92\linewidth}{%
+    \centering\vspace{6bp}
+    \textbf{\color{tigoDark}MEMORIA DE PROYECTO DE GRADO}\\[4bp]
+    \small Integración de Vistas Web Desktop (1440$\times$900), Tablet (1024$\times$768) y Móvil PWA (390$\times$844)\\
+    Resolución Uniforme de Láminas Maestras (2400$\times$1500 px) $\bullet$ Estilo Semi-Plano $\bullet$ Cero Emojis
+    \vspace{6bp}
+    }%
+    }
+    \vspace{2.5cm}
+    
+    \begin{minipage}{0.48\textwidth}
+        \textbf{Postulante:}\\
+        Jorge Esteban Medrano\\
+        \textbf{Entorno de Operaciones:}\\
+        Carrier AS27839 (Tigo Bolivia)
+    \end{minipage}
+    \hfill
+    \begin{minipage}{0.48\textwidth}
+        \flushright
+        \textbf{Fecha de Entrega:}\\
+        Octubre 2026\\
+        \textbf{Repositorio de Artefactos:}\\
+        \texttt{MockupsFiles/Final/}
+    \end{minipage}
+    
+    \vfill
+    {\small\color{slate500} La Paz --- Bolivia}
+\end{titlepage}
+
+\newpage
+\tableofcontents
+\newpage
+
+% ── SECCIÓN 1: MARCO ACADÉMICO E INSTRUCCIONES ───────────────────────────
+\section{Marco Académico, Instrucciones y Objetivos}
+
+\subsection{Instrucciones del Proyecto de Grado}
+\noindent\fbox{%
+\parbox{0.96\linewidth}{%
+\small
+Como parte del proyecto de grado en Ingeniería de Sistemas Informáticos, se solicita diseñar los mockups que incluya tanto la versión web como la versión móvil (De acuerdo a cada proyecto).
+}%
+}
+
+\subsection{El Objetivo}
+\noindent\fbox{%
+\parbox{0.96\linewidth}{%
+\small
+El objetivo es que los mockups reflejen claramente la funcionalidad principal del sistema, la experiencia de usuario, y la adaptación a diferentes dispositivos. Se debe mostrar cómo interactúan los usuarios con el sistema y cómo se garantizan los objetivos funcionales del mismo en ambas plataformas.
+}%
+}
+
+\subsection{Indicaciones Metodológicas y Grado de Cumplimiento}
+\begin{enumerate}[leftmargin=18bp, itemsep=4bp]
+    \item \textbf{Diseña mockups para la interfaz web y para la aplicación móvil del sistema:}\\
+    Se han diseñado mockups para la interfaz web de alta resolución (1440$\times$900 px) y para la aplicación móvil progresiva (PWA, 390$\times$844 px), incorporando además la versión intermedia tablet táctil (1024$\times$768 px). Las tres vistas conviven de forma armónica e integrada en láminas todo-en-uno de tamaño uniforme (2400$\times$1500 px).
+    
+    \item \textbf{Deben incluir pantallas clave que muestren los flujos de interacción más importantes:}\\
+    Se cubren 10 pantallas críticas operativas que modelan los flujos completos de ciberdefensa: login seguro SSO, rotación forzada de clave por defecto, telemetría de ancho de banda carrier (42.8 Gbps), topología de nodos GNS3, inferencia de aprendizaje automático (LightGBM), captura eBPF/XDP en tiempo real, auditoría forense pericial, control de blast radius con timer de rollback y entorno sandbox ACL en subred aislada (VLAN 999).
+    
+    \item \textbf{Resaltar la funcionalidad principal y cómo esta se mantiene coherente en ambas plataformas:}\\
+    Las reglas de negocio, endpoints RESTful y respuestas del kernel Linux son estrictamente idénticas en todas las plataformas. La versión móvil adapta ergonómicamente los elementos a áreas de toque táctiles calibradas (mínimo 48 px), con navegación vertical y teclado numérico nativo optimizado.
+    
+    \item \textbf{Utilizar herramientas o técnicas adecuadas para la creación de mockups:}\\
+    Desarrollo vectorial en SVG puro sin pérdida de resolución, estandarización tipográfica con cifras tabulares y compilación automatizada mediante \texttt{librsvg} (\texttt{rsvg-convert}), \texttt{pypdf} y el motor \texttt{Tectonic} / \LaTeX.
+    
+    \item \textbf{Adjunta una breve explicación como introducción de las decisiones de diseño, enfocándote en la usabilidad y funcionalidad:}\\
+    Estructurada en el presente documento siguiendo las normativas de calidad ISO/IEC 25010 y WCAG 2.2.
+\end{enumerate}
+
+\newpage
+
+% ── SECCIÓN 2: MANUAL DE DECISIONES DE DISEÑO Y USABILIDAD ───────────────
+\section{Manual de Decisiones de Diseño, Usabilidad y Funcionalidad}
+
+\subsection{Erradicación Rigurosa de Anti-Patrones UI/UX de IA}
+En apego al documento de directivas técnicas \emph{Anti-patrones UI/UX de IA}:
+\begin{itemize}[leftmargin=18bp, itemsep=4bp]
+    \item \textbf{Cero Emojis:} Se eliminó cualquier emoji decorativo o informal. Todas las indicaciones de estado y acciones operativas se representan mediante \textbf{iconografía técnica vectorial SVG pura} (escudos de seguridad, cerrojos criptográficos, CPU, nodos de red, terminal y probetas sandbox) acompañadas de etiquetas textuales formales.
+    \item \textbf{Especificaciones en Textos Semi-Planos:} Los contenedores y tarjetas técnicas utilizan \textbf{bordes uniformes de 1\,px} (\emph{sin barras gruesas en el borde izquierdo}), evitando ornamentaciones innecesarias que saturen visualmente la consola del operador.
+    \item \textbf{Radios Concéntricos Calibrados:} Se aplica la fórmula matemática de concentricidad de esquinas:
+    $$\text{radio}_{\text{interior}} = \max(0, \text{radio}_{\text{exterior}} - \text{padding})$$
+    empleando radios sobrios de 6\,px a 8\,px en contenedores estructurales y 4\,px en botones y controles interactivos.
+    \item \textbf{Tipografía de Cifras Tabulares:} Fuentes sans-serif del sistema (\texttt{-apple-system}, \texttt{Segoe UI}, \texttt{Roboto}) para rótulos y lectura ejecutiva, y fuentes de ancho fijo (\texttt{SF Mono}, \texttt{Fira Code}) con cifras tabulares para direcciones IP, prefijos CIDR, números de puerto, paquetes por segundo y hashes criptográficos SHA-256.
+\end{itemize}
+
+\subsection{Arquitectura Cromática Armonizada (Dual-Theme WCAG 2.2)}
+Para garantizar ergonomía visual ininterrumpida tanto en turnos diurnos como en salas NOC/SOC de 24/7, se definieron dos esquemas cromáticos hermanos:
+
+\begin{table}[h!]
+\centering\small
+\begin{tabularx}{\textwidth}{lXXX}
+\toprule
+\textbf{Token Semántico} & \textbf{Tema Claro (Light)} & \textbf{Tema Oscuro (Dark)} & \textbf{Criterio Ergonómico / WCAG 2.2} \\
+\midrule
+Fondo Base (\texttt{bg\_page}) & \texttt{\#F8FAFC} (Slate 50) & \texttt{\#0B0F17} (Obsidian) & Sin brillo deslumbrante ni negros puros de neón \\
+Paneles (\texttt{bg\_panel}) & \texttt{\#FFFFFF} (Blanco Puro) & \texttt{\#131A29} (Midnight) & Elevación con bordes semi-planos de 1\,px \\
+Borde Uniforme (\texttt{border}) & \texttt{\#CBD5E1} (Slate 300) & \texttt{\#27354F} (Slate Border) & Delimitación nítida con contraste $\ge 3:1$ \\
+Texto Principal (\texttt{text\_primary}) & \texttt{\#0F172A} (Slate 900) & \texttt{\#F8FAFC} (Slate 50) & Ratio de contraste $\ge 12:1$ (Legibilidad extrema) \\
+Acento Tigo (\texttt{accent}) & \texttt{\#0284C7} (Sky Blue 600) & \texttt{\#38BDF8} (Sky Blue 400) & Identidad corporativa para controles interactivos \\
+Semántica Crítica (\texttt{critical}) & \texttt{\#DC2626} & \texttt{\#EF4444} & Alertas de anomalías graves y caídas de enlace \\
+Semántica Éxito (\texttt{success}) & \texttt{\#16A34A} & \texttt{\#22C55E} & Reglas eBPF activas, mTLS 1.3 y 2FA verificado \\
+Semántica Sandbox (\texttt{sandbox}) & \texttt{\#4F46E5} & \texttt{\#818CF8} & Subred aislada de prueba en VLAN 999 \\
+\bottomrule
+\end{tabularx}
+\caption{Matriz de tokens cromáticos armonizados para modo claro y oscuro.}
+\end{table}
+
+\newpage
+
+% ── SECCIÓN 3: REQUISITOS CRÍTICOS DE SEGURIDAD ──────────────────────────
+\section{Requisitos Funcionales de Seguridad Implementados}
+
+\subsection{Identidad Inmutable en Encabezado (Supresión de Conmutación Arbitraria)}
+En versiones preliminares, existía un menú desplegable que permitía alternar libremente entre usuarios y roles sin autenticación previa. Esto se ha erradicado por completo. El encabezado global (\texttt{soc-header}) despliega de manera inmutable:
+\begin{itemize}[itemsep=2bp]
+    \item Nombre del operador autenticado: \textbf{Carlos Mendoza}
+    \item Identificador de cuenta: \texttt{[admin\_soc]}
+    \item Badge de Rol RBAC fijo: \texttt{SOC\_ADMIN}
+    \item Estado de conexión segura: \texttt{TLS 1.3 - 2FA Activo}
+    \item Botón explícito: \texttt{[ Cerrar Sesión ]} (destruye la cookie segura JWT en el servidor y fuerza la redirección al login).
+\end{itemize}
+
+\subsection{Rotación Forzada de Contraseña por Defecto (\texttt{01b\_cambio\_password})}
+Las cuentas asignadas inicialmente cuentan con credenciales genéricas (\texttt{admin}). Para cumplir con directivas bancarias e ISO/IEC 27001:
+\begin{itemize}[itemsep=2bp]
+    \item \textbf{Bloqueo de Navegación:} La consola del SOC permanece inaccesible hasta que el operador establezca una contraseña permanente.
+    \item \textbf{Medidor de Entropía en Tiempo Real:} Barra dinámica de 4 segmentos que calcula la fortaleza criptográfica (alcanzando 94 bits de entropía).
+    \item \textbf{Checklist de 5 Criterios Zero-Trust:} Longitud mínima de 14 caracteres, mayúsculas, minúsculas, dígitos, caracteres especiales y descarte de coincidencia con datos corporativos o historial previo.
+\end{itemize}
+
+\subsection{Autenticación Multi-Factor y Rate Limiting (\texttt{01\_login})}
+\begin{itemize}[itemsep=2bp]
+    \item \textbf{Identidad Corporativa SSO:} Reemplazo del campo de texto genérico por correo corporativo verificado (\texttt{carlos.mendoza@tigo.net.bo}).
+    \item \textbf{Segundo Factor 2FA / TOTP:} 6 casillas numéricas independientes con avance automático de cursor sincronizadas con app móvil (RFC 6238 HMAC-SHA1).
+    \item \textbf{Protección Anti-Fuerza Bruta:} Banner dinámico que reporta intentos restantes permitidos (3 intentos máximos controlados por tabla Redis antes del bloqueo temporal de 15 minutos).
+\end{itemize}
+
+\subsection{Sandbox ACL en Subred Aislada (\texttt{09\_sandbox\_acl})}
+Para evitar caídas de red por errores en reglas dinámicas (blackholing accidental en enlaces carrier):
+\begin{itemize}[itemsep=2bp]
+    \item \textbf{Subred Aislada Virtualizada:} Entorno hermético \texttt{10.200.0.0/24 (VLAN 999)} con réplica de routers perimetrales ISP.
+    \item \textbf{Inyector Sintético de Ataques:} Flujo combinado de tráfico malicioso (SYN Flood 500k pps) y tráfico legítimo de control (HTTP/HTTPS 100k pps).
+    \item \textbf{Consola de Compilación Dinámica:} Soporte para reglas \texttt{iptables RAW} y filtros eBPF/XDP compilados directamente en el kernel Linux 6.8.
+    \item \textbf{Matriz de Verificación y Promoción:} Reporta 99.85\% de paquetes maliciosos descartados y 0.00\% de falsos positivos antes de habilitar el botón \texttt{[ Aprobar y Promover Regla a Producción ]} con firma SHA-256 inmutable.
+\end{itemize}
+
+\newpage
+
+% ── SECCIÓN 4: CATÁLOGO DE PANTALLAS Y MATRIZ DE BOTONES ─────────────────
+\section{Catálogo Técnico de las 10 Pantallas del Sistema}
+
+Cada pantalla ha sido diseñada de manera unificada integrando las tres vistas (Web Desktop, Tablet táctil y Móvil PWA) en láminas maestras de 2400$\times$1500 px.
+
+\begin{table}[h!]
+\centering\small
+\begin{tabularx}{\textwidth}{lp{4cm}Xp{3.2cm}}
+\toprule
+\textbf{Página} & \textbf{Nombre y Módulo} & \textbf{Funcionalidad Operativa Principal} & \textbf{Controles Destacados} \\
+\midrule
+\textbf{Página 1} & \textbf{Login de Alta Seguridad} \newline \texttt{01\_login} & Acceso restringido corporativo mediante SSO, 2FA y rate limiting anti-bruteforce. & \texttt{[1]} Validar \newline \texttt{[2]} Casillas 2FA \newline \texttt{[3]} Banner Redis \\
+\midrule
+\textbf{Página 2} & \textbf{Rotación de Contraseña} \newline \texttt{01b\_cambio\_password} & Obligación de reemplazo de clave temporal por defecto con medidor de entropía (94 bits). & \texttt{[1]} Actualizar \newline \texttt{[2]} Barra Entropía \newline \texttt{[3]} Checklist ISO \\
+\midrule
+\textbf{Página 3} & \textbf{Dashboard Central SOC} \newline \texttt{02\_dashboard} & Telemetría en tiempo real de 42.8 Gbps, incidentes activos y header inmutable. & \texttt{[1]} Logout \newline \texttt{[2]} KPI Tráfico \newline \texttt{[3]} Mitigar Ahora \\
+\midrule
+\textbf{Página 4} & \textbf{Topología de Red Core} \newline \texttt{03\_topology} & Mapa de nodos GNS3 AS27839, enlaces 10G/40G e inspector de interfaces eth0-eth3. & \texttt{[1]} Core-BGP-01 \newline \texttt{[2]} Switch XDP \newline \texttt{[3]} Aislar Nodo \\
+\midrule
+\textbf{Página 5} & \textbf{Métricas ML (LightGBM)} \newline \texttt{04\_monitoring\_charts} & Rendimiento del clasificador (0.42 ms, 99.42\% precisión) y matriz de confusión. & \texttt{[1]} Selector ML \newline \texttt{[2]} Matriz \newline \texttt{[3]} Reentrenar \\
+\midrule
+\textbf{Página 6} & \textbf{Inspección eBPF en Vivo} \newline \texttt{05\_realtime\_stream} & Captura de 14.2k pkts/s, filtros BPF y decodificación de volcado hexadecimal. & \texttt{[1]} Pausar Flujo \newline \texttt{[2]} Filtro BPF \newline \texttt{[3]} Hex Dump \\
+\midrule
+\textbf{Página 7} & \textbf{Auditoría Forense} \newline \texttt{06\_alerts} & Registro pericial inmutable con firma SHA-256 y exportación de reportes PDF/CSV. & \texttt{[1]} Exportar \newline \texttt{[2]} Filtro Crítico \newline \texttt{[3]} Búsqueda IP \\
+\midrule
+\textbf{Página 8} & \textbf{Blast Radius y Re-Auth} \newline \texttt{07\_blast\_radius} & Cuarentena preventiva, temporizador de rollback 300s y re-autenticación FIDO2. & \texttt{[1]} Re-Auth \newline \texttt{[2]} Timer 300s \newline \texttt{[3]} Abortar \\
+\midrule
+\textbf{Página 9} & \textbf{Gobernanza RBAC} \newline \texttt{08\_user\_management} & Administración de operadores, enforcement 2FA al 100\% y matriz de privilegios. & \texttt{[1]} Crear Usuario \newline \texttt{[2]} Enrolar 2FA \newline \texttt{[3]} Revocar JWT \\
+\midrule
+\textbf{Página 10} & \textbf{Sandbox ACL Aislado} \newline \texttt{09\_sandbox\_acl} & Simulación en VLAN 999 (\texttt{10.200.0.0/24}), inyección de tráfico y promoción. & \texttt{[1]} Inyectar \newline \texttt{[2]} Consola eBPF \newline \texttt{[3]} Promover \\
+\bottomrule
+\end{tabularx}
+\caption{Resumen técnico de las 10 pantallas y controles interactivos analizados.}
+\end{table}
+
+\newpage
+
+% ── SECCIÓN 5: ENTREGABLES MAESTROS Y CONCLUSIONES ───────────────────────
+\section{Inventario de Compendios Maestros Compilados}
+
+Todos los archivos han sido generados en el directorio local \texttt{MockupsFiles/Final/}:
+
+\subsection{Documentos Consolidados en PDF (Tamaño Uniforme 2400$\times$1500 px)}
+\begin{enumerate}[leftmargin=18bp, itemsep=6bp]
+    \item \textbf{Gran Entrega Maestra Multi-Dispositivo (22 Páginas Uniformes):}\\
+    \texttt{MockupsFiles/Final/ENTREGA\_MAESTRA\_MOCKUPS\_MULTI\_DISPOSITIVO.pdf}\\
+    Integra la Lámina 00 formal en \LaTeX\ más las 10 pantallas completas tanto en Tema Claro como en Tema Oscuro.
+    
+    \item \textbf{Compilación Multi-Dispositivo en Tema Claro (11 Páginas Uniformes):}\\
+    \texttt{MockupsFiles/Final/COMPILACION\_MOCKUPS\_MULTI\_DISPOSITIVO\_TEMA\_CLARO.pdf}\\
+    Edición optimizada para revisión diurna e impresión formal.
+    
+    \item \textbf{Compilación Multi-Dispositivo en Tema Oscuro (11 Páginas Uniformes):}\\
+    \texttt{MockupsFiles/Final/COMPILACION\_MOCKUPS\_MULTI\_DISPOSITIVO\_TEMA\_OSCURO.pdf}\\
+    Edición ergonómica para centros de operaciones de ciberseguridad (SOC/NOC 24/7).
+\end{enumerate}
+
+\subsection{Conclusión de Usabilidad y Validación}
+El diseño propuesto resuelve las necesidades críticas de ciberdefensa en telecomunicaciones, garantizando:
+\begin{itemize}[itemsep=2bp]
+    \item \textbf{Mitigación de Errores Operativos:} La inclusión del sandbox aislado (VLAN 999) y el temporizador de reversión de 300 segundos previene interrupciones accidentales en enlaces carrier.
+    \item \textbf{Ergonomía Táctil y Respuesta Inmediata:} El diseño responsive adaptativo permite que el analista pueda contener incidentes críticos desde una estación desktop o de manera remota desde un dispositivo móvil con idéntica fidelidad funcional.
+    \item \textbf{Gobernanza Criptográfica Robusta:} Cero suplantación de identidad mediante encabezados inmutables y rotación obligatoria de contraseñas por defecto en el primer acceso.
+\end{itemize}
+
+\end{document}

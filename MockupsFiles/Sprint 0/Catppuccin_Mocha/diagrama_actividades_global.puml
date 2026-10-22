@@ -1,0 +1,126 @@
+@startuml
+skinparam backgroundColor #1E1E2E
+skinparam defaultFontName Arial
+skinparam defaultFontColor #CDD6F4
+skinparam defaultFontSize 10
+skinparam roundcorner 8
+skinparam shadowing false
+
+skinparam swimlane {
+    BorderColor #585B70
+    BorderThickness 1.2
+    TitleFontColor #89B4FA
+    TitleFontSize 11
+    TitleFontStyle bold
+}
+
+skinparam activity {
+    BackgroundColor #313244
+    BorderColor #89B4FA
+    FontColor #CDD6F4
+    BorderThickness 1.2
+}
+
+skinparam activityDiamond {
+    BackgroundColor #313244
+    BorderColor #CBA6F7
+    FontColor #CDD6F4
+}
+
+skinparam activityStart {
+    Color #A6E3A1
+}
+
+skinparam activityEnd {
+    Color #F38BA8
+}
+
+skinparam activityBar {
+    Color #89B4FA
+}
+
+skinparam note {
+    BackgroundColor #313244
+    BorderColor #F9E2AF
+    FontColor #CDD6F4
+    BorderThickness 1.2
+}
+
+skinparam arrow {
+    Color #89B4FA
+    FontColor #A6ADC8
+    FontSize 9
+}
+
+|#181825|Red Carrier AS27839 / Sondas eBPF|
+start
+:Capturar trama de red a velocidad de cable;
+:Filtrar tráfico por socket RAW / AF_PACKET;
+
+|#1E1E2E|Motor de Feature Engineering (Polars)|
+:Agrupar eventos en ventana temporal deslizante;
+:Extraer 23 características de red en formato columnar;
+note right
+  Calcula en < 500 us:
+  * Tamaños y cabeceras
+  * Varianza de TTL
+  * Ratios de flags TCP (SYN, ACK, FIN, RST)
+  * Entropía de bytes de payload
+  * Frecuencia de consultas DNS
+end note
+:Generar vector normalizado de características;
+
+|#181825|Motor Analítico de IA (LightGBM C-API)|
+:Alimentar vector al Booster LightGBM (C-API libre de GIL);
+:Calcular probabilidad de anomalía de exfiltración;
+if (¿Probabilidad >= Umbral de Amenaza [0.85]?) then (No - Tráfico Legítimo)
+    |#1E1E2E|Persistencia & Telemetría (PostgreSQL BCNF)|
+    :Acumular en métricas periódicas agregadas\n(network_traffic_metrics);
+    stop
+else (Sí - Exfiltración Detectada)
+    :Tipificar amenaza (DNS Tunneling / HTTPS Leak);
+    :Generar registro forense aislado (network_logs);
+    :Calcular hash criptográfico SHA-256 de evidencia;
+    :Registrar alerta de seguridad (security_alerts);
+    
+    |#181825|Consola SOC & Orquestador de Mitigaciones|
+    :Despachar alerta en vivo vía WebSocket y Push FCM;
+    :Evaluar Radio de Impacto (Blast Radius);
+    if (¿Impacto Masivo o Capa 7?) then (Sí - Requiere Aprobación)
+        :Encolar tarea en estado PENDING_MANUAL;
+        :Exigir re-autenticación al Operador L2;
+        :Analista inspecciona payload y confirma mitigación;
+    else (No - Impacto Singular / Host Aislado)
+        :Despachar cuarentena automática inmediata;
+    endif
+
+    :Generar instantánea JSON de estado previo (Rollback Snapshot);
+    fork
+        if (¿Vector L2?) then (Sí)
+            :Ejecutar desconexión RADIUS CoA en Switch;
+        endif
+    fork again
+        if (¿Vector L3/L4?) then (Sí)
+            :Inyectar BGP RTBH / ACL DROP en Core;
+        endif
+    fork again
+        if (¿Vector L7 DNS?) then (Sí)
+            :Activar DNS Sinkhole hacia IP controlada;
+        endif
+    end fork
+
+    :Iniciar temporizador preventivo de 300 segundos;
+    :Registrar acción en auditoría inmutable (mitigation_audit);
+    
+    if (¿Operador detecta Falso Positivo o Expira Timer?) then (Revertir)
+        :Ejecutar carga útil de Rollback JSON;
+        :Restaurar configuración de red original;
+        :Marcar alerta como FALSE_POSITIVE;
+    else (Confirmado)
+        :Consolidar bloqueo definitivo;
+        :Marcar alerta como MITIGATED;
+    endif
+    stop
+endif
+
+@enduml

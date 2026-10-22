@@ -1,0 +1,87 @@
+================================================================================
+          TIGO NDR INTELLIGENCE SUITE - GUÍA TÉCNICA DE MÉTRICAS
+================================================================================
+
+Este documento detalla las métricas de ciberdefensa y rendimiento utilizadas en
+la Suite Tigo NDR v3.2 para la detección de exfiltración y protección de red.
+
+---
+1. MÉTRICAS DE OPERACIÓN CARRIER-GRADE (KPIs Superiores)
+---
+
+● INTEGRIDAD DE RED (SLA):
+  Representa la salud operativa de la red en tiempo real. 
+  - Cálculo: Empieza al 100%. Sufre un "decay" (caída) de 1.5% por cada alerta 
+    crítica pendiente en IPs masivas (Carrier).
+  - Objetivo: Visualizar el riesgo de degradación del servicio si no se toman 
+    decisiones de mitigación.
+
+● CONTINUIDAD TIGO (SLA AVOIDED):
+  Mide el impacto negativo evitado.
+  - Significado: Es un estimado de cuántos usuarios habrían perdido internet
+    si el analista hubiera bloqueado la IP en lugar de usar Shadow Routing.
+  - Valor: Se incrementa cada vez que una amenaza Carrier se mueve a un nodo fantasma.
+
+● AUTO MITIGADOS (AUTO ACTIONS):
+  - Significado: Cantidad de amenazas aisladas de forma autónoma por la IA.
+  - Alcance: Solo aplica a la "ZONA INTERNA" (IPs no críticas), donde el riesgo
+    de impacto colateral es bajo y el sistema tiene permiso de bloqueo total.
+
+● SHADOW ROUTING ACTIVO:
+  - Significado: Número de atacantes que están siendo interceptados actualmente.
+  - Estado: Estas IPs creen que están exfiltrando datos, pero están atrapadas
+    en una red virtual de engaño, protegiendo la red real.
+
+---
+2. MÉTRICAS DE INTELIGENCIA ARTIFICIAL (IA Forense / XAI)
+---
+
+● CONFIANZA DE IA (PROBABILITY):
+  Muestra la certeza matemática del modelo LightGBM.
+  - > 90%: Certeza absoluta de ataque (Requiere acción inmediata).
+  - 60% - 85%: Comportamiento altamente sospechoso.
+  - < 45%: Tráfico dentro de parámetros normales.
+
+● PESOS DE ACTIVACIÓN NEURONAL (XAI):
+  Explican el "por qué" de la decisión del modelo:
+  - VELOCIDAD (PPS): Mide paquetes por segundo. Un pico alto indica DoS o
+    barrido de puertos.
+  - ESTABILIDAD IAT: Mide el tiempo entre paquetes. Una estabilidad perfecta
+    sugiere un script automatizado (bot) en lugar de un humano.
+  - TAMAÑO DE FLUJO: Mide el volumen de datos. Fundamental para detectar
+    exfiltración de bases de datos o archivos pesados.
+  - ANOMALÍA PROTOCOLO: Detecta si las banderas (flags) de red no coinciden
+    con el uso estándar de protocolos como SSH, DNS o HTTP.
+
+---
+3. VISUALIZACIÓN DE CLUSTERING (MATRIZ DE AMENAZAS)
+---
+
+La matriz utiliza una escala Logarítmica (Log10) para normalizar el tráfico
+masivo de Tigo y permitir la visualización de patrones:
+
+● EJE X (SIGNAL VELOCITY):
+  Representa la velocidad de transmisión. Los puntos a la derecha son flujos
+  más rápidos y agresivos.
+
+● EJE Y (PAYLOAD VARIANCE):
+  Representa la variabilidad de la carga útil. Los puntos superiores indican
+  flujos con tamaños de datos inusuales o ráfagas pesadas.
+
+● SEPARACIÓN DE CLUSTERS:
+  - NÚCLEOS ROJOS: Amenazas detectadas. Su posición indica el tipo de ataque.
+  - NUBES CIAN: Tráfico benigno verificado por el entrenamiento K-Fold.
+
+---
+4. ESTADOS DE INCIDENTE
+---
+
+- PENDING (PENDIENTE): Amenaza detectada en infraestructura crítica. Requiere
+  que el analista elija entre Shadow Routing o Throttling.
+- AUTO_RESOLVED: Amenaza interna bloqueada automáticamente por la IA.
+- SHADOW_ROUTED: Amenaza neutralizada mediante redireccionamiento invisible.
+- THROTTLED: Velocidad de la IP atacante limitada para minimizar daño.
+
+================================================================================
+Tigo NDR Suite - Protección Proactiva e IA Explicable - 2026
+================================================================================

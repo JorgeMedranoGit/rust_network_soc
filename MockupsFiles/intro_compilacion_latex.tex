@@ -1,0 +1,151 @@
+\documentclass[11pt]{article}
+\usepackage[paperwidth=1800bp, paperheight=1125bp, margin=40bp]{geometry}
+\usepackage[utf8]{inputenc}
+\usepackage{amsmath}
+\usepackage{microtype}
+\usepackage{multicol}
+\usepackage{booktabs}
+\usepackage{xcolor}
+\usepackage{enumitem}
+\usepackage{tabularx}
+\usepackage{hyperref}
+
+% Definición de Paleta Formal Académica
+\definecolor{primary}{HTML}{0284C7}      % Azul Corporativo Tigo
+\definecolor{primarydark}{HTML}{0369A1}  % Azul Marino Oscuro
+\definecolor{textprimary}{HTML}{0F172A}  % Slate 900
+\definecolor{textsecondary}{HTML}{334155}% Slate 700
+\definecolor{textmuted}{HTML}{64748B}    % Slate 500
+\definecolor{border}{HTML}{CBD5E1}       % Slate 300
+\definecolor{bglight}{HTML}{F8FAFC}      % Slate 50
+\definecolor{success}{HTML}{16A34A}      % Verde Éxito
+\definecolor{critical}{HTML}{DC2626}     % Rojo Crítico
+
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{5pt}
+\setlength{\columnsep}{30bp}
+
+\hypersetup{
+    colorlinks=true,
+    linkcolor=primary,
+    urlcolor=primarydark
+}
+
+\begin{document}
+\pagestyle{empty}
+
+% ENCABEZADO INSTITUCIONAL FORMAL
+\begin{center}
+    {\large\scshape\bfseries\color{primarydark} Proyecto de Grado en Ingeniería de Sistemas Informáticos \quad $\bullet$ \quad Universidad Católica Boliviana / Tigo SOC}\\[4bp]
+    {\LARGE\bfseries\color{textprimary} MANUAL TÉCNICO Y COMPILACIÓN DE MOCKUPS MULTIPLATAFORMA}\\[4bp]
+    {\normalsize\color{textsecondary} Plataforma de Detección y Mitigación de Ataques de Red en Tiempo Real \quad $\bullet$ \quad Red ISP Carrier AS27839}\\[2bp]
+    {\small\color{textmuted} Postulante: Jorge Esteban Medrano \quad $\bullet$ \quad Fecha: Octubre 2026 \quad $\bullet$ \quad Entregable Maestro: Láminas Todo-en-Uno (Web, Tablet y Móvil)}
+\end{center}
+
+\vspace{-4bp}
+\noindent\textcolor{primary}{\rule{\textwidth}{1.5bp}}
+\vspace{4bp}
+
+\begin{multicols}{3}
+
+% COLUMNA 1: INSTRUCCIONES, OBJETIVO Y MARCO
+\section*{\color{primarydark}\Large 1. Instrucciones y Objetivo}
+
+\noindent\fbox{%
+\parbox{0.96\linewidth}{%
+\textbf{\color{primarydark}Instrucciones:}\\[2bp]
+\small Como parte del proyecto de grado en Ingeniería de Sistemas Informáticos, se solicita diseñar los mockups que incluya tanto la versión web como la versión móvil (De acuerdo a cada proyecto).
+}%
+}
+
+\vspace{6bp}
+
+\noindent\fbox{%
+\parbox{0.96\linewidth}{%
+\textbf{\color{primarydark}El objetivo:}\\[2bp]
+\small El objetivo es que los mockups reflejen claramente la funcionalidad principal del sistema, la experiencia de usuario, y la adaptación a diferentes dispositivos. Se debe mostrar cómo interactúan los usuarios con el sistema y cómo se garantizan los objetivos funcionales del mismo en ambas plataformas.
+}%
+}
+
+\vspace{6bp}
+\subsection*{\color{primary}Indicaciones Metodológicas}
+\begin{itemize}[leftmargin=12bp, itemsep=2bp]
+    \item \textbf{Diseña mockups para la interfaz web y móvil:} Láminas que unifican Web Desktop (1440$\times$900), Tablet (1024$\times$768) y Móvil PWA (390$\times$844) en una misma página de 2400$\times$1500 px.
+    \item \textbf{Pantallas y flujos clave:} 10 pantallas críticas del SOC modeladas con interacciones reales y telemetría de kernel Linux.
+    \item \textbf{Coherencia funcional:} La lógica de negocio, contratos de API REST y respuestas eBPF/XDP son idénticos en todas las plataformas.
+    \item \textbf{Herramientas y técnicas adecuadas:} Modelado gráfico vectorial SVG, compilación automatizada y tipografía tabular sin distorsión.
+    \item \textbf{Decisiones de diseño:} Enfoque riguroso en usabilidad, ergonomía y prevención de errores en salas de operaciones 24/7.
+\end{itemize}
+
+\columnbreak
+
+% COLUMNA 2: DECISIONES DE DISEÑO, USABILIDAD Y FUNCIONALIDAD
+\section*{\color{primarydark}\Large 2. Usabilidad y Funcionalidad}
+
+\subsection*{\color{primary}Erradicación de Anti-Patrones UI/UX de IA}
+\begin{itemize}[leftmargin=12bp, itemsep=2bp]
+    \item \textbf{Cero Emojis:} Eliminación absoluta de emojis informales en estados, tablas y botones. Se emplea iconografía técnica vectorial SVG pura y texto explícito.
+    \item \textbf{Textos y Especificaciones Semi-Planos:} Contenedores con bordes uniformes de 1\,px (\emph{sin barras gruesas a la izquierda}). Eliminación del anidamiento excesivo (\emph{cardocalypse}).
+    \item \textbf{Radios Concéntricos Calibrados:} Geometría armónica según $\text{radio}_{\text{interior}} = \max(0, \text{radio}_{\text{exterior}} - \text{padding})$.
+    \item \textbf{Tipografía Tabular de Red:} Fuentes sans-serif limpias y tipografías monoespaciadas con cifras tabulares para IP, CIDR, hashes y pps.
+\end{itemize}
+
+\subsection*{\color{primary}Pilares de Seguridad Reforzada}
+\begin{itemize}[leftmargin=12bp, itemsep=2bp]
+    \item \textbf{Sesión Inmutable en Header:} Eliminación de cambio arbitrario de cuenta. Despliegue fijo de \texttt{Carlos Mendoza [admin\_soc]}, rol \texttt{SOC\_ADMIN}, estado TLS 1.3 y botón de \texttt{[Cerrar Sesión]}.
+    \item \textbf{Rotación Obligatoria de Contraseña:} Detección de clave temporal por defecto (\texttt{admin}). Bloqueo de acceso hasta definir clave con medidor de entropía (94 bits) y checklist ISO 27001.
+    \item \textbf{Autenticación Corporativa de 3 Factores:} Correo SSO institucional, casillas numéricas 2FA/TOTP sincronizadas con app móvil y rate limiting (3 intentos).
+    \item \textbf{Sandbox ACL en Subred Aislada:} Subred virtualizada \texttt{10.200.0.0/24 (VLAN 999)} con inyector sintético, consola eBPF/iptables y promoción auditada.
+\end{itemize}
+
+\columnbreak
+
+% COLUMNA 3: ÍNDICE DE LAS 10 PÁGINAS Y MATRIZ DE ENTREGABLES
+\section*{\color{primarydark}\Large 3. Índice de Pantallas del SOC}
+
+\begin{tabularx}{\linewidth}{lX}
+\toprule
+\textbf{Página} & \textbf{Funcionalidad y Controles Clave} \\
+\midrule
+\textbf{Página 1} & \textbf{Login de Alta Seguridad}\\[-1bp]
+\texttt{01\_login} & SSO Email, 2FA TOTP 6 dígitos, mTLS 1.3 y protección contra fuerza bruta (Redis rate-limit). \\
+\midrule
+\textbf{Página 2} & \textbf{Rotación Obligatoria de Contraseña}\\[-1bp]
+\texttt{01b\_cambio} & Medidor de entropía dinámica (94 bits) y validación de 5 reglas criptográficas ISO 27001. \\
+\midrule
+\textbf{Página 3} & \textbf{Dashboard Central del SOC}\\[-1bp]
+\texttt{02\_dashboard} & 4 KPIs de transporte (42.8 Gbps), curva de ancho de banda y mitigación en kernel. \\
+\midrule
+\textbf{Página 4} & \textbf{Topología de Red Core GNS3}\\[-1bp]
+\texttt{03\_topology} & Mapa AS27839, enlaces 10G/40G e inspector lateral de interfaces eth0-eth3. \\
+\midrule
+\textbf{Página 5} & \textbf{Métricas ML (LightGBM)}\\[-1bp]
+\texttt{04\_monitoring} & Inferencia 0.42 ms, precisión 99.42\%, ranking de variables y matriz de confusión. \\
+\midrule
+\textbf{Página 6} & \textbf{Inspección eBPF en Tiempo Real}\\[-1bp]
+\texttt{05\_realtime} & Captura de 14.2k pkts/s, filtros BPF y deserializador hexadecimal/ASCII. \\
+\midrule
+\textbf{Página 7} & \textbf{Auditoría Forense y Alertas}\\[-1bp]
+\texttt{06\_alerts} & Registro de incidentes, severidades, firma SHA-256 y exportación pericial. \\
+\midrule
+\textbf{Página 8} & \textbf{Control de Blast Radius}\\[-1bp]
+\texttt{07\_blast\_rad} & Cuarentena preventiva, temporizador de rollback 300s y re-autenticación FIDO2. \\
+\midrule
+\textbf{Página 9} & \textbf{Gobernanza RBAC Zero-Trust}\\[-1bp]
+\texttt{08\_user\_mgmt} & Administración de operadores, enforcement 2FA al 100\% y matriz de privilegios. \\
+\midrule
+\textbf{Página 10} & \textbf{Sandbox ACL en Subred Aislada}\\[-1bp]
+\texttt{09\_sandbox} & Simulación en VLAN 999 (\texttt{10.200.0.0/24}), métricas de mitigación y promoción. \\
+\bottomrule
+\end{tabularx}
+
+\end{multicols}
+
+\vspace{6bp}
+\noindent\textcolor{border}{\rule{\textwidth}{0.8bp}}
+\vspace{2bp}
+\begin{center}
+    {\footnotesize\color{textmuted}\textsc{Compilación Maestra Multi-Dispositivo} \quad $\bullet$ \quad Todas las láminas presentan Web Desktop, Tablet y Móvil integradas con el mismo tamaño uniforme \quad $\bullet$ \quad Cero Emojis $\bullet$ Estilo Semi-Plano}
+\end{center}
+
+\end{document}

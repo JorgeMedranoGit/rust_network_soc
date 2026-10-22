@@ -1,0 +1,166 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1440" height="900" viewBox="0 0 1440 900">
+  <rect width="1440" height="900" fill="#080C14"/>
+
+  <!-- Barra Superior -->
+  <rect width="1440" height="52" fill="#0F172A" stroke="#334155" stroke-width="1"/>
+  <text x="24" y="32" fill="#F8FAFC" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif" font-size="16" font-weight="800">TIGO SOC</text>
+  <text x="120" y="32" fill="#64748B" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif" font-size="13">|</text>
+  <text x="136" y="32" fill="#94A3B8" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif" font-size="13">TRIAJE FORENSE DE AMENAZAS &amp; INSPECCIÓN DE TELEMETRÍA</text>
+
+  <!-- Breadcrumbs de Navegación -->
+  <g transform="translate(24, 76)">
+    <text x="0" y="0" fill="#64748B" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif" font-size="12">Consola SOC &gt; Alertas Forenses &gt; </text>
+    <text x="210" y="0" fill="#0284C7" font-family="'SF Mono', 'Fira Code', 'Roboto Mono', Consolas, monospace" font-size="12" font-weight="700">ALT-2026-0891 (DDOS_SYN_FLOOD)</text>
+    <rect x="520" y="-14" width="120" height="20" rx="3" fill="#DC2626"/>
+    <text x="580" y="0" fill="#FFFFFF" font-family="'SF Mono', 'Fira Code', 'Roboto Mono', Consolas, monospace" font-size="10" font-weight="700" text-anchor="middle">SEVERIDAD 5 / 5</text>
+  </g>
+
+  <!-- Estructura de Tres Columnas (Información / Evidencia PCAP / Mitigación) -->
+  
+  <!-- Columna 1: Datos Técnicos del Incidente (340px) -->
+  <g transform="translate(24, 96)">
+    <rect width="360" height="770" rx="6" fill="#0F172A" stroke="#334155" stroke-width="1"/>
+    <path d="M 0 6 Q 0 0 6 0 L 354 0 Q 360 0 360 6 L 360 48 L 0 48 Z" fill="#1E293B"/>
+    <text x="20" y="30" fill="#F8FAFC" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif" font-size="13" font-weight="700">DIAGNÓSTICO DEL INCIDENTE</text>
+
+    <g transform="translate(20, 70)">
+      <text x="0" y="0" fill="#64748B" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif" font-size="11" font-weight="700">CLASIFICACIÓN DEL MOTOR ML</text>
+      <text x="0" y="24" fill="#DC2626" font-family="'SF Mono', 'Fira Code', 'Roboto Mono', Consolas, monospace" font-size="18" font-weight="700">DDOS_SYN_FLOOD</text>
+      <text x="0" y="44" fill="#94A3B8" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif" font-size="12">Score Confianza: 99.2% (LightGBM)</text>
+
+      <line x1="0" y1="64" x2="320" y2="64" stroke="#1E293B" stroke-width="1"/>
+
+      <!-- Vector Atacante -->
+      <text x="0" y="86" fill="#64748B" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif" font-size="11" font-weight="700">ORIGEN DEL ATAQUE (OFFENSIVE NODE)</text>
+      <text x="0" y="108" fill="#F8FAFC" font-family="'SF Mono', 'Fira Code', 'Roboto Mono', Consolas, monospace" font-size="14" font-weight="700">192.168.100.50</text>
+      <text x="0" y="126" fill="#94A3B8" font-family="'SF Mono', 'Fira Code', 'Roboto Mono', Consolas, monospace" font-size="11">Hostname: AttackerKali (GNS3)</text>
+      <text x="0" y="142" fill="#94A3B8" font-family="'SF Mono', 'Fira Code', 'Roboto Mono', Consolas, monospace" font-size="11">MAC: 00:00:0c:aa:bb:cc</text>
+      <text x="0" y="158" fill="#94A3B8" font-family="'SF Mono', 'Fira Code', 'Roboto Mono', Consolas, monospace" font-size="11">Vendor: Cisco ISE Managed Host</text>
+
+      <line x1="0" y1="178" x2="320" y2="178" stroke="#1E293B" stroke-width="1"/>
+
+      <!-- Objetivo -->
+      <text x="0" y="200" fill="#64748B" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif" font-size="11" font-weight="700">OBJETIVO (VICTIM NODE)</text>
+      <text x="0" y="222" fill="#F8FAFC" font-family="'SF Mono', 'Fira Code', 'Roboto Mono', Consolas, monospace" font-size="14" font-weight="700">192.168.1.15 : 80 [HTTP]</text>
+      <text x="0" y="240" fill="#94A3B8" font-family="'SF Mono', 'Fira Code', 'Roboto Mono', Consolas, monospace" font-size="11">Hostname: VictimeAlpine5</text>
+      <text x="0" y="256" fill="#94A3B8" font-family="'SF Mono', 'Fira Code', 'Roboto Mono', Consolas, monospace" font-size="11">MAC: 02:42:ac:11:00:0f</text>
+
+      <line x1="0" y1="276" x2="320" y2="276" stroke="#1E293B" stroke-width="1"/>
+
+      <!-- Métricas de Flujo Forense -->
+      <text x="0" y="298" fill="#64748B" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif" font-size="11" font-weight="700">CARACTERÍSTICAS DEL FLUJO (FEATURES)</text>
+      <text x="0" y="322" fill="#94A3B8" font-family="'SF Mono', 'Fira Code', 'Roboto Mono', Consolas, monospace" font-size="11">Tasa SYN: 4,890 paquetes/seg</text>
+      <text x="0" y="342" fill="#94A3B8" font-family="'SF Mono', 'Fira Code', 'Roboto Mono', Consolas, monospace" font-size="11">Window Size Promedio: 1024</text>
+      <text x="0" y="362" fill="#94A3B8" font-family="'SF Mono', 'Fira Code', 'Roboto Mono', Consolas, monospace" font-size="11">IAT (Inter-Arrival Time): 0.0002s</text>
+      <text x="0" y="382" fill="#94A3B8" font-family="'SF Mono', 'Fira Code', 'Roboto Mono', Consolas, monospace" font-size="11">Ratio ACK / SYN: 0.001 (Anomalía crítica)</text>
+
+      <rect x="0" y="420" width="320" height="60" rx="4" fill="#450A0A" stroke="#DC2626" stroke-width="1"/>
+      <text x="12" y="444" fill="#FCA5A5" font-family="'SF Mono', 'Fira Code', 'Roboto Mono', Consolas, monospace" font-size="11" font-weight="700">DIAGNÓSTICO CONFIRMADO</text>
+      <text x="12" y="462" fill="#F8FAFC" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif" font-size="11">Inundación SYN perimetral con saturación de tabla de conexiones del servidor web.</text>
+    </g>
+  </g>
+
+  <!-- Columna 2: Evidencia Forense de Red y Decodificador PCAP L2-L7 (620px) -->
+  <g transform="translate(408, 96)">
+    <rect width="620" height="770" rx="6" fill="#0F172A" stroke="#334155" stroke-width="1"/>
+    <path d="M 0 6 Q 0 0 6 0 L 614 0 Q 620 0 620 6 L 620 48 L 0 48 Z" fill="#1E293B"/>
+    <text x="20" y="30" fill="#F8FAFC" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif" font-size="13" font-weight="700">EVIDENCIA FORENSE DE RED (PCAP L2 - L7)</text>
+
+    <g transform="translate(20, 68)">
+      <!-- Desglose de Cabeceras L2 - L4 -->
+      <rect x="0" y="0" width="580" height="130" rx="4" fill="#080C14" stroke="#334155" stroke-width="1"/>
+      <text x="16" y="24" fill="#0284C7" font-family="'SF Mono', 'Fira Code', 'Roboto Mono', Consolas, monospace" font-size="11" font-weight="700">DECODIFICADOR DE CABECERAS TCP/IP</text>
+      <text x="16" y="48" fill="#94A3B8" font-family="'SF Mono', 'Fira Code', 'Roboto Mono', Consolas, monospace" font-size="11">Ethernet II: Src 00:00:0c:aa:bb:cc -&gt; Dst 02:42:ac:11:00:0f (Type: IPv4)</text>
+      <text x="16" y="68" fill="#94A3B8" font-family="'SF Mono', 'Fira Code', 'Roboto Mono', Consolas, monospace" font-size="11">IPv4: Src 192.168.100.50 -&gt; Dst 192.168.1.15 | TTL 64 | Proto: TCP (6)</text>
+      <text x="16" y="88" fill="#DC2626" font-family="'SF Mono', 'Fira Code', 'Roboto Mono', Consolas, monospace" font-size="11" font-weight="700">TCP: SrcPort 48291 -&gt; DstPort 80 [SYN] | Seq: 3829104812 | Ack: 0</text>
+      <text x="16" y="108" fill="#64748B" font-family="'SF Mono', 'Fira Code', 'Roboto Mono', Consolas, monospace" font-size="11">Flags: [........S.] Urgent: 0 | Checksum: 0x4f12 [Correcto]</text>
+
+      <!-- Dump Hexadecimal y ASCII Forense Tabular -->
+      <text x="0" y="160" fill="#F8FAFC" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif" font-size="12" font-weight="700">DUMP FORENSE CRÍTICO (OFFSET TABULAR)</text>
+      <rect x="0" y="172" width="580" height="240" rx="4" fill="#080C14" stroke="#334155" stroke-width="1"/>
+      <g transform="translate(16, 196)" fill="#94A3B8" font-family="'SF Mono', 'Fira Code', 'Roboto Mono', Consolas, monospace" font-size="11">
+        <text x="0" y="0" fill="#64748B">0x0000:</text>
+        <text x="60" y="0">02 42 ac 11 00 0f 00 00  0c aa bb cc 08 00 45 00</text>
+        <text x="420" y="0">.B............E.</text>
+
+        <text x="0" y="24" fill="#64748B">0x0010:</text>
+        <text x="60" y="24">00 3c 1a 2b 40 00 40 06  e3 1f c0 a8 64 32 c0 a8</text>
+        <text x="420" y="24">.&lt;.+@.@.....d2..</text>
+
+        <text x="0" y="48" fill="#64748B">0x0020:</text>
+        <text x="60" y="48">01 0f bc a3 00 50 e4 3d  4a cc 00 00 00 00 a0 02</text>
+        <text x="420" y="48">.....P.=J.......</text>
+
+        <text x="0" y="72" fill="#64748B">0x0030:</text>
+        <text x="60" y="72" fill="#DC2626">04 00 72 1a 00 00 02 04  05 b4 04 02 08 0a 00 1f</text>
+        <text x="420" y="72">..r.............</text>
+
+        <text x="0" y="96" fill="#64748B">0x0040:</text>
+        <text x="60" y="96">2b 12 00 00 00 00 01 03  03 07 00 00 00 00 00 00</text>
+        <text x="420" y="96">+...............</text>
+      </g>
+
+      <!-- Gráfico de Dispersión Temporal IAT -->
+      <text x="0" y="445" fill="#F8FAFC" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif" font-size="12" font-weight="700">DISTRIBUCIÓN DEL TIEMPO INTER-PAQUETE (IAT)</text>
+      <rect x="0" y="456" width="580" height="150" rx="4" fill="#080C14" stroke="#334155" stroke-width="1"/>
+      <line x1="20" y1="580" x2="560" y2="580" stroke="#334155" stroke-width="1"/>
+      <circle cx="60" cy="530" r="3" fill="#DC2626"/>
+      <circle cx="100" cy="528" r="3" fill="#DC2626"/>
+      <circle cx="140" cy="532" r="3" fill="#DC2626"/>
+      <circle cx="180" cy="530" r="3" fill="#DC2626"/>
+      <circle cx="220" cy="529" r="3" fill="#DC2626"/>
+      <circle cx="260" cy="531" r="3" fill="#DC2626"/>
+      <circle cx="300" cy="530" r="3" fill="#DC2626"/>
+      <circle cx="340" cy="530" r="3" fill="#DC2626"/>
+      <text x="20" y="480" fill="#D97706" font-family="'SF Mono', 'Fira Code', 'Roboto Mono', Consolas, monospace" font-size="11">Ráfagas continuas de alta periodicidad (Firma de ataque sintetizado Scapy/Hping3)</text>
+    </g>
+  </g>
+
+  <!-- Columna 3: Matriz de Despacho de Mitigación Multi-Vendor (380px) -->
+  <g transform="translate(1052, 96)">
+    <rect width="364" height="770" rx="6" fill="#0F172A" stroke="#334155" stroke-width="1"/>
+    <path d="M 0 6 Q 0 0 6 0 L 358 0 Q 364 0 364 6 L 364 48 L 0 48 Z" fill="#1E293B"/>
+    <text x="20" y="30" fill="#F8FAFC" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif" font-size="13" font-weight="700">DESPACHO DE MITIGACIÓN MULTI-VENDOR</text>
+
+    <g transform="translate(20, 68)">
+      <text x="0" y="0" fill="#64748B" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif" font-size="11" font-weight="700">SELECCIÓN DE DIRECTIVA DE DEFENSA</text>
+
+      <!-- Opción 1: L3 ACL Blackhole (Recomendada) -->
+      <rect x="0" y="16" width="324" height="110" rx="6" fill="#1E293B" stroke="#0284C7" stroke-width="2"/>
+      <rect x="16" y="32" width="16" height="16" rx="3" fill="#0284C7"/>
+      <polyline points="19,40 23,44 29,36" fill="none" stroke="#FFFFFF" stroke-width="2"/>
+      <text x="44" y="45" fill="#F8FAFC" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif" font-size="13" font-weight="700">ACL Blackhole Perimetral (L3/L4)</text>
+      <text x="44" y="66" fill="#94A3B8" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif" font-size="11">Comando: iptables Null Route / DROP</text>
+      <text x="44" y="82" fill="#64748B" font-family="'SF Mono', 'Fira Code', 'Roboto Mono', Consolas, monospace" font-size="10">Target: IP 192.168.100.50 (Host Atacante)</text>
+      <text x="44" y="98" fill="#16A34A" font-family="'SF Mono', 'Fira Code', 'Roboto Mono', Consolas, monospace" font-size="10" font-weight="700">Impacto en servicio: CERO (Aislado)</text>
+
+      <!-- Opción 2: L2 RADIUS CoA Disconnect -->
+      <rect x="0" y="136" width="324" height="96" rx="6" fill="#080C14" stroke="#334155" stroke-width="1"/>
+      <rect x="16" y="152" width="16" height="16" rx="3" fill="none" stroke="#334155" stroke-width="1"/>
+      <text x="44" y="165" fill="#F8FAFC" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif" font-size="13" font-weight="600">Aislamiento L2 (RADIUS CoA)</text>
+      <text x="44" y="186" fill="#94A3B8" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif" font-size="11">Protocolo: UDP 3799 Cisco ISE</text>
+      <text x="44" y="202" fill="#64748B" font-family="'SF Mono', 'Fira Code', 'Roboto Mono', Consolas, monospace" font-size="10">Reasigna puerto de switch a VLAN de Cuarentena</text>
+
+      <!-- Opción 3: L7 DNS Sinkhole -->
+      <rect x="0" y="242" width="324" height="96" rx="6" fill="#080C14" stroke="#334155" stroke-width="1"/>
+      <rect x="16" y="258" width="16" height="16" rx="3" fill="none" stroke="#334155" stroke-width="1"/>
+      <text x="44" y="271" fill="#F8FAFC" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif" font-size="13" font-weight="600">DNS Sinkhole (L7)</text>
+      <text x="44" y="292" fill="#94A3B8" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif" font-size="11">Servidor Unbound / BIND9</text>
+      <text x="44" y="308" fill="#64748B" font-family="'SF Mono', 'Fira Code', 'Roboto Mono', Consolas, monospace" font-size="10">Desvía C2 hacia 127.0.0.1 (No requerido)</text>
+
+      <!-- Caja de Requerimiento de Re-autenticación -->
+      <rect x="0" y="358" width="324" height="80" rx="6" fill="#451A03" stroke="#D97706" stroke-width="1"/>
+      <text x="16" y="380" fill="#D97706" font-family="'SF Mono', 'Fira Code', 'Roboto Mono', Consolas, monospace" font-size="11" font-weight="700">ACCIÓN CRÍTICA DE RED</text>
+      <text x="16" y="398" fill="#F8FAFC" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif" font-size="11">La ejecución despacha órdenes a los routers de borde del ISP.</text>
+      <text x="16" y="416" fill="#94A3B8" font-family="'SF Mono', 'Fira Code', 'Roboto Mono', Consolas, monospace" font-size="10">Requerirá contraseña en el siguiente paso.</text>
+
+      <!-- Botón de Ejecución Primario -->
+      <rect x="0" y="460" width="324" height="48" rx="6" fill="#DC2626"/>
+      <text x="162" y="490" fill="#FFFFFF" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif" font-size="13" font-weight="700" text-anchor="middle">DESPACHAR MITIGACIÓN L3 INMEDIATA</text>
+
+      <!-- Botón Secundario de Descarte -->
+      <rect x="0" y="520" width="324" height="38" rx="6" fill="#1E293B" stroke="#334155" stroke-width="1"/>
+      <text x="162" y="544" fill="#94A3B8" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif" font-size="12" font-weight="600" text-anchor="middle">Marcar como Falso Positivo</text>
+    </g>
+  </g>
+</svg>

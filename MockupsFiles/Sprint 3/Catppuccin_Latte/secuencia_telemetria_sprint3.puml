@@ -1,0 +1,77 @@
+@startuml
+
+skinparam backgroundColor #EFF1F5
+skinparam defaultFontName Arial
+skinparam defaultFontColor #4C4F69
+skinparam defaultFontSize 10
+skinparam roundcorner 8
+skinparam shadowing false
+skinparam nodesep 40
+skinparam ranksep 45
+skinparam arrow {
+    Color #1E66F5
+    FontColor #6C6F85
+    FontSize 9
+}
+
+skinparam sequence {
+    LifeLineBorderColor #1E66F5
+    LifeLineBackgroundColor #E6E9EF
+    ParticipantBorderColor #1E66F5
+    ParticipantBackgroundColor #FFFFFF
+    ParticipantFontColor #4C4F69
+    GroupBackgroundColor #E6E9EF
+    GroupBorderColor #1E66F5
+    GroupFontColor #4C4F69
+    BoxBackgroundColor #E6E9EF
+    BoxBorderColor #8839EF
+    BoxFontColor #4C4F69
+}
+
+
+autonumber "<b>[00]</b>"
+
+participant "Kernel Linux / NIC\n(eBPF/XDP Sonda)" as KernelNIC
+participant "NetworkAdapter\n(Raw Socket Tokio)" as Adapter
+participant "AssetDiscoveryEngine\n(OUI & ARP Resolver)" as Discovery
+participant "TelemetryStreamHandler\n(Tokio Broadcast)" as StreamHandler
+participant "TelemetryRepository\n(SQLx PgPool)" as Repo
+database "PostgreSQL 15\n(network_traffic_metrics)" as DB
+participant "Frontend Leptos\n(WebSocket WASM DOM)" as LeptosWasm
+
+KernelNIC -> Adapter : [01] Captura trama raw ethernet L2/L3/L4 sin copia
+activate Adapter
+
+Adapter -> Discovery : [02] check_or_discover_host(src_mac, src_ip)
+activate Discovery
+
+alt ¿MAC o IP no registrada en inventario?
+    Discovery -> Repo : [03] insert_discovered_node(node)
+    Repo -> DB : [04] INSERT INTO network_nodes (hostname, ip, mac, vendor)
+    DB --> Repo : [05] Ok(node_id: 14)
+    Repo --> Discovery : [06] Ok(node_id: 14)
+end
+deactivate Discovery
+
+Adapter -> Adapter : [07] Acumular bytes y paquetes en ventana temporal (1s)
+
+opt Cada expiración de ventana temporal (1.000 ms)
+    Adapter -> Repo : [08] persist_metric_window(node_id, packets, bytes)
+    activate Repo
+    Repo -> DB : [09] INSERT INTO network_traffic_metrics (node_id, window_start, window_end, packets, bytes)
+    DB --> Repo : [10] Ok(metric_id: 8901)
+    Repo --> Adapter : [11] Ok()
+    deactivate Repo
+    
+    Adapter -> StreamHandler : [12] broadcast_telemetry(window_summary_json)
+    activate StreamHandler
+    StreamHandler -> LeptosWasm : [13] WS TextFrame { pps: 45200, mbps: 341.2, nodes: 28 }
+    activate LeptosWasm
+    LeptosWasm -> LeptosWasm : [14] Actualizar SVG Topology & Signal<TrafficStats> (60 FPS)
+    deactivate LeptosWasm
+    deactivate StreamHandler
+end
+
+deactivate Adapter
+
+@enduml

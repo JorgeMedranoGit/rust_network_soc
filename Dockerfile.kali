@@ -1,0 +1,2 @@
+FROM kalilinux/kali-rolling
+RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y iproute2 iputils-ping net-tools nmap tcpreplay && apt-get clean

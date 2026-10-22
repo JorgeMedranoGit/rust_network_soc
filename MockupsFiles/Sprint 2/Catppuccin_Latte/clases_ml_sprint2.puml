@@ -1,0 +1,89 @@
+@startuml
+
+skinparam backgroundColor #EFF1F5
+skinparam defaultFontName Arial
+skinparam defaultFontColor #4C4F69
+skinparam defaultFontSize 10
+skinparam roundcorner 8
+skinparam shadowing false
+skinparam nodesep 40
+skinparam ranksep 45
+skinparam arrow {
+    Color #1E66F5
+    FontColor #6C6F85
+    FontSize 9
+}
+
+skinparam package {
+    BackgroundColor #E6E9EF
+    BorderColor #8839EF
+    FontColor #4C4F69
+    FontStyle bold
+    BorderThickness 1.2
+}
+skinparam class {
+    BackgroundColor #FFFFFF
+    BorderColor #1E66F5
+    FontColor #4C4F69
+    HeaderBackgroundColor #E6E9EF
+    BorderThickness 1.2
+}
+
+
+class PolarsFeatureEngine {
+    __ Funciones __
+    +extract_features_columnar(events: &[NetworkEvent]): Result<(ExtractedFeatures, f64)>
+    +build_polars_dataframe(events: &[NetworkEvent]): Result<DataFrame>
+    +compute_entropy(bytes: &[u8]): f64
+    +calculate_flag_ratios(df: &DataFrame): Result<(f64, f64, f64, f64)>
+    +calculate_inter_arrival_times(df: &DataFrame): Result<Series>
+}
+
+class ThreatDetector {
+    +anomaly_threshold: f32
+    -booster: Arc<BoosterWrapper>
+    -evaluations_counter: Arc<AtomicU64>
+    -anomalies_counter: Arc<AtomicU64>
+    -stats_mutex: Arc<Mutex<StatsTuple>>
+    __ Funciones __
+    +from_file(model_path: &str, threshold: f32): Result<Self>
+    +evaluate_anomaly(features: &ExtractedFeatures): Result<ThreatEvaluation>
+    +get_realtime_stats(): ThreatDetectorStats
+    +reset_metrics(): void
+}
+
+class BoosterWrapper {
+    +booster: Booster
+    __ Funciones __
+    +predict(input: &[f32]): Result<f64>
+    +get_num_features(): u32
+}
+
+class LightGBMTrainer {
+    -dataset_path: String
+    -k_folds: u32
+    __ Funciones __
+    +new(dataset_path: &str, k: u32): Self
+    +train_kfold(): Result<TrainingMetrics>
+    +export_best_booster(dest_path: &str): Result<()>
+    +calculate_f1_score(confusion_matrix: &[u64]): f64
+}
+
+class ExtractedFeatures {
+    +packet_size_mean: f64
+    +packet_size_std: f64
+    +header_len_mean: f64
+    +ttl_variance: f64
+    +syn_ratio: f64
+    +ack_ratio: f64
+    +dns_query_length: f64
+    +byte_entropy: f64
+    +to_f32_slice(): Vec<f32>
+}
+
+ThreatDetector ..> PolarsFeatureEngine : consume_features
+ThreatDetector *-- BoosterWrapper : invoca_C_API
+ThreatDetector ..> ExtractedFeatures : evalua
+LightGBMTrainer ..> BoosterWrapper : genera_modelo
+
+@enduml
