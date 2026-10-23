@@ -26,6 +26,12 @@ for p in "$HOME/.cargo/bin" "/home/bando/Documents/BigLinuxTMP/bando/.cargo/bin"
     fi
 done
 
+# 0.1 Si no existe .env, crearlo desde el template (start_service.sh también lo cubre)
+if [ ! -f ".env" ] && [ -f ".env.example" ]; then
+    cp .env.example .env
+    echo -e "\e[1;33m[INFO] .env creado desde .env.example (ajusta FCM_SERVER_KEY si usarás push).\e[0m"
+fi
+
 # Captura de IP para Firewall Zero Trust
 ALLOWED_IP=${1:-}
 if [ -z "$ALLOWED_IP" ]; then
@@ -96,9 +102,32 @@ installInCase() {
 
 # 1. Verificación universal de dependencias: 
 # (Comando | Paquetes APT | Paquetes PACMAN | Paquetes DNF/YUM | Paquetes ZYPPER)
-installInCase "docker" "docker.io docker-compose-v2 jq curl" "docker docker-compose jq curl" "docker docker-compose jq curl" "docker docker-compose jq curl"
-installInCase "cargo" "cargo" "rust" "cargo" "cargo"
-installInCase "gns3server" "gns3-server dynamips ubridge" "gns3-server" "gns3-server" "gns3-server"
+installInCase "docker" "docker.io docker-compose-v2 jq curl git pkg-config libssl-dev build-essential" "docker docker-compose jq curl git pkgconf openssl base-devel" "docker docker-compose jq curl git pkgconf openssl-devel gcc" "docker docker-compose jq curl git libopenssl-devel"
+# rustc es necesario junto a cargo para compilar el backend (cargo sin toolchain fallaría)
+if ! command -v rustc &>/dev/null; then
+    installInCase "cargo" "cargo rustc" "rust" "cargo" "cargo"
+fi
+# Fallback: si los repos del sistema no aportan cargo/rustc, instalar vía rustup (funciona en cualquier distro)
+if ! command -v cargo &>/dev/null; then
+    echo -e "\e[1;33m[INFO] 'cargo' no disponible vía gestor de paquetes. Instalando Rust via rustup...\e[0m"
+    curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain stable --profile minimal || true
+    export PATH="$HOME/.cargo/bin:$PATH"
+fi
+# GNS3 es OPCIONAL: start_network.sh/build_topology.sh tienen modo fallback Docker puro.
+# No se instala con el gestor de paquetes (falla en Azure/minimales); solo se detecta.
+if command -v gns3server &>/dev/null; then
+    echo -e "\e[1;32m gns3server ya está instalado.\e[0m"
+else
+    echo -e "\e[1;33m[AVISO] gns3server no está instalado (opcional). Se usará orquestación directa Docker para ambas redes GNS3.\e[0m"
+fi
+
+# 0.5 Verificar submódulos de Git (si aplica). Si faltan, inicializarlos.
+if [ -f ".gitmodules" ]; then
+    if find .git/modules -maxdepth 1 -mindepth 1 &>/dev/null 2>&1 || git submodule status | grep -q '^-'; then
+        echo -e "\e[1;34m[INFO] Inicializando submódulos de Git...\e[0m"
+        git submodule update --init --recursive || true
+    fi
+fi
 
 # 2. Iniciar Docker si está apagado
 if ! systemctl is-active --quiet docker; then
@@ -137,7 +166,7 @@ echo -e "\e[1;34m Verificando servidor GNS3...\e[0m"
 if pgrep -x "gns3server" > /dev/null; then
     echo -e "\e[1;32m El servidor GNS3 ya está en ejecución.\e[0m"
 elif command -v gns3server &> /dev/null; then
-    sudo gns3server --daemon --host 0.0.0.0
+    sudo gns3server --daemon --host 0.0.0.0 || true
     echo -e "\e[1;32m Servidor GNS3 levantado exitosamente.\e[0m"
 else
     echo -e "\e[1;33m[AVISO] 'gns3server' no encontrado como daemon local.\e[0m"
@@ -148,7 +177,56 @@ echo -e "\e[1;32m============================================================\e[
 echo -e "\e[1;32m LABORATORIO BASE INICIADO \e[0m"
 echo -e "\e[1;32m============================================================\e[0m"
 
-# 4. Llamada a los sub-scripts
-chmod +x start_service.sh start_network.sh build_topology.sh
+# 4. Llamada a TODOS los sub-scripts del laboratorio (orden de dependencia)
+chmod +x start_service.sh start_network.sh build_topology.sh \
+         allow_ip.sh lanzar_ataque.sh start_tunnel.sh \
+         scripts/red_alterna_sandbox_acl.sh scripts/probar_nuevas_acl.sh
+
+# 4.0 Build del frontend Leptos WASM (opcional). El repo incluye el bundle ya
+#     compilado en ./frontend; solo se reconstruye si trunk está disponible,
+#     para no romper el arranco en máquinas sin toolchain wasm.
+if command -v trunk &>/dev/null && [ -f "tigo_soc_frontend/index.html" ]; then
+    echo -e "\e[1;34m[INFO] Reconstruyendo frontend Leptos con trunk (dist -> ./frontend)...\e[0m"
+    ( cd tigo_soc_frontend && trunk build --release ) || echo -e "\e[1;33m[AVISO] Falló 'trunk build'; se usará el bundle pre-compilado incluido en ./frontend.\e[0m"
+else
+    echo -e "\e[1;32m[INFO] Usando frontend WASM pre-compilado incluido en ./frontend (instala 'trunk' para reconstruir).\e[0m"
+fi
+
+# 4.1 Backend Axum + PostgreSQL (docker compose, con migración init.sql y seed RBAC/amenazas)
 ./start_service.sh
+
+# 4.1.1 Esperar a que la API esté saludable antes de continuar (healthcheck /health)
+echo -e "\e[1;34m[INFO] Esperando a que el backend Axum responda en http://localhost:3000/health ...\e[0m"
+for i in $(seq 1 60); do
+    if curl -s --connect-timeout 2 http://localhost:3000/health >/dev/null 2>&1; then
+        echo -e "\e[1;32m[OK] Backend saludable tras ~$((i*5))s.\e[0m"
+        break
+    fi
+    sleep 5
+    if [ "$i" = "60" ]; then
+        echo -e "\e[1;33m[AVISO] El backend aún no responde en /health (la primera compilación Rust en Docker puede tardar varios minutos). Revisa: sudo docker logs -f tigo_rust_backend\e[0m"
+    fi
+done
+
+# 4.2 Red GNS3 PRINCIPAL (10 endpoints: Kali + 9 víctimas) + Red GNS3 SANDBOX ACL
+#     (build_topology.sh despliega ambas; en modo fallback Docker invoca
+#      scripts/red_alterna_sandbox_acl.sh para la sandbox VLAN 999)
 ./start_network.sh
+
+# 4.3 Mostrar IPs actualmente autorizadas en el Firewall Zero Trust (informativo)
+./allow_ip.sh list || true
+
+echo -e "\e[1;32m============================================================\e[0m"
+echo -e "\e[1;32m LABORATORIO TIGO SOC COMPLETAMENTE OPERATIVO\e[0m"
+echo -e "\e[1;32m   Frontend Leptos (compilado): http://localhost:3000/\e[0m"
+echo -e "\e[1;32m   API REST Axum:               http://localhost:3000/api/v1\e[0m"
+echo -e "\e[1;32m   Healthcheck:                 http://localhost:3000/health\e[0m"
+echo -e "\e[1;32m   PWA / notificaciones push:   http://localhost:3000/pwa/\e[0m"
+echo -e "\e[1;32m   PostgreSQL:                  tigo_postgres_db (tigo_soc)\e[0m"
+echo -e "\e[1;32m   RED 1 (principal): ataques/tráfico -> pipeline SOC/ML\e[0m"
+echo -e "\e[1;32m   RED 2 (sandbox ACL): probar ACLs -> aprobación persistida\e[0m"
+echo -e "\e[1;32m     en BD (approved_acl_rules). Ejecutar:\e[0m"
+echo -e "\e[1;32m       ./lanzar_ataque.sh            (simular ataque L2/L3/L7)\e[0m"
+echo -e "\e[1;32m       ./scripts/probar_nuevas_acl.sh  (validar+aprobar ACL en sandbox)\e[0m"
+echo -e "\e[1;32m   Tunnel HTTPS opcional (PWA/push): ./start_tunnel.sh\e[0m"
+echo -e "\e[1;32m============================================================\e[0m"

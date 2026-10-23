@@ -1042,3 +1042,90 @@ async fn extract_error(resp: Response, status: u16) -> String {
     }
     format!("El servidor rechazó la operación (HTTP {}).", status)
 }
+
+// * * * ACLs APROBADAS EN SANDBOX (espejo de infrastructure::repo_acl) * * *
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct ApiApprovedAclRule {
+    pub acl_rule_id: i64,
+    pub rule_name: String,
+    pub layer_target: String,
+    pub vendor: String,
+    pub source_ip: Option<String>,
+    pub dest_ip: Option<String>,
+    pub protocol: Option<String>,
+    pub port_range: Option<String>,
+    pub action: String,
+    pub applied_command: String,
+    pub rollback_command: String,
+    pub sandbox_verified: bool,
+    pub sandbox_snapshot: Option<serde_json::Value>,
+    pub threat_name: Option<String>,
+    pub hit_count: i64,
+    pub created_by: Option<i32>,
+    pub approved_at: Option<String>,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct ApiApproveAclDto {
+    pub rule_name: String,
+    pub layer_target: String,
+    pub vendor: String,
+    pub source_ip: Option<String>,
+    pub dest_ip: Option<String>,
+    pub protocol: Option<String>,
+    pub port_range: Option<String>,
+    pub action: String,
+    pub applied_command: String,
+    pub rollback_command: String,
+    pub sandbox_snapshot: Option<serde_json::Value>,
+    pub threat_name: Option<String>,
+    pub created_by: Option<i32>,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct ApiApproveAclResponse {
+    #[serde(default)]
+    pub status: Option<String>,
+    #[serde(default)]
+    pub message: Option<String>,
+    #[serde(default)]
+    pub rule: Option<ApiApprovedAclRule>,
+    #[serde(default)]
+    pub error: Option<String>,
+}
+
+/// GET /api/v1/acls/approved — lista las ACLs aprobadas en la red sandbox VLAN 999
+pub async fn fetch_approved_acls() -> Result<Vec<ApiApprovedAclRule>, String> {
+    get_json("/api/v1/acls/approved").await
+}
+
+/// POST /api/v1/acls/approve — persista una ACL validada en sandbox para futuras detecciones
+pub async fn approve_acl(
+    dto: &ApiApproveAclDto,
+    token: &str,
+) -> Result<ApiApproveAclResponse, String> {
+    let path = format!("{}{}", api_base(), "/api/v1/acls/approve");
+    let resp = gloo_net::http::Request::post(&path)
+        .header("Content-Type", "application/json")
+        .header("Authorization", &format!("Bearer {}", token))
+        .json(dto)
+        .map_err(|e| format!("Serializando ApproveAclDto: {}", e))?
+        .send()
+        .await
+        .map_err(|e| format!("POST /api/v1/acls/approve: {}", e))?;
+    let status = resp.status();
+    let body: ApiApproveAclResponse = resp
+        .json()
+        .await
+        .map_err(|e| format!("Decodificando respuesta approve_acl (HTTP {}): {}", status, e))?;
+    if (200..300).contains(&status) {
+        Ok(body)
+    } else {
+        Err(body
+            .error
+            .unwrap_or_else(|| format!("HTTP {} al aprobar la ACL", status)))
+    }
+}

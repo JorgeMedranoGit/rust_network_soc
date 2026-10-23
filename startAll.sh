@@ -50,7 +50,7 @@ installInCase() {
 # (Comando | Paquetes APT | Paquetes PACMAN | Paquetes DNF/YUM | Paquetes ZYPPER)
 installInCase "docker" "docker.io docker-compose-v2 jq curl" "docker docker-compose jq curl" "docker docker-compose jq curl" "docker docker-compose jq curl"
 installInCase "cargo" "cargo" "rust" "cargo" "cargo"
-installInCase "gns3server" "gns3-server dynamips ubridge" "gns3-server dynamips ubridge" "gns3-server dynamips ubridge" "gns3-server dynamips ubridge"
+if command -v gns3server &>/dev/null; then echo -e "\e[1;32m gns3server ya está instalado.\e[0m"; else echo -e "\e[1;33m[AVISO] gns3server no instalado (opcional): build_topology.sh usará el modo fallback Docker puro.\e[0m"; fi
 
 # 2. Iniciar Docker si está apagado
 if ! systemctl is-active --quiet docker; then
@@ -58,13 +58,15 @@ if ! systemctl is-active --quiet docker; then
     sudo systemctl enable --now docker
 fi
 
-# 3. Levantar GNS3 Server en segundo plano
-echo -e "\e[1;34m Iniciando servidor GNS3 en segundo plano...\e[0m"
+# 3. Levantar GNS3 Server en segundo plano (OPCIONAL: fallback Docker si no existe)
 if pgrep -x "gns3server" > /dev/null; then
     echo -e "\e[1;32m El servidor GNS3 ya está en ejecución.\e[0m"
-else
-    sudo gns3server --daemon --host 0.0.0.0
+elif command -v gns3server &>/dev/null; then
+    echo -e "\e[1;34m Iniciando servidor GNS3 en segundo plano...\e[0m"
+    sudo gns3server --daemon --host 0.0.0.0 || true
     echo -e "\e[1;32m Servidor GNS3 levantado exitosamente.\e[0m"
+else
+    echo -e "\e[1;33m[AVISO] gns3server no disponible. build_topology.sh usará orquestación directa Docker.\e[0m"
 fi
 
 echo -e "\e[1;32m============================================================\e[0m"

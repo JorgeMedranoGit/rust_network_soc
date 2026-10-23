@@ -70,8 +70,8 @@ struct ConfusionCell {
 
 #[component]
 pub fn MlMetrics() -> impl IntoView {
-    let (ml_stats, set_ml_stats) = create_signal<Option<Value>>(None);
-    let (model_info, set_model_info) = create_signal<Option<Value>>(None);
+    let (ml_stats, set_ml_stats) = create_signal::<Option<Value>>(None);
+    let (model_info, set_model_info) = create_signal::<Option<Value>>(None);
     let (error, set_error) = create_signal::<Option<String>>(None);
     let (loading, set_loading) = create_signal(true);
 
@@ -308,7 +308,7 @@ pub fn MlMetrics() -> impl IntoView {
                                             <div style=format!(
                                                 "padding:0.6rem; border-radius:8px; text-align:center; background:{}18; border:1px solid {}55;",
                                                 c.color, c.color
-                                            )}>
+                                            )>
                                                 <div style="font-size:0.7rem; font-weight:700; color:var(--ctp-subtext0);">{c.label}</div>
                                                 <div class="mono" style=format!("font-size:1.05rem; font-weight:700; color:{};", c.color)>
                                                     {c.value.to_string()}
