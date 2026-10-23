@@ -357,7 +357,7 @@ pub fn SandboxAcl(
                             <button class="btn btn-inspect" on:click=handle_promote>
                                 "⬆️ Aprobar ACL y guardar en BD"
                             </button>
-                            <button class="btn btn-inspect" on:click=reload_acls>
+                            <button class="btn btn-inspect" on:click=move |_| reload_acls(())>
                                 "🔄 Recargar ACLs"
                             </button>
                             <button class="btn btn-inspect" on:click=clear_console>
