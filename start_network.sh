@@ -1,7 +1,8 @@
 #!/bin/bash
 set -e
 
-echo -e "\e[1;34m[INFO] Desplegando Topología ISP Automatizada (10 Endpoints)...\e[0m"
+echo -e "\e[1;34m[INFO] Desplegando Topología ISP Automatizada (Red GNS3 PRINCIPAL: 10 Endpoints)...\e[0m"
+echo -e "\e[1;34m[INFO] El despliegue incluye la Red GNS3 SANDBOX ACL (más pequeña) para probar ACLs antes de aplicarlas en la principal.\e[0m"
 
 # 1. Pre-compilar la imagen de Kali con las herramientas necesarias si no existe
 if ! sudo docker image inspect kali-soc-tools &>/dev/null; then
@@ -80,4 +81,8 @@ done
 
 echo -e "\e[1;32m============================================================\e[0m"
 echo -e "\e[1;32m TOPOLOGÍA ISP AMPLIADA COMPLETAMENTE AUTOMATIZADA \e[0m"
+echo -e "\e[1;32m RED 1 (PRINCIPAL): 192.168.100.0/24 + 192.168.1.0/24 -> ataques y tráfico\e[0m"
+echo -e "\e[1;32m RED 2 (SANDBOX ACL, más pequeña): soc_sandbox_acl_net 10.200.0.0/24 (VLAN 999)\e[0m"
+echo -e "\e[1;32m   -> probar ACLs aquí antes de aplicarlas en la red principal;\e[0m"
+echo -e "\e[1;32m      ACL aprobada se persiste en BD (approved_acl_rules) para futuras detecciones.\e[0m"
 echo -e "\e[1;32m============================================================\e[0m"

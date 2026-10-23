@@ -180,6 +180,42 @@ pub struct GlobalSecurityConfig {
     pub critical_action_timeout_secs: u64,
 }
 
+// ════════════════════════════════════════════════════════════════════════════
+// VISTA DE GOBERNANZA RBAC — espejo de ApiUserWithRole (GET /api/v1/users)
+// Añade los campos exigidos por la lámina 09/20 del manual de mockups:
+// correo SSO corporativo, estado 2FA/TOTP y cumplimiento ISO 27001.
+// ════════════════════════════════════════════════════════════════════════════
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct UserGovernanceRow {
+    pub user_id: i32,
+    pub username: String,
+    pub email: String,
+    pub role: RoleType,
+    pub role_name: String,
+    pub is_active: bool,
+    /// true si el operador tiene segundo factor TOTP registrado (RFC 6238)
+    pub has_2fa: bool,
+    pub created_at: String,
+    /// Cumplimiento Zero-Trust: clave temporal sin rotar = incumplimiento
+    pub must_change_password: bool,
+}
+
+impl Default for UserGovernanceRow {
+    fn default() -> Self {
+        UserGovernanceRow {
+            user_id: 0,
+            username: String::new(),
+            email: String::new(),
+            role: RoleType::Auditor,
+            role_name: String::new(),
+            is_active: false,
+            has_2fa: false,
+            created_at: String::new(),
+            must_change_password: false,
+        }
+    }
+}
+
 
 
 

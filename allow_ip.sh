@@ -46,6 +46,14 @@ case "$ACTION" in
         else
             echo -e "\e[1;33m[!] iptables: La IP ya estaba autorizada en DOCKER-USER.\e[0m"
         fi
+
+        # Autorización también en la Red GNS3 PRINCIPAL (soc_isp_net, segmento
+        # de ataques/tráfico 192.168.100.0/24 + 192.168.1.0/24). La red SANDBOX
+        # ACL (soc_sandbox_acl_net) no requiere regla: es segregada por diseño.
+        if ! sudo iptables -C DOCKER-USER -s "$TARGET_IP" -d 192.168.0.0/16 -j ACCEPT 2>/dev/null; then
+            sudo iptables -I DOCKER-USER 2 -s "$TARGET_IP" -d 192.168.0.0/16 -j ACCEPT
+            echo -e "\e[1;32m[✓] iptables: IP autorizada en la red principal soc_isp_net (192.168.0.0/16).\e[0m"
+        fi
         
         # 2. Modificar frontend/app.js, frontend/index.html y start.sh mediante Python
         python3 - <<EOF
@@ -111,7 +119,11 @@ EOF
         while sudo iptables -D DOCKER-USER -s "$TARGET_IP" -j ACCEPT 2>/dev/null; do
             :
         done
-        echo -e "\e[1;32m[✓] iptables: Reglas de IP [$TARGET_IP] eliminadas de DOCKER-USER.\e[0m"
+        # Revocar también la autorización de la Red GNS3 PRINCIPAL (soc_isp_net)
+        while sudo iptables -D DOCKER-USER -s "$TARGET_IP" -d 192.168.0.0/16 -j ACCEPT 2>/dev/null; do
+            :
+        done
+        echo -e "\e[1;32m[✓] iptables: Reglas de IP [$TARGET_IP] eliminadas de DOCKER-USER (backend + red principal).\e[0m"
         
         # 2. Modificar frontend/app.js, frontend/index.html y start.sh mediante Python
         python3 - <<EOF

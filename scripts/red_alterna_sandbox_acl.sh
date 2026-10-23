@@ -3,7 +3,7 @@
 # TIGO SOC - RED ALTERNA DE PRUEBAS PARA ACLs Y BLACKHOLING (SANDBOX VLAN 999)
 # ==============================================================================
 # Propósito:
-#   Desplegar un entorno de red completamente segregado (Subred 10.200.0.0/24)
+#   RED SANDBOX ACL (la SEGUNDA red GNS3 del laboratorio, MAS PEQUEÑA que la red principal soc_isp_net/GNS3 ISP). Desplegar un entorno de red completamente segregado (Subred 10.200.0.0/24)
 #   destinado a probar y verificar la inyección dinámica de nuevas ACLs (L3/L4),
 #   técnicas de Null Routing (Blackholing) y mecanismos de Rollback (300s),
 #   SIN INTERFERIR con el tráfico en producción de clientes corporativos ni el core.
@@ -157,3 +157,14 @@ echo -e "${GREEN}===============================================================
 echo -e " Para ejecutar la prueba de inyección de ACL y Rollback, ejecute:"
 echo -e "   ${CYAN}./scripts/probar_nuevas_acl.sh${NC}"
 echo -e "${GREEN}==================================================================${NC}"
+
+# ==============================================================================
+# NOTA DE FLUJO ENTRE LAS DOS REDES GNS3:
+#   Red 1 PRINCIPAL (soc_isp_net / proyecto GNS3 "Tigo_SOC_ISP_Expanded"):
+#       192.168.100.0/24 + 192.168.1.0/24 — aquí se lanzan los ataques y se
+#       captura TODO el tráfico hacia el pipeline del SOC (telemetría -> ML).
+#   Red 2 SANDBOX ACL (esta red, más pequeña, VLAN 999 / 10.200.0.0/24):
+#       Se prueba cada ACL aquí ANTES de usarla en la red principal. Al aprobarse
+#       (scripts/probar_nuevas_acl.sh, FASE 8), la regla se persiste en
+#       PostgreSQL (tabla approved_acl_rules) para futuras detecciones.
+# ==============================================================================

@@ -1,8 +1,27 @@
 #!/bin/bash
 set -e
 
+# ==============================================================================
+# TIGO SOC - CONSTRUCCIÓN DE LAS DOS REDES GNS3 DEL LABORATORIO
+# ==============================================================================
+# Red 1 (PRINCIPAL / PRODUCCIÓN SIMULADA): 'Tigo_SOC_ISP_Expanded'
+#   - Subred 192.168.100.0/24 (atacante) + 192.168.1.0/24 (víctimas corporativas)
+#   - Aquí se lanzan TODOS los ataques y se captura TODO el tráfico que alimenta
+#     al pipeline del SOC (telemetría -> ML LightGBM -> alertas en PostgreSQL).
+#
+# Red 2 (SANDBOX ACL, más pequeña): 'Tigo_SOC_Sandbox_ACL'
+#   - Subred segregada 10.200.0.0/24 (VLAN 999), solo 4 nodos:
+#     RouterAcl (gateway/inyección ACL), TargetServer, LegitClient, Attacker.
+#   - Destinada a PROBAR las ACLs antes de aplicarlas en la red principal.
+#   - Una vez APROBADA una ACL en sandbox, esta se guarda en la base de datos
+#     (tabla approved_acl_rules) para futuras detecciones automáticas.
+#   - Desplegada por scripts/red_alterna_sandbox_acl.sh; este script la
+#     referencia y verifica su existencia.
+# ==============================================================================
+
 API_URL="http://127.0.0.1:3080/v2"
 PROJECT_NAME="Tigo_SOC_ISP_Expanded"
+SANDBOX_PROJECT_NAME="Tigo_SOC_Sandbox_ACL"
 
 # Comprobar si GNS3 Server está escuchando en puerto 3080
 GNS3_ONLINE=false
@@ -78,6 +97,33 @@ if [ "$GNS3_ONLINE" = true ]; then
         -H "Content-Type: application/json" -d "$SWITCH_PAYLOAD")
     SWITCH_ID=$(echo "$SWITCH_RES" | jq -r '.node_id')
 
+    # 3.b Red GNS3 SANDBOX ACL (más pequeña, segregada de la principal).
+    #     Si no existe el proyecto sandbox en GNS3, se despliega automáticamente
+    #     vía scripts/red_alterna_sandbox_acl.sh (equivalente Docker VLAN 999).
+    echo -e "\e[1;34m[INFO] Verificando segunda red GNS3: Sandbox ACL (prueba previa de ACLs)...\e[0m"
+    SANDBOX_EXISTING_ID=$(curl -s "$API_URL/projects" | jq -r --arg n "$SANDBOX_PROJECT_NAME" '.[] | select(.name==$n) | .project_id' 2>/dev/null || true)
+    if [ -z "$SANDBOX_EXISTING_ID" ] || [ "$SANDBOX_EXISTING_ID" == "null" ]; then
+        SB_PROJECT_RES=$(curl -s -X POST "$API_URL/projects" \
+            -H "Content-Type: application/json" \
+            -d "{\"name\": \"$SANDBOX_PROJECT_NAME\", \"summary\": \"Red GNS3 pequena para probar ACLs antes de aplicarlas en la red principal\"}" || true)
+        SB_PROJECT_ID=$(echo "$SB_PROJECT_RES" | jq -r '.project_id' 2>/dev/null || true)
+        if [ -n "$SB_PROJECT_ID" ] && [ "$SB_PROJECT_ID" != "null" ]; then
+            echo -e "\e[1;34m[INFO] Creando 4 nodos minimos en la red Sandbox ACL...\e[0m"
+            SB_ROUTER_RES=$(curl -s -X POST "$API_URL/projects/$SB_PROJECT_ID/nodes" \
+                -H "Content-Type: application/json" \
+                -d '{"name": "Sandbox.RouterAcl", "node_type": "vpcs", "compute_id": "local", "properties": {"adapters": 1}}' || true)
+            SB_ROUTER_ID=$(echo "$SB_ROUTER_RES" | jq -r '.node_id')
+            SB_TARGET_ID=$(create_docker "Sandbox.TargetServer" "alpine:latest")
+            SB_LEGIT_ID=$(create_docker "Sandbox.LegitClient" "alpine:latest")
+            SB_ATTACKER_ID=$(create_docker "Sandbox.Attacker" "alpine:latest")
+            echo -e "\e[1;32m[+] Proyecto Sandbox ACL creado con ID: $SB_PROJECT_ID (4 nodos)\e[0m"
+        else
+            echo -e "\e[1;33m[!] No se pudo crear el proyecto sandbox en GNS3. Se usará la red Docker alternativa.\e[0m"
+        fi
+    else
+        echo -e "\e[1;32m[i] El proyecto Sandbox ACL ya existe en GNS3 (ID: $SANDBOX_EXISTING_ID).\e[0m"
+    fi
+
     echo -e "\e[1;34m[INFO] Nodos instanciados. Estableciendo enlaces...\e[0m"
 
     # 5. Función enlaces
@@ -98,11 +144,33 @@ if [ "$GNS3_ONLINE" = true ]; then
         create_link "$SWITCH_ID" "$i" "${VICTIM_IDS[$i]}" 0
     done
 
+    # Enlaces de la red Sandbox ACL (más pequeña): RouterAcl en el centro,
+    # conectado a TargetServer(0), LegitClient(1) y Attacker(2).
+    if [ -n "$SB_ROUTER_ID" ] && [ "$SB_ROUTER_ID" != "null" ]; then
+        SB_SWITCH_RES=$(curl -s -X POST "$API_URL/projects/$SB_PROJECT_ID/nodes" \
+            -H "Content-Type: application/json" \
+            -d '{"name": "Sandbox_Switch", "node_type": "ethernet_switch", "compute_id": "local", "properties": {"ports_mapping": [{"name": "Ethernet0", "port_number": 0, "type": "access", "vlan": 999}, {"name": "Ethernet1", "port_number": 1, "type": "access", "vlan": 999}, {"name": "Ethernet2", "port_number": 2, "type": "access", "vlan": 999}, {"name": "Ethernet3", "port_number": 3, "type": "access", "vlan": 999}]}}' || true)
+        SB_SWITCH_ID=$(echo "$SB_SWITCH_RES" | jq -r '.node_id')
+        if [ -n "$SB_SWITCH_ID" ] && [ "$SB_SWITCH_ID" != "null" ]; then
+            create_link "$SB_ROUTER_ID" 0 "$SB_SWITCH_ID" 0
+            create_link "$SB_TARGET_ID" 0 "$SB_SWITCH_ID" 1
+            create_link "$SB_LEGIT_ID" 0 "$SB_SWITCH_ID" 2
+            create_link "$SB_ATTACKER_ID" 0 "$SB_SWITCH_ID" 3
+            echo -e "\e[1;32m[+] Red Sandbox ACL cableada (4 enlaces, VLAN 999).\e[0m"
+        fi
+    fi
+
     echo -e "\e[1;34m[INFO] Cableado finalizado. Iniciando nodos en paralelo...\e[0m"
     curl -s -X POST "$API_URL/projects/$PROJECT_ID/nodes/start" \
         -H "Content-Type: application/json" -d "{}" > /dev/null
+    if [ -n "$SB_PROJECT_ID" ] && [ "$SB_PROJECT_ID" != "null" ]; then
+        curl -s -X POST "$API_URL/projects/$SB_PROJECT_ID/nodes/start" \
+            -H "Content-Type: application/json" -d "{}" > /dev/null || true
+    fi
 
     echo -e "\e[1;32m[+] Topología ISP levantada exitosamente por script Bash (GNS3 API).\e[0m"
+    echo -e "\e[1;32m[+] Red 1 (PRINCIPAL): $PROJECT_NAME -> ataques + captura de tráfico.\e[0m"
+    echo -e "\e[1;32m[+] Red 2 (SANDBOX ACL, más pequeña): $SANDBOX_PROJECT_NAME -> validación previa de ACLs.\e[0m"
 else
     echo -e "\e[1;33m[INFO] Servidor GNS3 no disponible en puerto 3080.\e[0m"
     echo -e "\e[1;34m[INFO] Desplegando topología ISP equivalente directamente en Docker (Multi-Distro / Azure Cloud)...\e[0m"
@@ -127,4 +195,17 @@ else
     done
 
     echo -e "\e[1;32m[+] Topología ISP levantada exitosamente en Docker (10 nodos activos con prefijo GNS3.*).\e[0m"
+
+    # Red 2 (SANDBOX ACL, más pequeña): desplegar la red Docker segregada
+    # soc_sandbox_acl_net (VLAN 999 / 10.200.0.0/24) para probar ACLs antes
+    # de aplicarlas en la red principal. Las ACLs aprobadas aquí se guardan
+    # en PostgreSQL (approved_acl_rules) por scripts/probar_nuevas_acl.sh.
+    if [ -x "$PWD/scripts/red_alterna_sandbox_acl.sh" ]; then
+        echo -e "\e[1;34m[INFO] Desplegando segunda red: SANDBOX ACL (soc_sandbox_acl_net, 10.200.0.0/24)...\e[0m"
+        chmod +x "$PWD/scripts/red_alterna_sandbox_acl.sh"
+        "$PWD/scripts/red_alterna_sandbox_acl.sh" || echo -e "\e[1;33m[AVISO] No se pudo desplegar la red sandbox automáticamente.\e[0m"
+    fi
+
+    echo -e "\e[1;32m[+] RED 1 (PRINCIPAL): soc_isp_net  -> ataques y captura de tráfico.\e[0m"
+    echo -e "\e[1;32m[+] RED 2 (SANDBOX ACL, más pequeña): soc_sandbox_acl_net -> validación previa de ACLs + aprobación persistida en BD.\e[0m"
 fi
