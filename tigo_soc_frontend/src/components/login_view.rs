@@ -1,6 +1,7 @@
 // * * * COMPONENTE: VISTA DE AUTENTICACIÓN Y CREACIÓN DE ADMINISTRADOR INICIAL * * *
 
 use leptos::*;
+use crate::api;
 use crate::models::{RoleType, SocUser, UserSessionState};
 
 // ---------------------------------------------------------------------------
@@ -194,7 +195,9 @@ pub fn LoginView(
     // ── Estados del formulario de login ──────────────────────────────────────
     let (login_username, set_login_username) = create_signal(String::new());
     let (login_password, set_login_password) = create_signal(String::new());
+    let (login_totp, set_login_totp) = create_signal(String::new());
     let (login_error, set_login_error) = create_signal(Option::<String>::None);
+    let (login_loading, set_login_loading) = create_signal(false);
 
     // ── Panel de creación de primer administrador ─────────────────────────────
     let (show_admin_create, set_show_admin_create) = create_signal(false);
@@ -217,13 +220,17 @@ pub fn LoginView(
     // (La vista de login se muestra solo cuando no hay sesión iniciada,
     //  pero necesitamos el modal de re-auth que puede aparecer sobre el dashboard)
 
-    // ── Lógica de LOGIN ───────────────────────────────────────────────────────
+    // ── Lógica de LOGIN REAL contra POST /api/v1/auth/login ──────────────────
+    // Autenticación delegada al backend Axum (+ PostgreSQL): username + password
+    // + código 2FA/TOTP opcional. El JWT/token de sesión devuelto se almacena en
+    // UserSessionState y, si las credenciales son válidas, se redirige al Dashboard.
     let handle_login = move |ev: web_sys::MouseEvent| {
         ev.prevent_default();
         set_login_error.set(None);
 
         let uname = login_username.get().trim().to_string();
         let pass  = login_password.get();
+        let totp  = login_totp.get().trim().to_string();
 
         if uname.is_empty() || pass.is_empty() {
             set_login_error.set(Some(
@@ -232,48 +239,72 @@ pub fn LoginView(
             return;
         }
 
-        let found = users.get()
-            .into_iter()
-            .find(|u| u.username.to_lowercase() == uname.to_lowercase() && u.is_active);
+        set_login_loading.set(true);
 
-        match found {
-            Some(user) => {
-                // Validación de contraseña (simulada: admin="admin", otros cualquier no-vacía)
-                let pass_ok = match user.role {
-                    RoleType::Admin => pass == "admin" || !pass.is_empty(),
-                    _               => !pass.is_empty(),
-                };
+        spawn_local(async move {
+            let result = api::login(&uname, &pass, Some(&totp)).await;
 
-                if pass_ok {
-                    let ts = now_timestamp() / 1000.0; // segundos
+            match result {
+                Ok(resp) => {
+                    // Enriquecemos el perfil con GET /api/v1/users (mejor esfuerzo);
+                    // si falla, construimos el usuario desde LoginResponseDto.
+                    let mut soc_user = SocUser {
+                        user_id: resp.user_id,
+                        username: resp.username.clone(),
+                        role: match resp.role_name.as_str() {
+                            "SOC_ADMIN"     => RoleType::Admin,
+                            "SOC_OPERATOR"  => RoleType::SocOperator,
+                            "SOC_AUDITOR"   => RoleType::Auditor,
+                            _               => RoleType::AnalystL1,
+                        },
+                        created_at: resp.expires_at.format("%Y-%m-%d %H:%M:%S").to_string(),
+                        is_active: true,
+                    };
+                    if let Ok(users_api) = api::fetch_users().await {
+                        if let Some(found) = users_api.into_iter().find(|u| u.user_id == resp.user_id) {
+                            soc_user = api::map_user_with_role(found);
+                        }
+                    }
+
+                    let expires_human = resp.expires_at.format("%Y-%m-%d %H:%M UTC").to_string();
+                    let reauth_ts = resp
+                        .expires_at
+                        .timestamp_millis() as f64 / 1000.0;
+
                     set_session.update(|s| {
-                        s.current_user = user.clone();
-                        s.session_token = format!(
-                            "tok_{}_{}",
-                            user.user_id,
-                            (ts as u64) & 0xFFFFFFFF
-                        );
-                        s.expires_at = "24h (Sesión en Servidor)".to_string();
-                        s.last_reauth_timestamp = ts;
+                        s.current_user = soc_user;
+                        s.session_token = resp.session_token; // token real del servidor
+                        s.expires_at = expires_human;
+                        s.last_reauth_timestamp = reauth_ts;
                     });
+
                     set_login_username.set(String::new());
                     set_login_password.set(String::new());
+                    set_login_totp.set(String::new());
+                    set_login_loading.set(false);
+                    // Redirección al Dashboard gestionada por App (on_login_success)
                     on_login_success.call(());
-                } else {
-                    set_login_error.set(Some(
-                        "Usuario no encontrado o contraseña incorrecta.".to_string()
-                    ));
+                }
+                Err(msg) => {
+                    set_login_loading.set(false);
+                    set_login_error.set(Some(format!(
+                        "⚠ {}",
+                        if msg.is_empty() {
+                            "Credenciales incorrectas o servicio no disponible."
+                        } else {
+                            &msg
+                        }
+                    )));
                 }
             }
-            None => {
-                set_login_error.set(Some(
-                    "Usuario no encontrado o contraseña incorrecta.".to_string()
-                ));
-            }
-        }
+        });
     };
 
-    // ── Lógica de CREACIÓN DE ADMINISTRADOR INICIAL ───────────────────────────
+    // ── Lógica de CREACIÓN DE ADMINISTRADOR INICIAL (mejor esfuerzo) ─────────
+    // El endpoint POST /api/v1/users del backend exige una sesión autenticada.
+    // En el arranque en frío (bootstrap) no existe todavía, por lo que la alta
+    // real se delega al script de seed/CLI del backend; aquí solo se prepara
+    // el estado local para permitir el primer login contra la API.
     let handle_create_admin = move |ev: web_sys::MouseEvent| {
         ev.prevent_default();
         set_admin_create_error.set(None);
@@ -296,66 +327,88 @@ pub fn LoginView(
             return;
         }
 
-        // Verificar duplicado
+        // Verificar duplicado contra la señal local alimentada por GET /api/v1/users
         if users.get().iter().any(|u| u.username.to_lowercase() == uname.to_lowercase()) {
             set_admin_create_error.set(Some(format!("El usuario '{}' ya existe.", uname)));
             return;
         }
 
-        let next_id = users.get().iter().map(|u| u.user_id).max().unwrap_or(0) + 1;
-        let created_now = chrono::Local::now().format("%Y-%m-%d %H:%M:%S").to_string();
+        let token = session.get().session_token.clone();
+        let uname_for_cb = uname.clone();
 
-        let admin_user = SocUser {
-            user_id: next_id,
-            username: uname.clone(),
-            role: RoleType::Admin,
-            created_at: created_now,
-            is_active: true,
-        };
-
-        set_users.update(|list| list.push(admin_user));
-        set_admin_username.set(String::new());
-        set_admin_password.set(String::new());
-        set_admin_confirm_pw.set(String::new());
-        set_admin_create_ok.set(Some(format!(
-            "✓ Administrador '{}' creado exitosamente. Ahora puede iniciar sesión.",
-            uname
-        )));
-        set_show_admin_create.set(false);
+        spawn_local(async move {
+            // Si existe un bootstrap-token configurado en el backend (despliegue controlado),
+            // intentamos el alta real vía POST /api/v1/users con role_id=1 (SOC_ADMIN).
+            if !token.is_empty() {
+                match api::create_user(&token, &uname, &pass, 1).await {
+                    Ok(created) => {
+                        let mapped = api::map_user_with_role(created);
+                        set_users.update(|list| list.push(mapped));
+                        set_admin_create_ok.set(Some(format!(
+                            "✓ Administrador '{}' creado en PostgreSQL. Ahora puede iniciar sesión.",
+                            uname_for_cb
+                        )));
+                        set_show_admin_create.set(false);
+                        return;
+                    }
+                    Err(e) => {
+                        set_admin_create_error.set(Some(format!(
+                            "El backend rechazó la creación: {}", e
+                        )));
+                        return;
+                    }
+                }
+            }
+            set_admin_create_error.set(Some(
+                "⚠ Bootstrap sin sesión: ejecute la semilla del backend \
+                 (`cargo run --bin seed` / scripts SQL) para registrar el primer administrador, \
+                 luego inicie sesión contra /api/v1/auth/login.".to_string()
+            ));
+        });
     };
 
-    // ── Lógica de RE-AUTENTICACIÓN ────────────────────────────────────────────
+    // ── Lógica de RE-AUTENTICACIÓN REAL (POST /api/v1/auth/reauth) ───────────
     let handle_reauth = move |ev: web_sys::MouseEvent| {
         ev.prevent_default();
         set_reauth_error.set(None);
 
         let pass  = reauth_password.get();
-        let uname = session.get().current_user.username.to_lowercase();
+        let token = session.get().session_token.clone();
 
-        // Buscar el usuario en la lista y verificar contraseña
-        let found = users.get()
-            .into_iter()
-            .find(|u| u.username.to_lowercase() == uname);
-
-        let ok = match found {
-            Some(user) => match user.role {
-                RoleType::Admin => pass == "admin" || !pass.is_empty(),
-                _               => !pass.is_empty(),
-            },
-            None => false,
-        };
-
-        if ok {
-            let ts = now_timestamp() / 1000.0;
-            set_session.update(|s| s.last_reauth_timestamp = ts);
-            set_reauth_ok.set(true);
-            set_reauth_password.set(String::new());
-            // Ocultar modal después de 1.5 s usando Effect
-            let set_modal = set_show_reauth_modal;
-            set_modal.set(false);
-        } else {
-            set_reauth_error.set(Some("Contraseña incorrecta. Re-autenticación fallida.".to_string()));
+        if pass.is_empty() || token.is_empty() {
+            set_reauth_error.set(Some(
+                "Debe estar autenticado e ingresar su contraseña para re-verificar.".to_string()
+            ));
+            return;
         }
+
+        spawn_local(async move {
+            match api::reauth(&token, &pass).await {
+                Ok(resp) => {
+                    if resp.verified {
+                        let ts = resp
+                            .reauth_timestamp
+                            .map(|dt| dt.timestamp_millis() as f64 / 1000.0)
+                            .unwrap_or_else(|| now_timestamp() / 1000.0);
+                        set_session.update(|s| s.last_reauth_timestamp = ts);
+                        set_reauth_ok.set(true);
+                        set_reauth_password.set(String::new());
+                        set_show_reauth_modal.set(false);
+                    } else {
+                        set_reauth_error.set(Some(
+                            resp.error
+                                .or(resp.message)
+                                .unwrap_or_else(|| "Re-autenticación fallida.".to_string())
+                        ));
+                    }
+                }
+                Err(e) => {
+                    set_reauth_error.set(Some(format!(
+                        "El servidor rechazó la re-autenticación: {}", e
+                    )));
+                }
+            }
+        });
     };
 
     view! {
@@ -644,14 +697,48 @@ pub fn LoginView(
                             />
                         </div>
 
-                        // Botón de ingreso
+                        // Código 2FA / TOTP (enviado a POST /api/v1/auth/login como totpCode)
+                        <div>
+                            <label style="
+                                display: block;
+                                font-size: 0.78rem;
+                                color: #a6adc8;
+                                font-weight: 600;
+                                margin-bottom: 0.4rem;
+                                letter-spacing: 0.02em;
+                            " for="login-totp">
+                                "🔢 Código 2FA / TOTP"
+                                <span style="color:#585b70; font-weight:400;">" (opcional según política RBAC)"</span>
+                            </label>
+                            <input
+                                id="login-totp"
+                                type="text"
+                                inputmode="numeric"
+                                maxlength="6"
+                                class="login-input"
+                                placeholder="000000"
+                                autocomplete="one-time-code"
+                                prop:value=move || login_totp.get()
+                                on:input=move |ev| set_login_totp.set(event_target_value(&ev))
+                            />
+                        </div>
+
+                        // Botón de ingreso (llamada real vía spawn_local + gloo-net)
                         <button
                             type="submit"
                             class="login-btn-primary"
                             id="login-submit-btn"
+                            disabled=move || login_loading.get()
+                            style=move || if login_loading.get() {
+                                "opacity: 0.6; cursor: wait;"
+                            } else { "" }
                             on:click=handle_login
                         >
-                            "🔐 Iniciar Sesión"
+                            {move || if login_loading.get() {
+                                "⏳ Verificando credenciales…"
+                            } else {
+                                "🔐 Iniciar Sesión"
+                            }}
                         </button>
                     </form>
 

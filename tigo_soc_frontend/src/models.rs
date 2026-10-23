@@ -49,6 +49,22 @@ pub struct SystemMetrics {
     pub last_sync: String,
 }
 
+impl Default for SystemMetrics {
+    /// Estado vacío inicial — se llena con datos REALES vía GET /api/v1/metrics (Axum + PostgreSQL)
+    fn default() -> Self {
+        SystemMetrics {
+            total_events: 0,
+            blocked_auto: 0,
+            pending_manual: 0,
+            avg_latency_ns: 0.0,
+            traffic_pps: 0,
+            lightgbm_status: "Consultando backend Axum…".to_string(),
+            zero_data_push_status: "Conectado (/topics/soc_alerts)".to_string(),
+            last_sync: "—".to_string(),
+        }
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct PendingMitigation {
     pub task_id: i64,
