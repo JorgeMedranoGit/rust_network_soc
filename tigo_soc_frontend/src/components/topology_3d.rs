@@ -371,7 +371,7 @@ window.initTopology3D = function(canvasId, nodesJson) {
     let _ = head.append_child(&script);
 }
 
-// ─── Modelos de datos de topología ───────────────────────────────────────────
+// ─── Modelos de datos de topología (mapeados desde la API REST de Axum) ──────
 
 #[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
 pub struct NetworkNode {
@@ -386,7 +386,18 @@ pub struct NetworkNode {
     pub notes: String,
 }
 
-#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
+impl<'de> serde::de::Deserialize<'de> for NodeStatus {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        let s = <String as serde::Deserialize>::deserialize(deserializer)?;
+        Ok(NodeStatus::parse(&s))
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, serde::Serialize)]
+#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum NodeStatus {
     Secure,
     Analyzing,
@@ -398,6 +409,22 @@ pub enum NodeStatus {
 }
 
 impl NodeStatus {
+    /// Parseo tolerante desde el nombre crudo (status de alertas / heurística de tipo).
+    pub fn parse(s: &str) -> NodeStatus {
+        let u = s.to_uppercase().replace([' ', '-'], "_");
+        match u.as_str() {
+            "ATTACKER" | "ACTIVE_ATTACK" => NodeStatus::Attacker,
+            "COMPROMISED" | "CONFIRMED_MITIGATED" | "QUARANTINED_L3" => NodeStatus::Compromised,
+            "ANALYZING" | "UNDER_ANALYSIS" | "PENDING_MANUAL" | "INVESTIGATION" => {
+                NodeStatus::Analyzing
+            }
+            "QUARANTINE_L2" | "QUARANTINED_L2" | "MITIGATED_L2" => NodeStatus::QuarantineL2,
+            "QUARANTINE_L3" => NodeStatus::QuarantineL3,
+            "OFFLINE" => NodeStatus::Offline,
+            _ => NodeStatus::Secure,
+        }
+    }
+
     pub fn as_str(&self) -> &'static str {
         match self {
             NodeStatus::Secure => "SECURE",
@@ -433,184 +460,170 @@ impl NodeStatus {
     }
 }
 
-pub fn get_initial_topology_nodes() -> Vec<NetworkNode> {
-    vec![
-        NetworkNode {
-            hostname: "AttackerKali".to_string(),
-            ip_address: "192.168.100.50".to_string(),
-            mac_address: "00:00:0c:aa:bb:cc".to_string(),
-            vendor: "Cisco ISE".to_string(),
-            device_type: "ATTACKER_KALI".to_string(),
-            status: NodeStatus::Attacker,
-            layer: "L3/L7".to_string(),
-            mgmt_protocol: "SSH".to_string(),
-            notes: "Nodo atacante activo. DNS C2 Exfiltration detectado. Score LightGBM: 0.985".to_string(),
-        },
-        NetworkNode {
-            hostname: "VictimeAlpine1".to_string(),
-            ip_address: "192.168.1.11".to_string(),
-            mac_address: "02:42:ac:11:00:0b".to_string(),
-            vendor: "GNS3 Alpine Linux".to_string(),
-            device_type: "WORKSTATION_VICTIM".to_string(),
-            status: NodeStatus::Compromised,
-            layer: "L2/L3".to_string(),
-            mgmt_protocol: "SSH".to_string(),
-            notes: "MAC Spoofing detectado. Aislado en VLAN 99 (RADIUS CoA UDP 3799).".to_string(),
-        },
-        NetworkNode {
-            hostname: "VictimeAlpine2".to_string(),
-            ip_address: "192.168.1.12".to_string(),
-            mac_address: "02:42:ac:11:00:0c".to_string(),
-            vendor: "GNS3 Alpine Linux".to_string(),
-            device_type: "WORKSTATION_VICTIM".to_string(),
-            status: NodeStatus::Secure,
-            layer: "L2/L3".to_string(),
-            mgmt_protocol: "SSH".to_string(),
-            notes: "Sin anomalías detectadas en la ventana actual.".to_string(),
-        },
-        NetworkNode {
-            hostname: "VictimeAlpine3".to_string(),
-            ip_address: "192.168.1.13".to_string(),
-            mac_address: "02:42:ac:11:00:0d".to_string(),
-            vendor: "GNS3 Alpine Linux".to_string(),
-            device_type: "WORKSTATION_VICTIM".to_string(),
-            status: NodeStatus::Secure,
-            layer: "L2/L3".to_string(),
-            mgmt_protocol: "SSH".to_string(),
-            notes: "Tráfico nominal, dentro de los umbrales esperados.".to_string(),
-        },
-        NetworkNode {
-            hostname: "VictimeAlpine4".to_string(),
-            ip_address: "192.168.1.14".to_string(),
-            mac_address: "02:42:ac:11:00:0e".to_string(),
-            vendor: "GNS3 Alpine Linux".to_string(),
-            device_type: "WORKSTATION_VICTIM".to_string(),
-            status: NodeStatus::Analyzing,
-            layer: "L2/L3".to_string(),
-            mgmt_protocol: "SSH".to_string(),
-            notes: "Bajo análisis forense por tráfico ICMP inusual.".to_string(),
-        },
-        NetworkNode {
-            hostname: "VictimeAlpine5".to_string(),
-            ip_address: "192.168.1.15".to_string(),
-            mac_address: "02:42:ac:11:00:0f".to_string(),
-            vendor: "GNS3 Alpine Linux".to_string(),
-            device_type: "WORKSTATION_VICTIM".to_string(),
-            status: NodeStatus::Secure,
-            layer: "L2/L3".to_string(),
-            mgmt_protocol: "SSH".to_string(),
-            notes: "Sin anomalías. Monitoreo activo continuado.".to_string(),
-        },
-        NetworkNode {
-            hostname: "VictimeAlpine6".to_string(),
-            ip_address: "192.168.1.16".to_string(),
-            mac_address: "02:42:ac:11:00:10".to_string(),
-            vendor: "GNS3 Alpine Linux".to_string(),
-            device_type: "WORKSTATION_VICTIM".to_string(),
-            status: NodeStatus::QuarantineL2,
-            layer: "L2".to_string(),
-            mgmt_protocol: "SSH".to_string(),
-            notes: "Cuarentena L2 activa. VLAN 99 aislada por actividad sospechosa ARP.".to_string(),
-        },
-        NetworkNode {
-            hostname: "VictimeAlpine7".to_string(),
-            ip_address: "192.168.1.17".to_string(),
-            mac_address: "02:42:ac:11:00:11".to_string(),
-            vendor: "GNS3 Alpine Linux".to_string(),
-            device_type: "WORKSTATION_VICTIM".to_string(),
-            status: NodeStatus::Secure,
-            layer: "L2/L3".to_string(),
-            mgmt_protocol: "SSH".to_string(),
-            notes: "Actividad normal. Sin alertas en las últimas 6 horas.".to_string(),
-        },
-        NetworkNode {
-            hostname: "VictimeAlpine8".to_string(),
-            ip_address: "192.168.1.18".to_string(),
-            mac_address: "02:42:ac:11:00:12".to_string(),
-            vendor: "GNS3 Alpine Linux".to_string(),
-            device_type: "WORKSTATION_VICTIM".to_string(),
-            status: NodeStatus::Secure,
-            layer: "L2/L3".to_string(),
-            mgmt_protocol: "SSH".to_string(),
-            notes: "Flujos estables. Latencia promedio 2.4ms.".to_string(),
-        },
-        NetworkNode {
-            hostname: "VictimeAlpine9".to_string(),
-            ip_address: "192.168.1.19".to_string(),
-            mac_address: "02:42:ac:11:00:13".to_string(),
-            vendor: "GNS3 Alpine Linux".to_string(),
-            device_type: "WORKSTATION_VICTIM".to_string(),
-            status: NodeStatus::Secure,
-            layer: "L2/L3".to_string(),
-            mgmt_protocol: "SSH".to_string(),
-            notes: "Sin incidencias. Tráfico dentro de baseline.".to_string(),
-        },
-        NetworkNode {
-            hostname: "pfSense_Gateway".to_string(),
-            ip_address: "192.168.1.1".to_string(),
-            mac_address: "00:18:0a:33:44:55".to_string(),
-            vendor: "OpenWrt / pfSense".to_string(),
-            device_type: "FIREWALL_PERIMETER".to_string(),
-            status: NodeStatus::Secure,
-            layer: "L3/L7".to_string(),
-            mgmt_protocol: "SSH".to_string(),
-            notes: "Gateway perimetral activo. ACL Zero Trust habilitadas. DNS Sinkhole operativo.".to_string(),
-        },
-        NetworkNode {
-            hostname: "Router_Core_L3".to_string(),
-            ip_address: "192.168.1.254".to_string(),
-            mac_address: "00:0c:42:66:77:88".to_string(),
-            vendor: "MikroTik RouterOS".to_string(),
-            device_type: "ROUTER_CORE_L3".to_string(),
-            status: NodeStatus::Secure,
-            layer: "L3".to_string(),
-            mgmt_protocol: "SSH".to_string(),
-            notes: "Router core operativo. OSPF activo. BGP peering estable con Tigo upstream.".to_string(),
-        },
-    ]
+// ─── Carga dinámica de infraestructura desde la API REST de Axum ─────────────
+// Sustituye por completo al antiguo mock `get_initial_topology_nodes()`.
+
+/// Capa OSI derivada del catálogo `device_types` (PostgreSQL).
+fn layer_for_device_type(type_name: &str) -> &'static str {
+    let u = type_name.to_uppercase();
+    if u.contains("FIREWALL") {
+        "L3/L7"
+    } else if u.contains("ROUTER") || u.contains("CORE_L3") {
+        "L3"
+    } else if u.contains("ATTACKER") {
+        "L2/L3/L7"
+    } else if u.contains("SWITCH") {
+        "L2"
+    } else {
+        "L2/L3"
+    }
+}
+
+/// Estado heurístico según el tipo de dispositivo inventariado en PostgreSQL.
+fn base_status_for_device_type(type_name: &str) -> NodeStatus {
+    let u = type_name.to_uppercase();
+    if u.contains("ATTACKER") {
+        NodeStatus::Attacker
+    } else {
+        NodeStatus::Secure
+    }
+}
+
+/// Ensambla los `ApiNetworkNode` (GET /api/v1/inventory/nodes) con los nombres del
+/// catálogo `ApiDeviceType` (GET /api/v1/catalogs/device-types, JOIN por typeId) y
+/// las alertas activas (GET /api/v1/alerts) para derivar el estado de seguridad real.
+fn build_topology_nodes(
+    api_nodes: Vec<crate::api::ApiNetworkNode>,
+    device_types: &[crate::api::ApiDeviceType],
+    alerts: &[crate::api::ApiEnrichedAlert],
+) -> Vec<NetworkNode> {
+    // Índice typeId → typeName desde el catálogo REST
+    let type_name_of = |tid: Option<i32>| -> String {
+        tid.and_then(|id| {
+            device_types
+                .iter()
+                .find(|dt| dt.type_id == Some(id))
+                .map(|dt| dt.type_name.clone())
+        })
+        .unwrap_or_else(|| "UNKNOWN_DEVICE".to_string())
+    };
+
+    // Estado más grave observado entre las alertas cuya IP origen/destino coincide con el nodo.
+    let status_from_alerts = |ip: &str| -> Option<NodeStatus> {
+        let mut best: Option<NodeStatus> = None;
+        let rank = |s: &NodeStatus| -> u8 {
+            match s {
+                NodeStatus::Attacker => 5,
+                NodeStatus::Compromised => 4,
+                NodeStatus::QuarantineL3 => 3,
+                NodeStatus::QuarantineL2 => 3,
+                NodeStatus::Analyzing => 2,
+                _ => 0,
+            }
+        };
+        for a in alerts {
+            let src = a.source_ip.as_deref().unwrap_or("");
+            let dst = a.destination_ip.as_deref().unwrap_or("");
+            if src != ip && dst != ip {
+                continue;
+            }
+            let st = NodeStatus::parse(a.status_name.as_deref().unwrap_or(""));
+            if rank(&st) == 0 {
+                continue; // estados cerrados/mitigados no alteran la topología
+            }
+            if best.as_ref().map_or(true, |b| rank(&st) > rank(b)) {
+                best = Some(st);
+            }
+        }
+        best
+    };
+
+    api_nodes
+        .into_iter()
+        .map(|n| {
+            let device_type = type_name_of(n.type_id);
+            let base = base_status_for_device_type(&device_type);
+            let status = status_from_alerts(&n.ip_address).unwrap_or(base);
+            let threat_note = alerts
+                .iter()
+                .find(|a| {
+                    a.source_ip.as_deref() == Some(n.ip_address.as_str())
+                        || a.destination_ip.as_deref() == Some(n.ip_address.as_str())
+                })
+                .and_then(|a| {
+                    a.threat_name.clone().map(|t| {
+                        format!(
+                            " · Última amenaza: {} (score {:.3})",
+                            t, a.anomaly_score
+                        )
+                    })
+                })
+                .unwrap_or_default();
+            NetworkNode {
+                hostname: n.hostname,
+                ip_address: n.ip_address,
+                mac_address: n.mac_address.unwrap_or_else(|| "N/D".to_string()),
+                vendor: n.vendor.unwrap_or_else(|| "Genérico".to_string()),
+                device_type,
+                status,
+                layer: layer_for_device_type(&type_name_of(n.type_id)).to_string(),
+                mgmt_protocol: crate::api::mgmt_protocol_name(n.protocol_id).to_string(),
+                notes: format!(
+                    "Inventario sincronizado desde PostgreSQL/API{}.",
+                    threat_note
+                ),
+            }
+        })
+        .collect()
 }
 
 // ─── Componente principal ─────────────────────────────────────────────────────
 
 #[component]
 pub fn Topology3D() -> impl IntoView {
-    let nodes = get_initial_topology_nodes();
+    // Nodos vacíos hasta que respondan GET /api/v1/inventory/nodes + /catalogs/device-types
+    let (nodes_sig, set_nodes_sig) = create_signal::<Vec<NetworkNode>>(Vec::new());
+    let (load_error, set_load_error) = create_signal::<Option<String>>(None);
+    let (loading, set_loading) = create_signal::<bool>(true);
     let (selected_node, set_selected_node) = create_signal::<Option<NetworkNode>>(None);
     let (filter_status, set_filter_status) = create_signal::<Option<String>>(None);
 
     let canvas_id = "topo-3d-canvas";
 
-    // Serializar nodos a JSON para pasar al script Three.js
-    let nodes_for_js = nodes
-        .iter()
-        .map(|n| {
-            format!(
-                r#"{{"hostname":"{}","ip_address":"{}","mac_address":"{}","vendor":"{}","device_type":"{}","status":"{}","layer":"{}","mgmt_protocol":"{}","notes":"{}"}}"#,
-                n.hostname,
-                n.ip_address,
-                n.mac_address,
-                n.vendor.replace('"', "'"),
-                n.device_type,
-                n.status.as_str(),
-                n.layer,
-                n.mgmt_protocol,
-                n.notes.replace('"', "'")
-            )
-        })
-        .collect::<Vec<_>>()
-        .join(",");
-    let nodes_json = format!("[{}]", nodes_for_js);
+    // ── Carga real: GET /api/v1/inventory/nodes + GET /api/v1/catalogs/device-types
+    //    (+ GET /api/v1/alerts para derivar estados de seguridad) vía gloo-net ──────
+    create_effect(move |_| {
+        spawn_local(async move {
+            let inv = crate::api::fetch_inventory_nodes().await;
+            let dts = crate::api::fetch_device_types().await;
+            let alerts = crate::api::fetch_alerts("topology").await.unwrap_or_default();
+            match (inv, dts) {
+                (Ok(nodes), Ok(types)) => {
+                    set_load_error.set(None);
+                    set_loading.set(false);
+                    set_nodes_sig.set(build_topology_nodes(nodes, &types, &alerts));
+                }
+                (Err(e), _) | (Ok(_), Err(e)) => {
+                    set_load_error.set(Some(e));
+                    set_loading.set(false);
+                }
+            }
+        });
+    });
 
-    // Inyectar script de Three.js al montar el componente
-    let nj_clone = nodes_json.clone();
+    // Serializar nodos a JSON para pasar al script Three.js y re-inyectar el grafo
+    // cada vez que cambia la señal (primera carga y refresco del inventario).
     let cid = canvas_id.to_string();
     create_effect(move |_| {
         inject_topology_script(&cid);
-        // Pequeña demora para que el DOM esté listo
-        let nj = nj_clone.clone();
+        let current_nodes = nodes_sig.get();
+        if current_nodes.is_empty() {
+            return;
+        }
+        let nodes_json = serde_json::to_string(&current_nodes).unwrap_or_else(|_| "[]".to_string());
         let c = cid.clone();
         let closure = Closure::once(move || {
-            inject_threejs_and_init(&c, &nj);
+            inject_threejs_and_init(&c, &nodes_json);
         });
         let win = window().unwrap();
         let _ = win.set_timeout_with_callback_and_timeout_and_arguments_0(
@@ -662,8 +675,8 @@ pub fn Topology3D() -> impl IntoView {
         cb2.forget();
     });
 
-    let nodes_clone = nodes.clone();
     let filtered_nodes = move || {
+        let nodes_clone = nodes_sig.get();
         if let Some(status_filter) = filter_status.get() {
             nodes_clone
                 .iter()
@@ -671,17 +684,9 @@ pub fn Topology3D() -> impl IntoView {
                 .cloned()
                 .collect::<Vec<_>>()
         } else {
-            nodes_clone.clone()
+            nodes_clone
         }
     };
-
-    // Estadísticas de estado
-    let nodes_stats = nodes.clone();
-    let total = nodes_stats.len();
-    let secure_count = nodes_stats.iter().filter(|n| matches!(n.status, NodeStatus::Secure)).count();
-    let attacker_count = nodes_stats.iter().filter(|n| matches!(n.status, NodeStatus::Attacker | NodeStatus::Compromised)).count();
-    let quarantine_count = nodes_stats.iter().filter(|n| matches!(n.status, NodeStatus::QuarantineL2 | NodeStatus::QuarantineL3)).count();
-    let analyzing_count = nodes_stats.iter().filter(|n| matches!(n.status, NodeStatus::Analyzing)).count();
 
     // Función para obtener el emoji/icono del vendor
     let vendor_icon = |vendor: &str| -> &'static str {
@@ -710,28 +715,52 @@ pub fn Topology3D() -> impl IntoView {
                     </div>
                 </div>
 
-                // Estadísticas rápidas
+                // Estadísticas rápidas (reactivas, derivadas de la señal de inventario)
                 <div class="topo-stats-row">
                     <div class="topo-stat-chip" style="border-color: rgba(166,227,161,0.4); color: var(--ctp-green);">
                         <span class="status-dot" style="background:var(--ctp-green); box-shadow: 0 0 6px var(--ctp-green);"></span>
-                        {format!("{} Seguros", secure_count)}
+                        {move || format!("{} Seguros", nodes_sig.get().iter().filter(|n| matches!(n.status, NodeStatus::Secure)).count())}
                     </div>
                     <div class="topo-stat-chip" style="border-color: rgba(243,139,168,0.4); color: var(--ctp-red);">
                         <span class="status-dot" style="background:var(--ctp-red); box-shadow: 0 0 6px var(--ctp-red);"></span>
-                        {format!("{} Atacante/Comprometido", attacker_count)}
+                        {move || format!("{} Atacante/Comprometido", nodes_sig.get().iter().filter(|n| matches!(n.status, NodeStatus::Attacker | NodeStatus::Compromised)).count())}
                     </div>
                     <div class="topo-stat-chip" style="border-color: rgba(250,179,135,0.4); color: var(--ctp-peach);">
                         <span class="status-dot" style="background:var(--ctp-peach); box-shadow: 0 0 6px var(--ctp-peach);"></span>
-                        {format!("{} Cuarentena", quarantine_count)}
+                        {move || format!("{} Cuarentena", nodes_sig.get().iter().filter(|n| matches!(n.status, NodeStatus::QuarantineL2 | NodeStatus::QuarantineL3)).count())}
                     </div>
                     <div class="topo-stat-chip" style="border-color: rgba(137,180,250,0.4); color: var(--ctp-blue);">
                         <span class="status-dot" style="background:var(--ctp-blue); box-shadow: 0 0 6px var(--ctp-blue);"></span>
-                        {format!("{} Analizando", analyzing_count)}
+                        {move || format!("{} Analizando", nodes_sig.get().iter().filter(|n| matches!(n.status, NodeStatus::Analyzing)).count())}
                     </div>
                     <div class="topo-stat-chip" style="border-color: rgba(166,173,200,0.3); color: var(--ctp-subtext0);">
-                        {format!("{} Nodos Total", total)}
+                        {move || format!("{} Nodos Total", nodes_sig.get().len())}
                     </div>
                 </div>
+            </div>
+
+            // ── Estado de carga / error de la API de inventario ────────────────
+            <div class="topo-api-banner-row">
+                {move || match (loading.get(), load_error.get()) {
+                    (true, _) => view! {
+                        <div class="topo-api-banner loading">
+                            "⏳ Consultando GET /api/v1/inventory/nodes y /api/v1/catalogs/device-types…"
+                        </div>
+                    }.into_view(),
+                    (false, Some(err)) => view! {
+                        <div class="topo-api-banner error">
+                            {format!("⚠️ Backend no disponible — {}", err)}
+                        </div>
+                    }.into_view(),
+                    (false, None) => view! {
+                        <div class="topo-api-banner ok">
+                            {format!(
+                                "🟢 Inventario sincronizado vía API REST — {} nodos desde PostgreSQL",
+                                nodes_sig.get().len()
+                            )}
+                        </div>
+                    }.into_view(),
+                }}
             </div>
 
             // ── Layout principal: canvas 3D + panel lateral ───────────────────

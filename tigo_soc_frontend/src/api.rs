@@ -216,6 +216,20 @@ pub struct DeviceTypesResponse {
     pub device_types: Vec<ApiDeviceType>,
 }
 
+/// Catálogo local de protocolos de administración (espejo de la tabla `mgmt_protocols`
+/// de bd/init.sql). El backend Axum aún NO expone GET /api/v1/catalogs/mgmt-protocols,
+/// por lo que topology_3d.rs resuelve `protocolId` de los nodos con esta semilla estable.
+pub const MGMT_PROTOCOL_SEED: [&str; 4] = ["SSH", "NETCONF", "RESTCONF", "SNMP"];
+
+pub fn mgmt_protocol_name(protocol_id: Option<i32>) -> &'static str {
+    match protocol_id {
+        Some(id) if id >= 1 && (id as usize) <= MGMT_PROTOCOL_SEED.len() => {
+            MGMT_PROTOCOL_SEED[(id - 1) as usize]
+        }
+        _ => "SSH",
+    }
+}
+
 /// Espejo de `UserWithRole` → GET /api/v1/users (envuelto en {"users": [...]})
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]

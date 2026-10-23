@@ -1035,6 +1035,39 @@ body {
     font-weight: 600;
 }
 
+/* Banner de estado de la API REST de inventario (topology_3d) */
+.topo-api-banner-row {
+    margin-bottom: 0.75rem;
+}
+
+.topo-api-banner {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    border-radius: 8px;
+    padding: 0.5rem 0.9rem;
+    font-size: 0.78rem;
+    font-weight: 600;
+    border: 1px solid var(--ctp-surface1);
+    background-color: var(--ctp-mantle);
+    color: var(--ctp-subtext1);
+}
+
+.topo-api-banner.loading {
+    border-color: rgba(137, 180, 250, 0.4);
+    color: var(--ctp-blue);
+}
+
+.topo-api-banner.ok {
+    border-color: rgba(166, 227, 161, 0.4);
+    color: var(--ctp-green);
+}
+
+.topo-api-banner.error {
+    border-color: rgba(243, 139, 168, 0.5);
+    color: var(--ctp-red);
+}
+
 .topology-layout {
     display: grid;
     grid-template-columns: 1fr 380px;
