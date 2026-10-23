@@ -1,1 +1,26 @@
+# Rust build artifacts
+target/
+**/target/
+
+# WASM/JS artifacts de build (se regeneran con trunk; frontend/ es output servido)
 *.wasm
+frontend/tigo_soc_frontend-*.js
+dist/
+
+# Archivos de entorno y credenciales (NUNCA subir secretos reales)
+.env
+.env.local
+service-account.json
+*.pem
+*.key
+
+# Artefactos del laboratorio GNS3/Docker
+*.log
+gns3_snapshots/*.backup
+approved_acl_rules.pending.sql
+
+# Sistema / editores
+.DS_Store
+Thumbs.db
+*.tmp
+proyecto_limpio.tar.gz
