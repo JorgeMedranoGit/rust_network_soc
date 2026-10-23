@@ -61,7 +61,7 @@ fn parse_feature_ranking(v: &Value) -> Vec<(String, f64)> {
     out
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 struct ConfusionCell {
     label: &'static str,
     value: i64,
@@ -88,11 +88,11 @@ pub fn MlMetrics() -> impl IntoView {
                     set_error.set(None);
                 }
                 (s, i) => {
-                    if let Ok(i) = i {
-                        set_model_info.set(Some(i));
+                    if let Ok(i) = &i {
+                        set_model_info.set(Some(i.clone()));
                     }
-                    if let Ok(s) = s {
-                        set_ml_stats.set(Some(s));
+                    if let Ok(s) = &s {
+                        set_ml_stats.set(Some(s.clone()));
                     }
                     set_error.set(Some(format!(
                         "{}{}",
