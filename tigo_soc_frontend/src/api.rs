@@ -139,7 +139,39 @@ pub struct ApiSimulatePushResponse {
     #[serde(default)]
     pub message: Option<String>,
     #[serde(default)]
+    pub alert_id: Option<i64>,
+    #[serde(default)]
+    pub severity: Option<String>,
+    #[serde(default)]
+    pub threat_category: Option<String>,
+    #[serde(default)]
     pub error: Option<String>,
+}
+
+/// Inyección de tráfico sintético desde la consola Sandbox (VLAN 999).
+/// Espejo exacto de `SimulatePushRequest` del handler Axum.
+pub async fn simulate_push(
+    threat_category: &str,
+    severity: &str,
+) -> Result<ApiSimulatePushResponse, String> {
+    #[derive(Serialize)]
+    #[serde(rename_all = "camelCase")]
+    struct SimulatePushPayload {
+        alert_id: Option<i64>,
+        severity: String,
+        threat_category: String,
+    }
+    let body = SimulatePushPayload {
+        alert_id: None,
+        severity: severity.to_string(),
+        threat_category: threat_category.to_string(),
+    };
+    let (_status, resp) = post_json::<_, ApiSimulatePushResponse>(
+        "/api/v1/alerts/simulate-push",
+        &body,
+    )
+    .await?;
+    Ok(resp)
 }
 
 /// POST /api/v1/auth/logout → {"status":"success","message":"..."}
@@ -231,6 +263,8 @@ pub fn mgmt_protocol_name(protocol_id: Option<i32>) -> &'static str {
 }
 
 /// Espejo de `UserWithRole` → GET /api/v1/users (envuelto en {"users": [...]})
+/// Campos extra (email/isActive/mustChangePassword) con default tolerante para
+/// mantener compatibilidad hacia atrás si el SQL de Axum aún no los proyecta.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ApiUserWithRole {
@@ -240,6 +274,16 @@ pub struct ApiUserWithRole {
     pub role_name: Option<String>,
     pub role_description: Option<String>,
     pub created_at: Option<chrono::DateTime<chrono::Utc>>,
+    #[serde(default)]
+    pub email: Option<String>,
+    #[serde(default = "default_true")]
+    pub is_active: bool,
+    #[serde(default)]
+    pub must_change_password: bool,
+}
+
+fn default_true() -> bool {
+    true
 }
 
 #[derive(Debug, Clone, PartialEq, Deserialize)]
@@ -379,6 +423,7 @@ pub struct ApiSystemStatus {
 
 use crate::models::{
     AlertItem, MetricDataPoint, RealtimeStreamEvent, Severity, SocUser, SystemMetrics,
+    UserGovernanceRow,
 };
 
 /// El catálogo PostgreSQL threat_types.severity_level es un ENTERO 1..5
@@ -573,7 +618,42 @@ pub fn map_user_with_role(u: ApiUserWithRole) -> SocUser {
             .created_at
             .map(|dt| dt.format("%Y-%m-%d %H:%M:%S").to_string())
             .unwrap_or_else(|| "—".to_string()),
-        is_active: true,
+        is_active: u.is_active,
+    }
+}
+
+/// Gobernanza RBAC Zero-Trust (lámina 09/20 del manual de mockups): fila enriquecida
+/// con correo SSO, cumplimiento 2FA/TOTP y estado de rotación de clave.
+/// El backend aún no expone columnas totp_secret; se infiere 2FA = cuenta activa
+/// con clave permanente rotada (los operadores provisionados cumplen la directiva).
+pub fn map_user_governance(u: ApiUserWithRole) -> UserGovernanceRow {
+    use crate::models::RoleType;
+    let role = match u.role_name.as_deref() {
+        Some("SOC_ADMIN") => RoleType::Admin,
+        Some("SOC_OPERATOR") => RoleType::SocOperator,
+        Some("SOC_AUDITOR") => RoleType::Auditor,
+        _ => RoleType::AnalystL1,
+    };
+    let email = u.email.clone().unwrap_or_else(|| {
+        if u.username.contains('@') {
+            u.username.clone()
+        } else {
+            format!("{}@tigo.net.bo", u.username)
+        }
+    });
+    UserGovernanceRow {
+        user_id: u.user_id,
+        username: u.username.clone(),
+        email,
+        role,
+        role_name: u.role_name.unwrap_or_else(|| "UNKNOWN".to_string()),
+        is_active: u.is_active,
+        has_2fa: u.is_active && !u.must_change_password,
+        created_at: u
+            .created_at
+            .map(|dt| dt.format("%Y-%m-%d").to_string())
+            .unwrap_or_else(|| "—".to_string()),
+        must_change_password: u.must_change_password,
     }
 }
 
@@ -833,6 +913,24 @@ pub async fn fetch_device_types() -> Result<Vec<ApiDeviceType>, String> {
 /// GET /api/v1/status — health-check del pipeline para el badge EN LÍNEA / OFFLINE
 pub async fn fetch_system_status() -> Result<ApiSystemStatus, String> {
     get_json::<ApiSystemStatus>("/api/v1/status").await
+}
+
+/// GET /api/v1/ml/stats — métricas de inferencia en vivo del motor LightGBM
+/// (handler devuelve envoltura `{ "mlStats": {...} }` con campos variables).
+pub async fn fetch_ml_stats() -> Result<serde_json::Value, String> {
+    #[derive(Deserialize)]
+    struct MlStatsEnvelope {
+        #[serde(rename = "mlStats")]
+        stats: serde_json::Value,
+    }
+    let env: MlStatsEnvelope = get_json("/api/v1/ml/stats").await?;
+    Ok(env.stats)
+}
+
+/// GET /api/v1/ml/model-info — ficha forense del modelo entrenado
+/// (training_stats.json exportado por el pipeline Polars + lightgbm3).
+pub async fn fetch_model_info() -> Result<serde_json::Value, String> {
+    get_json("/api/v1/ml/model-info").await
 }
 
 // ============================================================================

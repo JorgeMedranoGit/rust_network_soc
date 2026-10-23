@@ -7,13 +7,26 @@ use wasm_bindgen_futures::spawn_local;
 
 use crate::api;
 use crate::components::{
-    AlertsTable, BlastRadiusControl, LoginView, MonitoringChart, RealtimeAlerts,
-    SystemStatus, Topology3D, UserManagement,
+    AlertsTable, BlastRadiusControl, LoginView, MlMetrics, MonitoringChart, RealtimeAlerts,
+    SandboxAcl, SystemStatus, Topology3D, UserManagement,
 };
 use crate::models::{
     AlertItem, GlobalSecurityConfig, MetricDataPoint, PendingMitigation,
     RealtimeStreamEvent, RoleType, Severity, SocUser, SystemMetrics, UserSessionState,
 };
+
+//! Paleta institucional oficial del manual de mockups (MockupsFiles/Final) —
+//! ISO/IEC 25010, contraste WCAG 2.2 ≥ 12:1 en textos y controles.
+/// Azul #0284C7 — navegación principal, filtros seleccionados, acción primaria
+pub const TIGO_BLUE: &str = "#0284c7";
+/// Verde #16A34A — tráfico normal verificado, TLS 1.3, 2FA válido, enlaces activos
+pub const TIGO_GREEN: &str = "#16a34a";
+/// Rojo #DC2626 — exfiltración crítica, DDoS volumétrico, bloqueo/descarte
+pub const TIGO_RED: &str = "#dc2626";
+/// Ámbar #D97706 — rate limiting, retención preventiva, umbrales operacionales
+pub const TIGO_AMBER: &str = "#d97706";
+/// Índigo #4F46E5 — subred de pruebas VLAN 999 (Sandbox ACL), uso exclusivo
+pub const TIGO_INDIGO: &str = "#4f46e5";
 
 /// Indicador de estado del backend Axum (Online/Offline) según el último sondeo HTTP
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -67,7 +80,9 @@ pub enum ActiveTab {
     Dashboard,
     Topology,
     MonitoringCharts,
+    MlMetrics,
     RealtimeStream,
+    Sandbox,
     Alerts,
     BlastRadius,
     UserManagement,
@@ -332,10 +347,22 @@ pub fn App() -> impl IntoView {
                                     "📈 Gráficas"
                                 </button>
                                 <button
+                                    class=move || if active_tab.get() == ActiveTab::MlMetrics { "nav-btn active" } else { "nav-btn" }
+                                    on:click=move |_| set_active_tab.set(ActiveTab::MlMetrics)
+                                >
+                                    "🤖 Motor ML"
+                                </button>
+                                <button
                                     class=move || if active_tab.get() == ActiveTab::RealtimeStream { "nav-btn active" } else { "nav-btn" }
                                     on:click=move |_| set_active_tab.set(ActiveTab::RealtimeStream)
                                 >
                                     "⚡ Flujo en Vivo"
+                                </button>
+                                <button
+                                    class=move || if active_tab.get() == ActiveTab::Sandbox { "nav-btn active" } else { "nav-btn" }
+                                    on:click=move |_| set_active_tab.set(ActiveTab::Sandbox)
+                                >
+                                    "🧪 Sandbox VLAN 999"
                                 </button>
                                 <button
                                     class=move || if active_tab.get() == ActiveTab::Alerts { "nav-btn active" } else { "nav-btn" }
@@ -348,7 +375,7 @@ pub fn App() -> impl IntoView {
                                     on:click=move |_| set_active_tab.set(ActiveTab::BlastRadius)
                                 >
                                     "⚠️ Blast Radius "
-                                    <span style="background-color: var(--ctp-peach); color: var(--ctp-crust); padding: 0.1rem 0.4rem; border-radius: 10px; font-size: 0.6875rem; font-weight: 700; margin-left: 0.25rem;">
+                                    <span style="background-color: #d97706; color: #ffffff; padding: 0.1rem 0.4rem; border-radius: 10px; font-size: 0.6875rem; font-weight: 700; margin-left: 0.25rem; font-family: var(--font-mono);">
                                         {move || pending_items.get().len().to_string()}
                                     </span>
                                 </button>
@@ -421,7 +448,6 @@ pub fn App() -> impl IntoView {
                                         <div style="margin-bottom: 1.5rem;">
                                             <MonitoringChart
                                                 chart_data=chart_data
-                                                set_chart_data=set_chart_data
                                             />
                                         </div>
                                         <h2 style="font-size: 1.125rem; font-weight: 700; margin-bottom: 0.75rem; color: var(--ctp-text);">
@@ -449,8 +475,17 @@ pub fn App() -> impl IntoView {
                                         <SystemStatus metrics=metrics />
                                         <MonitoringChart
                                             chart_data=chart_data
-                                            set_chart_data=set_chart_data
                                         />
+                                    </div>
+                                }.into_view(),
+
+                                // Lámina 05/20 — Métricas ML LightGBM (API real /api/v1/ml/*)
+                                ActiveTab::MlMetrics => view! {
+                                    <div>
+                                        <h2 style="font-size: 1.25rem; font-weight: 700; margin-bottom: 1rem; color: var(--ctp-text);">
+                                            "Inferencia Algorítmica LightGBM y Validación K-Fold"
+                                        </h2>
+                                        <MlMetrics />
                                     </div>
                                 }.into_view(),
 
@@ -462,6 +497,19 @@ pub fn App() -> impl IntoView {
                                         <RealtimeAlerts
                                             events=stream_events
                                             set_events=set_stream_events
+                                        />
+                                    </div>
+                                }.into_view(),
+
+                                // Lámina 10/21 — Sandbox ACL en subred aislada (índigo exclusivo)
+                                ActiveTab::Sandbox => view! {
+                                    <div>
+                                        <h2 style="font-size: 1.25rem; font-weight: 700; margin-bottom: 1rem; color: var(--ctp-text);">
+                                            "Ambiente de Pruebas Aislado — Inyección Controlada y Promoción"
+                                        </h2>
+                                        <SandboxAcl
+                                            set_stream_events=set_stream_events
+                                            alerts=alerts
                                         />
                                     </div>
                                 }.into_view(),

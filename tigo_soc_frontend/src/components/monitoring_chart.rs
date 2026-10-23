@@ -13,7 +13,6 @@ pub enum ChartMetricMode {
 #[component]
 pub fn MonitoringChart(
     chart_data: ReadSignal<Vec<MetricDataPoint>>,
-    set_chart_data: WriteSignal<Vec<MetricDataPoint>>,
 ) -> impl IntoView {
     let (metric_mode, set_metric_mode) = create_signal(ChartMetricMode::DualView);
     let (hovered_point, set_hovered_point) = create_signal(Option::<MetricDataPoint>::None);
@@ -27,28 +26,6 @@ pub fn MonitoringChart(
     let pad_bottom = 40.0;
     let plot_w = svg_width - pad_left - pad_right;
     let plot_h = svg_height - pad_top - pad_bottom;
-
-    // Inyectar ráfaga simulada de tráfico y latencia para pruebas dinámicas
-    let inject_anomaly_burst = move |_| {
-        set_chart_data.update(|data| {
-            let next_minute = (data.len() % 60) + 1;
-            let time_str = format!("06:{:02}:00", next_minute);
-            let label_str = format!("06:{:02}", next_minute);
-
-            data.push(MetricDataPoint {
-                timestamp: time_str,
-                time_label: label_str,
-                packets_per_sec: 8450.0,
-                latency_us: 12.8,
-                cpu_usage_pct: 88.0,
-                bandwidth_mbps: 76.5,
-            });
-
-            if data.len() > 16 {
-                data.remove(0);
-            }
-        });
-    };
 
     // Cálculos reactivos de escalas y trayectorias SVG
     let chart_calc = create_memo(move |_| {
@@ -170,10 +147,7 @@ pub fn MonitoringChart(
                         </button>
                     </div>
 
-                    // Botón para simular ráfagas anómalas
-                    <button class="btn btn-inspect" on:click=inject_anomaly_burst style="padding: 0.35rem 0.75rem; font-size: 0.75rem;">
-                        "⚡ Inyectar Pico Anómalo"
-                    </button>
+                    // Los datos provienen exclusivamente del polling GET /api/v1/telemetry/metrics
                 </div>
             </div>
 

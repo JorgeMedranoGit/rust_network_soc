@@ -166,6 +166,32 @@ CREATE TABLE mitigation_audit (
     result_status VARCHAR(50) NOT NULL
 );
 
+-- * * * 4.b ACLs APROBADAS EN SANDBOX (Red GNS3 secundaria VLAN 999) * * *
+-- Flujo de dos redes: la red principal captura ataques/trafico; la red sandbox
+-- (mas pequena) prueba cada ACL antes de usarla en la principal. Una ACL
+-- APROBADA en sandbox se persiste aqui y alimenta futuras detecciones.
+CREATE TABLE IF NOT EXISTS approved_acl_rules (
+    acl_rule_id BIGSERIAL PRIMARY KEY,
+    rule_name VARCHAR(150) NOT NULL UNIQUE,
+    layer_target VARCHAR(10) NOT NULL DEFAULT 'L3',
+    vendor VARCHAR(60) NOT NULL DEFAULT 'AclBlackhole',
+    source_ip CIDR,
+    dest_ip CIDR,
+    protocol VARCHAR(20),
+    port_range VARCHAR(30),
+    action VARCHAR(30) NOT NULL,                 -- DROP / BLACKHOLE / SINKHOLE
+    applied_command TEXT NOT NULL,               -- comando exacto validado en sandbox
+    rollback_command TEXT NOT NULL,              -- reverso documentado (Iso 27001)
+    sandbox_verified BOOLEAN NOT NULL DEFAULT TRUE,
+    sandbox_snapshot JSONB,                      -- resultado de probar_nuevas_acl.sh
+    threat_name VARCHAR(80),                     -- vinculacion con threat_types
+    hit_count BIGINT NOT NULL DEFAULT 0,         -- veces re-aplicada automaticamente
+    created_by INT REFERENCES sys_users(user_id) ON DELETE SET NULL,
+    approved_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX idx_approved_acl_threat ON approved_acl_rules (threat_name);
+
 -- * * * 5. AUDITORÍA GENERAL DEL SISTEMA * * *
 
 CREATE TABLE system_audit_logs (
