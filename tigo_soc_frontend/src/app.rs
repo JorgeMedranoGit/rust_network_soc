@@ -15,8 +15,8 @@ use crate::models::{
     RealtimeStreamEvent, RoleType, Severity, SocUser, SystemMetrics, UserSessionState,
 };
 
-//! Paleta institucional oficial del manual de mockups (MockupsFiles/Final) —
-//! ISO/IEC 25010, contraste WCAG 2.2 ≥ 12:1 en textos y controles.
+// Paleta institucional oficial del manual de mockups (MockupsFiles/Final) —
+// ISO/IEC 25010, contraste WCAG 2.2 >= 12:1 en textos y controles.
 /// Azul #0284C7 — navegación principal, filtros seleccionados, acción primaria
 pub const TIGO_BLUE: &str = "#0284c7";
 /// Verde #16A34A — tráfico normal verificado, TLS 1.3, 2FA válido, enlaces activos
@@ -510,6 +510,7 @@ pub fn App() -> impl IntoView {
                                         <SandboxAcl
                                             set_stream_events=set_stream_events
                                             alerts=alerts
+                                            session=session
                                         />
                                     </div>
                                 }.into_view(),

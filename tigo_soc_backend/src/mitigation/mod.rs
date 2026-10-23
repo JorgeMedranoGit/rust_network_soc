@@ -250,6 +250,42 @@ pub async fn register_security_alert(
     }
 }
 
+
+// * * * 4.b COINCIDENCIA DE ACLs APROBADAS EN SANDBOX PARA FUTURAS DETECCIONES * * *
+// Cuando una amenaza se detecta (o se registra un incidente), el orquestador
+// consulta approved_acl_rules: si existe una ACL ya validada en la red GNS3
+// sandbox (VLAN 999) para esa threat_name o para la IP del atacante, se puede
+// re-aplicar directamente sin volver a pasar por pruebas. Incrementa hit_count.
+pub async fn find_approved_acls_for(
+    pool: &PgPool,
+    threat_name: &str,
+    attacker_ip: &str,
+) -> Vec<crate::infrastructure::repo_acl::ApprovedAclRule> {
+    use crate::infrastructure::repo_acl::AclRepository;
+    let repo = AclRepository::new(pool.clone());
+    match repo.match_for_detection(threat_name, attacker_ip).await {
+        Ok(rules) => {
+            if !rules.is_empty() {
+                println!(
+                    "|- ORQUESTADOR MULTI-VENDOR -| [ACL SANDBOX] {} regla(s) aprobada(s) en VLAN 999 coinciden con '{}' / IP [{}]: {:?}",
+                    rules.len(),
+                    threat_name,
+                    attacker_ip,
+                    rules.iter().map(|r| r.rule_name.clone()).collect::<Vec<_>>()
+                );
+            }
+            rules
+        }
+        Err(e) => {
+            eprintln!(
+                "|- ORQUESTADOR MULTI-VENDOR -| [WARN] Consulta de ACLs aprobadas falló ({}). Continuando con mitigación estándar.",
+                e
+            );
+            Vec::new()
+        }
+    }
+}
+
 // * * * 5. PERSISTENCIA DE INSTANTÁNEAS DE RESTAURACIÓN (ROLLBACK SNAPSHOTS) * * *
 pub async fn save_rollback_snapshot(
     pool: &PgPool,
