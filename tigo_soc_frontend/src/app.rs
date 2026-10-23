@@ -2,21 +2,65 @@
 // Conexión activa con Backend Axum en :3000 via gloo-net HTTP (polling cada 15s)
 
 use leptos::*;
-use gloo_net::http::Request;
 use gloo_timers::future::IntervalStream;
 use wasm_bindgen_futures::spawn_local;
 
+use crate::api;
 use crate::components::{
     AlertsTable, BlastRadiusControl, LoginView, MonitoringChart, RealtimeAlerts,
     SystemStatus, Topology3D, UserManagement,
 };
 use crate::models::{
-    get_initial_alerts, get_initial_chart_data, get_initial_metrics,
-    get_initial_pending_mitigations, get_initial_realtime_events,
-    get_initial_security_config, get_initial_session, get_initial_users,
     AlertItem, GlobalSecurityConfig, MetricDataPoint, PendingMitigation,
     RealtimeStreamEvent, RoleType, Severity, SocUser, SystemMetrics, UserSessionState,
 };
+
+/// Indicador de estado del backend Axum (Online/Offline) según el último sondeo HTTP
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum BackendStatus {
+    Online,
+    Offline,
+}
+
+/// Usuario vacío inicial — la señal users_list/session se llena con datos REALES
+/// vía GET /api/v1/users y POST /api/v1/auth/login (nunca con mocks).
+impl Default for SocUser {
+    fn default() -> Self {
+        SocUser {
+            user_id: 0,
+            username: String::new(),
+            role: RoleType::Auditor,
+            created_at: String::new(),
+            is_active: true,
+        }
+    }
+}
+
+/// Estado central de datos en vivo obtenidos del backend Axum. Se expone a los
+/// componentes hijos mediante señales derivadas (`use_derived`) y permite que el
+/// ciclo de polling (un cierre `Copy`) actualice todo desde un único `SignalSet`.
+#[derive(Clone, PartialEq)]
+pub struct DataState {
+    pub metrics: SystemMetrics,
+    pub alerts: Vec<AlertItem>,
+    pub pending: Vec<PendingMitigation>,
+    pub chart: Vec<MetricDataPoint>,
+    pub stream: Vec<RealtimeStreamEvent>,
+    pub users: Vec<SocUser>,
+}
+
+impl DataState {
+    fn initial() -> Self {
+        DataState {
+            metrics: SystemMetrics::default(),
+            alerts: Vec::new(),
+            pending: Vec::new(),
+            chart: Vec::new(),
+            stream: Vec::new(),
+            users: Vec::new(),
+        }
+    }
+}
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ActiveTab {
@@ -31,32 +75,183 @@ pub enum ActiveTab {
 
 #[component]
 pub fn App() -> impl IntoView {
-    // ── Estados globales reactivos ──────────────────────────────────────────
-    let (metrics, set_metrics) = create_signal::<SystemMetrics>(get_initial_metrics());
-    let (alerts, _set_alerts) = create_signal::<Vec<AlertItem>>(get_initial_alerts());
+    // ── Estado central EN VIVO (SIN MOCKS: arranca vacío y lo llena el polling HTTP) ─
+    let (data_state, set_data_state) =
+        create_signal::<DataState>(DataState::initial());
+
+    // ── Señales espejo para los componentes hijos (compatibles con sus props
+    //    ReadSignal/WriteSignal actuales, sin modificar dichos componentes) ──────
+    let (metrics, set_metrics) = create_signal::<SystemMetrics>(SystemMetrics::default());
+    let (alerts, _set_alerts_unused) = create_signal::<Vec<AlertItem>>(Vec::new());
     let (pending_items, set_pending_items) =
-        create_signal::<Vec<PendingMitigation>>(get_initial_pending_mitigations());
+        create_signal::<Vec<PendingMitigation>>(Vec::new());
     let (chart_data, set_chart_data) =
-        create_signal::<Vec<MetricDataPoint>>(get_initial_chart_data());
+        create_signal::<Vec<MetricDataPoint>>(Vec::new());
     let (stream_events, set_stream_events) =
-        create_signal::<Vec<RealtimeStreamEvent>>(get_initial_realtime_events());
+        create_signal::<Vec<RealtimeStreamEvent>>(Vec::new());
+    let (users_list, set_users_list) = create_signal::<Vec<SocUser>>(Vec::new());
+
+    // Efecto reactivo: propaga cada actualización del estado central (polling HTTP)
+    // hacia las señales espejo que consumen SystemStatus, AlertsTable, MonitoringChart,
+    // RealtimeAlerts, BlastRadiusControl y UserManagement.
+    create_effect(move |_| {
+        let d = data_state.get();
+        set_metrics.set(d.metrics.clone());
+        _set_alerts_unused.set(d.alerts.clone());
+        set_pending_items.set(d.pending.clone());
+        set_chart_data.set(d.chart.clone());
+        set_stream_events.set(d.stream.clone());
+        set_users_list.set(d.users.clone());
+    });
+
     let (selected_severity, set_selected_severity) =
         create_signal::<Option<Severity>>(None);
     let (active_tab, set_active_tab) = create_signal::<ActiveTab>(ActiveTab::Dashboard);
 
-    // ── Estados de gestión de usuarios, sesiones y RBAC ────────────────────
-    let (users_list, set_users_list) =
-        create_signal::<Vec<SocUser>>(get_initial_users());
-    let (session, set_session) =
-        create_signal::<UserSessionState>(get_initial_session());
-    let (security_config, set_security_config) =
-        create_signal::<GlobalSecurityConfig>(get_initial_security_config());
+    // ── Estados de gestión de sesiones y RBAC ──────────────────────────────
+    let (session, set_session) = create_signal::<UserSessionState>(UserSessionState {
+        current_user: SocUser::default(),
+        session_token: String::new(),
+        expires_at: "—".to_string(),
+        last_reauth_timestamp: 0.0,
+    });
+    let (security_config, set_security_config) = create_signal::<GlobalSecurityConfig>(
+        GlobalSecurityConfig { critical_action_timeout_secs: 60 },
+    );
 
-    // ── Estado de autenticación ─────────────────────────────────────────────
+    // ── Estado de autenticación y salud del backend ────────────────────────
     // is_authenticated: false = pantalla de login, true = dashboard SOC
     let (is_authenticated, set_is_authenticated) = create_signal::<bool>(false);
+    // BackendStatus: Online/Offline según el resultado del último sondeo HTTP real
+    let (backend_status, set_backend_status) =
+        create_signal::<BackendStatus>(BackendStatus::Offline);
 
-    // Efecto: sincronizar mitigaciones pendientes con las métricas
+    // ════════════════════════════════════════════════════════════════════════
+    // CICLO DE POLLING EN VIVO contra el backend Axum (gloo-net + spawn_local)
+    //   GET /api/v1/alerts            → alertas enriquecidas + cola Blast Radius + stream
+    //   GET /api/v1/metrics           → resumen global (PostgreSQL agregado)
+    //   GET /api/v1/telemetry/metrics → ventanas de tráfico para las gráficas SVG
+    //   GET /api/v1/users             → directorio RBAC real
+    // Cada sondeo actualiza el indicador Online/Offline del header.
+    // ════════════════════════════════════════════════════════════════════════
+    fn run_poll(
+        first_run: bool,
+        set_data_state: WriteSignal<DataState>,
+        set_security_config: WriteSignal<GlobalSecurityConfig>,
+        set_backend_status: WriteSignal<BackendStatus>,
+    ) {
+        spawn_local(async move {
+            let mut ok_any = false;
+
+            // 1) Alertas reales → tabla, cola PENDING_MANUAL (Blast Radius) y flujo en vivo
+            match api::fetch_alerts(if first_run { "primera carga" } else { "polling 15s" }).await {
+                Ok(raw) => {
+                    ok_any = true;
+                    let pending: Vec<PendingMitigation> = raw
+                        .iter()
+                        .filter(|a| {
+                            a.status_name
+                                .as_deref()
+                                .unwrap_or("")
+                                .eq_ignore_ascii_case("PENDING_MANUAL")
+                        })
+                        .map(api::map_pending_mitigation)
+                        .collect();
+                    let mapped: Vec<AlertItem> =
+                        raw.clone().into_iter().map(api::map_enriched_alert).collect();
+                    let stream = api::map_alerts_to_stream(raw);
+                    set_data_state.update(|d| {
+                        d.alerts = mapped;
+                        d.pending = pending;
+                        d.stream = stream;
+                    });
+                }
+                Err(e) => log::warn!("Polling /api/v1/alerts falló: {}", e),
+            }
+
+            // 2) Resumen de métricas del sistema (pending_manual lo fija la cola real abajo)
+            if let Ok(summary) = api::fetch_metrics_summary().await {
+                ok_any = true;
+                let fresh = api::map_metrics_summary(summary, None);
+                set_data_state.update(|d| d.metrics = fresh);
+            }
+
+            // 3) Ventanas de telemetría → series de las gráficas
+            match api::fetch_telemetry_metrics().await {
+                Ok(points) => {
+                    ok_any = true;
+                    let pts = api::map_traffic_metrics_to_points(points);
+                    set_data_state.update(|d| d.chart = pts);
+                }
+                Err(e) => log::warn!("Polling /api/v1/telemetry/metrics falló: {}", e),
+            }
+
+            // 4) Directorio de usuarios RBAC
+            match api::fetch_users().await {
+                Ok(us) => {
+                    ok_any = true;
+                    let users: Vec<SocUser> = us.into_iter().map(api::map_user_with_role).collect();
+                    set_data_state.update(|d| d.users = users);
+                }
+                Err(e) => log::warn!("Polling /api/v1/users falló: {}", e),
+            }
+
+            // 5) Timeout global de acciones críticas (config zero-trust del backend)
+            if let Ok(secs) = api::fetch_critical_timeout().await {
+                set_security_config.set(GlobalSecurityConfig {
+                    critical_action_timeout_secs: secs.max(1) as u64,
+                });
+            }
+
+            // 6) Indicador Online/Offline: health-check explícito o cualquier sondeo exitoso
+            let healthy = ok_any || api::fetch_system_status().await.is_ok();
+            set_backend_status.set(if healthy {
+                BackendStatus::Online
+            } else {
+                BackendStatus::Offline
+            });
+        });
+    }
+
+    // Cierre `Copy`: captura solo señales/setters (todos `Copy` en Leptos 0.6), por lo
+    // que puede invocarse en cada tick del IntervalStream sin mover ningún estado.
+    let poll_once = move |first_run: bool| {
+        run_poll(first_run, set_data_state, set_security_config, set_backend_status);
+    };
+
+    // Bandera del ciclo de polling: mientras esté activa, el bucle de IntervalStream
+    // sigue sondeando; al cerrar sesión se marca en falso y el bucle termina.
+    let (poll_active, set_poll_active) = create_signal::<bool>(false);
+
+    // Efecto reactivo: arranca el ciclo solo cuando hay sesión autenticada y
+    // lo detiene (deja de sondear) al cerrar sesión.
+    create_effect(move |_| {
+        if is_authenticated.get() {
+            // Primera consulta inmediata al entrar al dashboard
+            poll_once(true);
+
+            if !poll_active.get() {
+                set_poll_active.set(true);
+                let active = poll_active.clone();
+                // Polling periódico cada 15 segundos vía IntervalStream (gloo-timers)
+                let mut stream = IntervalStream::new(15_000);
+                spawn_local(async move {
+                    use futures_lite::stream::StreamExt;
+                    while stream.next().await.is_some() {
+                        if !active.get() {
+                            break; // sesión cerrada → fin del ciclo de sondeo
+                        }
+                        poll_once(false);
+                    }
+                });
+            }
+        } else {
+            set_poll_active.set(false);
+        }
+    });
+
+    // Badge dinámico de Blast Radius: sincroniza el tamaño de la cola REAL de
+    // mitigaciones PENDING_MANUAL con la tarjeta "Pendientes" del dashboard.
     create_effect(move |_| {
         let count = pending_items.get().len() as u64;
         set_metrics.update(|m| {
@@ -69,14 +264,26 @@ pub fn App() -> impl IntoView {
         set_is_authenticated.set(true);
     });
 
-    // Logout
+    // ── Logout REAL: POST /api/v1/auth/logout con el token de sesión ──────
     let handle_logout = move |_| {
+        let token = session.get().session_token.clone();
+        spawn_local(async move {
+            if !token.is_empty() {
+                if let Err(e) = api::logout(&token).await {
+                    log::warn!("POST /api/v1/auth/logout respondió error: {} (sesión local invalidada)", e);
+                }
+            }
+        });
         set_session.update(|s| {
             s.last_reauth_timestamp = 0.0;
             s.session_token = String::new();
         });
         set_is_authenticated.set(false);
         set_active_tab.set(ActiveTab::Dashboard);
+        // Al salir, limpiamos los datos en memoria para no exponer información
+        // de la sesión anterior y marcamos el backend como aún no verificado.
+        set_data_state.set(DataState::initial());
+        set_backend_status.set(BackendStatus::Offline);
     };
 
     view! {
@@ -177,9 +384,21 @@ pub fn App() -> impl IntoView {
                                     </span>
                                 </div>
 
-                                <div class="status-badge online">
+                                // Indicador REAL de disponibilidad del backend Axum
+                                // (Online/Offline según el último sondeo HTTP del ciclo de polling)
+                                <div
+                                    class=move || match backend_status.get() {
+                                        BackendStatus::Online => "status-badge online",
+                                        BackendStatus::Offline => "status-badge offline",
+                                    }
+                                >
                                     <span class="status-dot"></span>
-                                    <span>"EN LÍNEA"</span>
+                                    <span>
+                                        {move || match backend_status.get() {
+                                            BackendStatus::Online => "BACKEND EN LÍNEA",
+                                            BackendStatus::Offline => "BACKEND OFFLINE",
+                                        }}
+                                    </span>
                                 </div>
 
                                 // Botón de logout
