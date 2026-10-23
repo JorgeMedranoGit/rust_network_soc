@@ -834,3 +834,113 @@ pub async fn fetch_device_types() -> Result<Vec<ApiDeviceType>, String> {
 pub async fn fetch_system_status() -> Result<ApiSystemStatus, String> {
     get_json::<ApiSystemStatus>("/api/v1/status").await
 }
+
+// ============================================================================
+// MUTACIONES (escritura) — consumidas por UserManagement y BlastRadiusControl
+// ============================================================================
+
+/// PUT /api/v1/users/:id/role — cambio real de rol RBAC persistido en PostgreSQL.
+/// El handler `update_user_role_handler` recibe `{ roleId }` (UpdateUserRoleDto).
+pub async fn update_user_role(token: &str, user_id: i32, role_id: i32) -> Result<(), String> {
+    #[derive(Serialize)]
+    #[serde(rename_all = "camelCase")]
+    struct UpdateRoleBody {
+        role_id: i32,
+    }
+    let url = api_url(&format!("/api/v1/users/{}/role", user_id));
+    let resp = Request::put(&url)
+        .header("Content-Type", "application/json")
+        .header("Accept", "application/json")
+        .header("Authorization", &format!("Bearer {}", token))
+        .json(&UpdateRoleBody { role_id })
+        .map_err(|e| e.to_string())?
+        .send()
+        .await
+        .map_err(|e| format!("Fallo de red contra {}: {}", url, e))?;
+    let status = resp.status();
+    if !(200..300).contains(&status) {
+        return Err(extract_error(resp, status).await);
+    }
+    Ok(())
+}
+
+/// DELETE /api/v1/users/:id — eliminación real de usuario del directorio RBAC.
+pub async fn delete_user(token: &str, user_id: i32) -> Result<(), String> {
+    let url = api_url(&format!("/api/v1/users/{}", user_id));
+    let resp = Request::delete(&url)
+        .header("Accept", "application/json")
+        .header("Authorization", &format!("Bearer {}", token))
+        .send()
+        .await
+        .map_err(|e| format!("Fallo de red contra {}: {}", url, e))?;
+    let status = resp.status();
+    if !(200..300).contains(&status) {
+        return Err(extract_error(resp, status).await);
+    }
+    Ok(())
+}
+
+/// PUT /api/v1/config/critical-timeout — guardado global del timeout Zero-Trust.
+/// Payload `CriticalTimeoutConfigDto { timeoutSeconds }`; el backend rechaza < 10 s.
+pub async fn save_critical_timeout(token: &str, seconds: u64) -> Result<(), String> {
+    #[derive(Serialize)]
+    #[serde(rename_all = "camelCase")]
+    struct TimeoutBody {
+        timeout_seconds: u64,
+    }
+    let url = api_url("/api/v1/config/critical-timeout");
+    let resp = Request::put(&url)
+        .header("Content-Type", "application/json")
+        .header("Accept", "application/json")
+        .header("Authorization", &format!("Bearer {}", token))
+        .json(&TimeoutBody { timeout_seconds: seconds })
+        .map_err(|e| e.to_string())?
+        .send()
+        .await
+        .map_err(|e| format!("Fallo de red contra {}: {}", url, e))?;
+    let status = resp.status();
+    if !(200..300).contains(&status) {
+        return Err(extract_error(resp, status).await);
+    }
+    Ok(())
+}
+
+/// POST /api/v1/alerts/simulate-push — despacho de una mitigación/acción al
+/// orquestador del backend (handler `simulate_push_handler`). El cuerpo es un
+/// Syslog JSON CEF/LEEF/CEF2; se construye desde la alerta encolada en Blast
+/// Radius para que el pipeline ML lo procese y registre en `mitigation_audit`.
+pub async fn dispatch_mitigation(token: &str, alert: &PendingMitigation) -> Result<(), String> {
+    let syslog_payload = format!(
+        "CEF:Version|TigoSOC|BlastRadiusConsole|1.0|{}|MitigacionManualAprobada|7|src={} dpt={} msg=\"{}\" act=\"{}\" suser={} rt={}",
+        alert.alert_id,
+        alert.target_ip,
+        alert.layer_target,
+        alert.action_name.replace(' ', "_"),
+        alert.reason.replace('"', "'").split(':').next().unwrap_or("MITIGATE").replace(' ', "_"),
+        alert.blast_radius.replace(' ', "_"),
+        chrono::Utc::now().to_rfc3339(),
+    );
+    let url = api_url("/api/v1/alerts/simulate-push");
+    let resp = Request::post(&url)
+        .header("Content-Type", "application/json")
+        .header("Accept", "application/json")
+        .header("Authorization", &format!("Bearer {}", token))
+        .json(&syslog_payload)
+        .map_err(|e| e.to_string())?
+        .send()
+        .await
+        .map_err(|e| format!("Fallo de red contra {}: {}", url, e))?;
+    let status = resp.status();
+    if !(200..300).contains(&status) {
+        return Err(extract_error(resp, status).await);
+    }
+    Ok(())
+}
+
+/// Extrae el mensaje {"error": "..."} de una respuesta HTTP fallida de Axum.
+async fn extract_error(resp: Response, status: u16) -> String {
+    if let Ok(err_body) = decode_json::<ApiErrorResponse>(resp).await {
+        return err_body.error;
+    }
+    format!("El servidor rechazó la operación (HTTP {}).", status)
+}
