@@ -1,6 +1,8 @@
 // * * * COMPONENTE: VISTA DE CONTROL Y APROBACIÓN MANUAL DE BLAST RADIUS CON RE-AUTENTICACIÓN ESTRICTA * * *
 
 use leptos::*;
+use wasm_bindgen_futures::spawn_local;
+use crate::api;
 use crate::models::{GlobalSecurityConfig, PendingMitigation, RoleType, UserSessionState};
 
 #[component]
@@ -43,26 +45,80 @@ pub fn BlastRadiusControl(
         if rem > 0.0 { rem as i64 } else { 0i64 }
     };
 
-    // Ejecución interna tras verificación estricta de credenciales
+    // Despacho REAL de la mitigación aprobada: POST /api/v1/alerts/simulate-push
+    // (el orquestador del backend procesa el evento CEF y aplica la directiva).
+    // Solo se retira de la cola local si el servidor Axum lo confirma.
     let execute_approved_mitigation = move |task_id: i64| {
-        set_pending_items.update(|items| {
-            items.retain(|i| i.task_id != task_id);
+        let token = session.get().session_token.clone();
+        let alert_snapshot = pending_items.get().into_iter().find(|i| i.task_id == task_id);
+        let set_pending_items_e = set_pending_items;
+        let set_feedback_msg_e = set_feedback_msg;
+        let set_error_msg_e = set_error_msg;
+
+        spawn_local(async move {
+            match alert_snapshot {
+                Some(alert) => match api::dispatch_mitigation(&token, &alert).await {
+                    Ok(_) => {
+                        set_pending_items_e.update(|items| {
+                            items.retain(|i| i.task_id != task_id);
+                        });
+                        set_feedback_msg_e.set(Some(format!(
+                            "✓ Mitigación Masiva (Tarea #{}) APROBADA Y DESPACHADA AL ORQUESTADOR (POST /api/v1/alerts/simulate-push). Re-autenticación verificada.",
+                            task_id
+                        )));
+                    }
+                    Err(e) => {
+                        set_error_msg_e.set(Some(format!(
+                            "✕ El backend rechazó el despacho de la mitigación (Tarea #{}): {}",
+                            task_id, e
+                        )));
+                    }
+                },
+                None => {
+                    set_error_msg_e.set(Some(format!("La Tarea #{} ya no está encolada (fue consumida por el polling).", task_id)));
+                }
+            }
         });
-        set_feedback_msg.set(Some(format!(
-            "✓ Mitigación Masiva (Tarea #{}) APROBADA Y EJECUTADA. Re-autenticación por contraseña verificada con éxito. Comando despachado al orquestador.",
-            task_id
-        )));
     };
 
+    // Rollback: mismo canal de despacho (directiva inversa registrada en mitigation_audit)
     let execute_rollback_action = move |task_id: i64| {
-        set_pending_items.update(|items| {
-            items.retain(|i| i.task_id != task_id);
+        let token = session.get().session_token.clone();
+        let mut snapshot = pending_items.get().into_iter().find(|i| i.task_id == task_id);
+        let set_pending_items_r = set_pending_items;
+        let set_modal_json_r = set_modal_json;
+        let set_feedback_msg_r = set_feedback_msg;
+        let set_error_msg_r = set_error_msg;
+
+        if let Some(a) = snapshot.as_mut() {
+            a.action_name = format!("ROLLBACK_{}", a.action_name);
+        }
+
+        spawn_local(async move {
+            match snapshot {
+                Some(alert) => match api::dispatch_mitigation(&token, &alert).await {
+                    Ok(_) => {
+                        set_pending_items_r.update(|items| {
+                            items.retain(|i| i.task_id != task_id);
+                        });
+                        set_modal_json_r.set(None);
+                        set_feedback_msg_r.set(Some(format!(
+                            "🔄 Rollback (Tarea #{}) EJECUTADO. Directiva inversa despachada al hardware perimetral vía backend y registrada en mitigation_audit.",
+                            task_id
+                        )));
+                    }
+                    Err(e) => {
+                        set_error_msg_r.set(Some(format!(
+                            "✕ El backend rechazó el rollback (Tarea #{}): {}",
+                            task_id, e
+                        )));
+                    }
+                },
+                None => {
+                    set_error_msg_r.set(Some(format!("La Tarea #{} ya no está disponible para rollback.", task_id)));
+                }
+            }
         });
-        set_modal_json.set(None);
-        set_feedback_msg.set(Some(format!(
-            "🔄 Rollback (Tarea #{}) EJECUTADO EXITOSAMENTE. Directiva inversa aplicada sobre el hardware perimetral y registrada en mitigation_audit.",
-            task_id
-        )));
     };
 
     // Despacho de mitigación con control RBAC y timeout de re-autenticación
@@ -121,6 +177,9 @@ pub fn BlastRadiusControl(
         }
     };
 
+    // Rechazo: descarte LOCAL de la cola. La alerta permanece en PostgreSQL con
+    // estado PENDING_MANUAL; el siguiente ciclo de polling (15 s) la reincorporará
+    // si el backend no la marca como descartada por otra vía.
     let reject_mitigation = move |task_id: i64| {
         let user_role = session.get().current_user.role;
         if !user_role.can_execute_destructive_actions() {
@@ -134,12 +193,13 @@ pub fn BlastRadiusControl(
             items.retain(|i| i.task_id != task_id);
         });
         set_feedback_msg.set(Some(format!(
-            "✕ Mitigación (Tarea #{}) RECHAZADA por el analista. Alerta marcada como descartada en execution_queue.",
+            "✕ Mitigación (Tarea #{}) RECHAZADA por el analista. No se despachó ninguna directiva al orquestador.",
             task_id
         )));
     };
 
-    // Validación de la contraseña ingresada en el Modal de Re-autenticación
+    // Validación REAL de la contraseña ingresada en el Modal de Re-autenticación:
+    // POST /api/v1/auth/reauth contra Axum (verificación BCrypt + ventana Zero-Trust).
     let confirm_reauth = move |_| {
         set_reauth_error.set(None);
         let pass = reauth_password.get();
@@ -149,28 +209,44 @@ pub fn BlastRadiusControl(
             return;
         }
 
-        // Validación estricta de longitud y robustez de contraseña
-        if pass.len() < 4 {
-            set_reauth_error.set(Some("Contraseña inválida. Verifique sus credenciales.".to_string()));
-            return;
-        }
+        // Re-autenticación REAL contra el backend: POST /api/v1/auth/reauth
+        // (Axum verifica BCrypt y actualiza last_reauth_at en user_sessions).
+        let token = session.get().session_token.clone();
+        let set_session_c = set_session;
+        let set_reauth_error_c = set_reauth_error;
+        let pending_action_snapshot = pending_critical_action.get();
+        let exec_ok = execute_approved_mitigation.clone();
+        let rollback_ok = execute_rollback_action.clone();
+        let set_pending_critical_action_c = set_pending_critical_action;
 
-        // Actualizar el timestamp de re-autenticación al tiempo actual en Unix Epoch
-        let now = chrono::Utc::now().timestamp() as f64;
-        set_session.update(|s| {
-            s.last_reauth_timestamp = now;
-        });
+        spawn_local(async move {
+            match api::reauth(&token, &pass).await {
+                Ok(resp) => {
+                    // Sincronizar el timestamp de re-autenticación informado por el servidor
+                    let server_ts = resp
+                        .reauth_timestamp
+                        .map(|dt| dt.timestamp() as f64)
+                        .unwrap_or_else(|| chrono::Utc::now().timestamp() as f64);
+                    set_session_c.update(|s| s.last_reauth_timestamp = server_ts);
 
-        // Ejecutar la acción crítica pendiente
-        if let Some((action_type, task_id, _)) = pending_critical_action.get() {
-            if action_type == "MITIGATE" {
-                execute_approved_mitigation(task_id);
-            } else if action_type == "ROLLBACK" {
-                execute_rollback_action(task_id);
+                    // Ejecutar la acción crítica pendiente tras validación del servidor
+                    if let Some((action_type, task_id, _)) = pending_action_snapshot {
+                        if action_type == "MITIGATE" {
+                            exec_ok(task_id);
+                        } else if action_type == "ROLLBACK" {
+                            rollback_ok(task_id);
+                        }
+                    }
+                    set_pending_critical_action_c.set(None);
+                }
+                Err(e) => {
+                    set_reauth_error_c.set(Some(format!(
+                        "✕ El backend rechazó la re-autenticación: {}",
+                        e
+                    )));
+                }
             }
-        }
-
-        set_pending_critical_action.set(None);
+        });
     };
 
     view! {
