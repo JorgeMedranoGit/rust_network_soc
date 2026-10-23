@@ -20,7 +20,8 @@ use crate::presentation::{
         get_metrics_summary_handler, get_ml_stats_handler, get_model_info_handler,
         get_nodes_handler, get_roles_handler, get_session_handler, get_telemetry_metrics_handler,
         get_users_handler, health_check_handler, login_handler, logout_handler, reauth_handler,
-        simulate_push_handler, subscribe_topic_handler, system_status_handler,
+        approve_acl_handler, get_approved_acls_handler, simulate_push_handler,
+        subscribe_topic_handler, system_status_handler,
         update_critical_timeout_handler, update_user_role_handler,
         validate_critical_action_handler,
     },
@@ -65,6 +66,9 @@ pub fn create_router(state: AppState) -> Router {
         .route("/api/v1/status", get(system_status_handler))
         .route("/api/v1/catalogs/device-types", get(get_device_types_handler))
         .route("/api/v1/inventory/nodes", get(get_nodes_handler))
+        // * * * ACLs aprobadas en la red GNS3 SANDBOX (VLAN 999) -> futuras detecciones * * *
+        .route("/api/v1/acls/approved", get(get_approved_acls_handler))
+        .route("/api/v1/acls/approve", post(approve_acl_handler))
         .route("/api/v1/ml/stats", get(get_ml_stats_handler))
         .route("/api/v1/ml/model-info", get(get_model_info_handler))
         // * * * Autenticación y Sesiones Seguras en Servidor * * *

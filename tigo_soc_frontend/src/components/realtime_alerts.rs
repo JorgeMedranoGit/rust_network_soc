@@ -12,30 +12,6 @@ pub fn RealtimeAlerts(
     let (filter_layer, set_filter_layer) = create_signal(Option::<String>::None);
     let (filter_sev, set_filter_sev) = create_signal(Option::<Severity>::None);
 
-    // Inyectar alerta sintética en el flujo dinámico para pruebas y validación
-    let inject_stream_alert = move |_| {
-        set_events.update(|list| {
-            let next_id = list.first().map(|e| e.event_id + 1).unwrap_or(2001);
-            let new_event = RealtimeStreamEvent {
-                event_id: next_id,
-                timestamp: chrono::Local::now().format("%H:%M:%S").to_string(),
-                threat_category: "DNS_C2_EXFILTRATION".to_string(),
-                severity: Severity::CRITICAL,
-                layer: "L7".to_string(),
-                source_ip: "192.168.1.50".to_string(),
-                destination_ip: "192.168.1.1".to_string(),
-                protocol: "UDP:53".to_string(),
-                message: "Ráfaga anómala hacia dominio malicioso evil-c2.com detectada. Blast Radius MASIVO -> PENDING_MANUAL.".to_string(),
-                mitigation_strategy: "DNS_SINKHOLE_L7 (Detención Manual)".to_string(),
-                blast_radius: "MASSIVE_NETWORK_WIDE".to_string(),
-            };
-            list.insert(0, new_event);
-            if list.len() > 30 {
-                list.pop();
-            }
-        });
-    };
-
     let clear_stream = move |_| {
         set_events.set(Vec::new());
     };
@@ -87,14 +63,6 @@ pub fn RealtimeAlerts(
                         on:click=move |_| set_is_paused.update(|p| *p = !*p)
                     >
                         {move || if is_paused.get() { "▶ Reanudar Stream" } else { "⏸ Pausar Stream" }}
-                    </button>
-
-                    <button
-                        class="btn btn-inspect"
-                        style="padding: 0.35rem 0.75rem; font-size: 0.75rem;"
-                        on:click=inject_stream_alert
-                    >
-                        "⚡ Inyectar Evento L7"
                     </button>
 
                     <button

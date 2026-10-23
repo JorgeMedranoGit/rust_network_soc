@@ -13,7 +13,10 @@
 #     5. Verificación de tráfico legítimo NO interrumpido (Blast Radius acotado)
 #     6. Rollback automático tras ventana configurable (default: 300s / 5min)
 #     7. Verificación post-rollback de restauración de conectividad
-# ==============================================================================
+#     8. APROBACIÓN Y PERSISTENCIA EN BD: si la ACL se validó con éxito en la
+#        red sandbox (más pequeña), se guarda en 'approved_acl_rules' para
+#        futuras detecciones automáticas ANTES de usarla en la red principal.
+# ============================================================================
 
 set -eo pipefail
 
@@ -246,6 +249,51 @@ else
     echo -e "  ${YELLOW}[!] Acceso del atacante no restaurado (posibles reglas residuales).${NC}"
 fi
 
+# ===========================================================================
+# FASE 8: APROBACIÓN DE LA ACL + PERSISTENCIA EN BASE DE DATOS
+# ===========================================================================
+# La ACL ya fue PROBADA con éxito en la red SANDBOX (más pequeña). Antes de
+# usarla en la red GNS3 principal, se APRUEBA y se GUARDA en PostgreSQL
+# (tabla approved_acl_rules) para futuras detecciones automáticas.
+echo -e "\n${BLUE}╔═══════════════════════════════════════════════════════════════╗${NC}"
+echo -e "${BLUE}║  FASE 8: APROBACIÓN ACL -> PERSISTENCIA EN BD (PostgreSQL)   ║${NC}"
+echo -e "${BLUE}╚═══════════════════════════════════════════════════════════════╝${NC}"
+
+RULE_NAME="ACL_BLACKHOLE_${ATTACKER_IP}_SANDBOX_VERIFIED"
+APPROVE_SQL=$(cat <<EOF
+INSERT INTO approved_acl_rules (
+    rule_name, layer_target, vendor, source_ip, action,
+    applied_command, rollback_command, sandbox_verified,
+    sandbox_snapshot, threat_name
+) VALUES (
+    '${RULE_NAME}', 'L3', 'AclBlackhole', '${ATTACKER_IP}/32', 'BLACKHOLE',
+    'ip route add blackhole ${ATTACKER_IP}/32',
+    'ip route del blackhole ${ATTACKER_IP}/32',
+    TRUE,
+    '$(echo "$ROLLBACK_JSON" | sed "s/'/''/g")'::jsonb,
+    'DDOS_SYN_FLOOD'
+)
+ON CONFLICT (rule_name) DO UPDATE SET
+    sandbox_snapshot = EXCLUDED.sandbox_snapshot,
+    hit_count = approved_acl_rules.hit_count + 1,
+    approved_at = CURRENT_TIMESTAMP;
+EOF
+)
+
+PERSISTED=false
+if $DOCKER_CMD ps -q -f name=tigo_postgres_db | grep -q .; then
+    if echo "$APPROVE_SQL" | $DOCKER_CMD exec -i tigo_postgres_db psql -U postgres -d tigo_soc -v ON_ERROR_STOP=1 >/dev/null 2>&1; then
+        PERSISTED=true
+        echo -e "  ${GREEN}[✓] ACL APROBADA y guardada en BD: approved_acl_rules (${RULE_NAME})${NC}"
+        echo -e "  ${CYAN}    Disponible para futuras detecciones automáticas antes de aplicarla en la red principal.${NC}"
+    fi
+fi
+if [ "$PERSISTED" != true ]; then
+    echo -e "  ${YELLOW}[!] No se pudo persistir en PostgreSQL (contenedor tigo_postgres_db no accesible).${NC}"
+    echo -e "  ${YELLOW}    Guardando aprobación local en scripts/approved_acl_rules.pending.sql${NC}"
+    echo "$APPROVE_SQL" > "$(dirname "${BASH_SOURCE[0]}")/approved_acl_rules.pending.sql"
+fi
+
 echo -e "\n${GREEN}=================================================================="
 echo -e "   CICLO COMPLETO DE PRUEBA ACL + ROLLBACK FINALIZADO EXITOSAMENTE"
 echo -e "==================================================================${NC}"
@@ -258,6 +306,11 @@ echo -e "   ${GREEN}✓${NC} Blast Radius (tráfico legítimo preservado): Valid
 echo -e "   ${GREEN}✓${NC} Rollback JSON Snapshot (auditado): Generado"
 echo -e "   ${GREEN}✓${NC} Rollback automático a los ${ROLLBACK_TIMEOUT}s: Ejecutado"
 echo -e "   ${GREEN}✓${NC} Conectividad post-rollback: Restaurada"
+if [ "$PERSISTED" = true ]; then
+echo -e "   ${GREEN}✓${NC} ACL aprobada en SANDBOX y persistida en BD (approved_acl_rules)"
+else
+echo -e "   ${YELLOW}!${NC} ACL aprobada pendiente de sincronizar con BD (archivo .pending.sql)"
+fi
 echo -e ""
 echo -e " ${YELLOW}Para limpiar la red alterna de pruebas:${NC}"
 echo -e "   ${CYAN}docker network rm ${SANDBOX_NET}${NC}"

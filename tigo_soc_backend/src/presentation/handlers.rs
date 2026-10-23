@@ -735,3 +735,72 @@ pub async fn validate_critical_action_handler(
     }
 }
 
+
+// * * * 11. ACLs APROBADAS EN SANDBOX (RED GNS3 SECUNDARIA VLAN 999) * * *
+// Flujo de dos redes: la sandbox prueba la ACL; al aprobarse se persiste en
+// approved_acl_rules y alimenta futuras detecciones automaticas.
+
+/// GET /api/v1/acls/approved — lista las ACLs aprobadas para la lamina Sandbox
+pub async fn get_approved_acls_handler(State(state): State<AppState>) -> impl IntoResponse {
+    let repo = crate::infrastructure::repo_acl::AclRepository::new(state.pool);
+    match repo.list_approved().await {
+        Ok(items) => (StatusCode::OK, Json(json!(items))),
+        Err(e) => (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(json!({ "error": e.to_string() })),
+        ),
+    }
+}
+
+/// POST /api/v1/acls/approve — aprueba una ACL validada en la sandbox y la guarda
+pub async fn approve_acl_handler(
+    State(state): State<AppState>,
+    headers: HeaderMap,
+    Json(dto): Json<crate::infrastructure::repo_acl::ApproveAclDto>,
+) -> impl IntoResponse {
+    if dto.rule_name.trim().is_empty() || dto.applied_command.trim().is_empty() {
+        return (
+            StatusCode::UNPROCESSABLE_ENTITY,
+            Json(json!({ "error": "rule_name y applied_command son obligatorios" })),
+        );
+    }
+    let users_repo = UsersRepository::new(state.pool.clone());
+    let created_by = match extract_session_token(&headers) {
+        Some(token) => users_repo
+            .get_valid_session(&token)
+            .await
+            .ok()
+            .flatten()
+            .map(|s| s.user_id),
+        None => None,
+    };
+    // Si el frontend no adjunto el snapshot, se genera uno con los comandos exactos
+    let snapshot = dto.sandbox_snapshot.clone().unwrap_or_else(|| json!({
+        "source": "lamina-sandbox-acl",
+        "vlan": 999,
+        "subnet": "10.200.0.0/24",
+        "verifiedAt": Utc::now().to_rfc3339(),
+        "appliedCommand": dto.applied_command,
+        "rollbackCommand": dto.rollback_command,
+    }));
+    let full = crate::infrastructure::repo_acl::ApproveAclDto {
+        created_by: dto.created_by.or(created_by),
+        sandbox_snapshot: Some(snapshot),
+        ..dto
+    };
+    let repo = crate::infrastructure::repo_acl::AclRepository::new(state.pool);
+    match repo.approve_rule(&full).await {
+        Ok(rule) => (
+            StatusCode::CREATED,
+            Json(json!({
+                "status": "success",
+                "message": "ACL aprobada en sandbox y persistida para futuras detecciones",
+                "rule": rule
+            })),
+        ),
+        Err(e) => (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            Json(json!({ "error": e.to_string() })),
+        ),
+    }
+}

@@ -1,8 +1,21 @@
 // * * * COMPONENTE: GESTIÓN CRUD DE USUARIOS, CONTROL RBAC Y CONFIGURACIÓN DE TIMEOUT * * *
 
 use leptos::*;
+use wasm_bindgen_futures::spawn_local;
 use js_sys;
+use crate::api;
 use crate::models::{GlobalSecurityConfig, RoleType, SocUser, UserSessionState};
+
+/// Mapeo RoleType (frontend) -> role_id (tabla `roles` de PostgreSQL segun seed:
+/// 1=SOC_ADMIN, 2=SOC_OPERATOR, 3=AUDITOR, 4=ANALYST_L1).
+fn role_type_to_id(role: RoleType) -> i32 {
+    match role {
+        RoleType::Admin => 1,
+        RoleType::SocOperator => 2,
+        RoleType::Auditor => 3,
+        RoleType::AnalystL1 => 4,
+    }
+}
 
 /// Genera un token de activación de un solo uso criptográficamente único
 /// Principio Zero-Knowledge: el administrador NUNCA conoce ni fija la contraseña del usuario.
@@ -61,33 +74,40 @@ pub fn UserManagement(
             return;
         }
 
-        let next_id = users.get().iter().map(|u| u.user_id).max().unwrap_or(0) + 1;
-        let created_now = chrono::Local::now().format("%Y-%m-%d %H:%M:%S").to_string();
+        // Creación REAL vía POST /api/v1/users (CreateUserDto del backend Axum).
+        // Principio Zero-Knowledge: se genera un token de activación que se envía
+        // como contraseña inicial; solo el usuario lo conoce, el admin no fija credenciales.
+        let activation_token_value = generate_activation_token();
+        let role_id = role_type_to_id(new_role.get());
 
-        // Generar token de activación de un solo uso (Zero-Knowledge provisioning)
-        let token = generate_activation_token();
+        let set_users_c = set_users;
+        let set_new_username_c = set_new_username;
+        let set_activation_token_c = set_activation_token;
+        let set_feedback_msg_c = set_feedback_msg;
+        let set_error_msg_c = set_error_msg;
+        let session_token = session.get().session_token.clone();
 
-        let new_user_obj = SocUser {
-            user_id: next_id,
-            username: user_str.clone(),
-            role: new_role.get(),
-            created_at: created_now,
-            is_active: true,
-        };
-
-        set_users.update(|list| list.push(new_user_obj));
-        set_new_username.set(String::new());
-
-        // Mostrar token de activación al administrador (NO es la contraseña)
-        set_activation_token.set(Some(token));
-        set_feedback_msg.set(Some(format!(
-            "✓ Usuario '{}' provisionado con rol '{}'. Token de activación generado.",
-            user_str,
-            new_role.get().display_name()
-        )));
+        spawn_local(async move {
+            match api::create_user(&session_token, &user_str, &activation_token_value, role_id).await {
+                Ok(created) => {
+                    let mapped = api::map_user_with_role(created);
+                    set_users_c.update(|list| list.push(mapped));
+                    set_new_username_c.set(String::new());
+                    // Mostrar token de activación al administrador (NO es la contraseña permanente)
+                    set_activation_token_c.set(Some(activation_token_value));
+                    set_feedback_msg_c.set(Some(format!(
+                        "✓ Usuario '{}' provisionado en PostgreSQL con rol ID {}. Token de activación generado.",
+                        user_str, role_id
+                    )));
+                }
+                Err(e) => {
+                    set_error_msg_c.set(Some(format!("✕ El backend rechazó la creación del usuario: {}", e)));
+                }
+            }
+        });
     };
 
-    // Actualización de rol
+    // Actualización de rol — PUT /api/v1/users/:id/role (persistencia real RBAC)
     let handle_role_change = move |user_id: i32, role_str: String| {
         let parsed_role = match role_str.as_str() {
             "ADMIN" => RoleType::Admin,
@@ -107,25 +127,60 @@ pub fn UserManagement(
             set_session.update(|s| s.current_user.role = parsed_role);
         }
 
-        set_feedback_msg.set(Some(format!(
-            "✓ Rol de usuario #{} actualizado a '{}'. Permisos sincronizados en PostgreSQL.",
-            user_id,
-            parsed_role.display_name()
-        )));
+        let token = session.get().session_token.clone();
+        let new_role_id = role_type_to_id(parsed_role);
+        let set_feedback_msg_r = set_feedback_msg;
+        let set_error_msg_r = set_error_msg;
+
+        spawn_local(async move {
+            match api::update_user_role(&token, user_id, new_role_id).await {
+                Ok(_) => {
+                    set_feedback_msg_r.set(Some(format!(
+                        "✓ Rol de usuario #{} actualizado a '{}' (role_id={}). Permisos sincronizados en PostgreSQL.",
+                        user_id,
+                        parsed_role.display_name(),
+                        new_role_id
+                    )));
+                }
+                Err(e) => {
+                    set_error_msg_r.set(Some(format!(
+                        "✕ No se pudo persistir el cambio de rol del usuario #{} en el backend: {}",
+                        user_id, e
+                    )));
+                }
+            }
+        });
     };
 
-    // Eliminación de usuario
+    // Eliminación de usuario — DELETE /api/v1/users/:id (real contra PostgreSQL)
     let handle_delete_user = move |user_id: i32| {
         if session.get().current_user.user_id == user_id {
             set_error_msg.set(Some("No puedes eliminar la cuenta del usuario actualmente autenticado.".to_string()));
             return;
         }
 
-        set_users.update(|list| list.retain(|u| u.user_id != user_id));
-        set_feedback_msg.set(Some(format!("✓ Usuario #{} eliminado de la base de datos.", user_id)));
+        let token = session.get().session_token.clone();
+        let set_users_d = set_users;
+        let set_feedback_msg_d = set_feedback_msg;
+        let set_error_msg_d = set_error_msg;
+
+        spawn_local(async move {
+            match api::delete_user(&token, user_id).await {
+                Ok(_) => {
+                    set_users_d.update(|list| list.retain(|u| u.user_id != user_id));
+                    set_feedback_msg_d.set(Some(format!("✓ Usuario #{} eliminado de la base de datos.", user_id)));
+                }
+                Err(e) => {
+                    set_error_msg_d.set(Some(format!(
+                        "✕ El backend rechazó la eliminación del usuario #{}: {}",
+                        user_id, e
+                    )));
+                }
+            }
+        });
     };
 
-    // Guardar nuevo timeout global
+    // Guardar nuevo timeout global — PUT /api/v1/config/critical-timeout (persistencia real)
     let handle_save_timeout = move |_| {
         set_error_msg.set(None);
         set_feedback_msg.set(None);
@@ -133,10 +188,27 @@ pub fn UserManagement(
         match timeout_input.get().trim().parse::<u64>() {
             Ok(val) if val >= 10 => {
                 set_security_config.update(|cfg| cfg.critical_action_timeout_secs = val);
-                set_feedback_msg.set(Some(format!(
-                    "✓ Parámetro global 'CRITICAL_ACTION_TIMEOUT_SECS' actualizado a {} segundos en base de datos.",
-                    val
-                )));
+
+                let token = session.get().session_token.clone();
+                let set_feedback_msg_t = set_feedback_msg;
+                let set_error_msg_t = set_error_msg;
+
+                spawn_local(async move {
+                    match api::save_critical_timeout(&token, val).await {
+                        Ok(_) => {
+                            set_feedback_msg_t.set(Some(format!(
+                                "✓ Parámetro global 'CRITICAL_ACTION_TIMEOUT_SECS' actualizado a {} segundos en PostgreSQL.",
+                                val
+                            )));
+                        }
+                        Err(e) => {
+                            set_error_msg_t.set(Some(format!(
+                                "✕ No se pudo guardar el timeout global en el backend: {}",
+                                e
+                            )));
+                        }
+                    }
+                });
             }
             Ok(_) => {
                 set_error_msg.set(Some("El timeout debe ser de al menos 10 segundos por razones de seguridad.".to_string()));

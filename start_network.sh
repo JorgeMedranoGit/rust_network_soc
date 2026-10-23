@@ -1,11 +1,18 @@
 #!/bin/bash
 set -e
 
-echo -e "\e[1;34m[INFO] Desplegando Topología ISP Automatizada (10 Endpoints)...\e[0m"
+echo -e "\e[1;34m[INFO] Desplegando Topología ISP Automatizada (Red GNS3 PRINCIPAL: 10 Endpoints)...\e[0m"
+echo -e "\e[1;34m[INFO] El despliegue incluye la Red GNS3 SANDBOX ACL (más pequeña) para probar ACLs antes de aplicarlas en la principal.\e[0m"
 
 # 1. Pre-compilar la imagen de Kali con las herramientas necesarias si no existe
 if ! sudo docker image inspect kali-soc-tools &>/dev/null; then
     echo -e "\e[1;33m[INFO] Construyendo imagen local 'kali-soc-tools' con nmap y ping pre-instalados...\e[0m"
+    # Si la imagen base no está en caché, descargarla primero (equivalente a un
+    # 'docker build' sin cache en una máquina recién instalada)
+    if ! sudo docker image inspect kalilinux/kali-rolling &>/dev/null; then
+        echo -e "\e[1;34m[INFO] Extrayendo imagen base kalilinux/kali-rolling...\e[0m"
+        sudo docker pull kalilinux/kali-rolling || true
+    fi
     cat <<EOF > Dockerfile.kali
 FROM kalilinux/kali-rolling
 RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y iproute2 iputils-ping net-tools nmap tcpreplay && apt-get clean
@@ -14,6 +21,14 @@ EOF
 else
     echo -e "\e[1;32m[INFO] Imagen local 'kali-soc-tools' ya disponible.\e[0m"
 fi
+
+# Asegurar imágenes ligeras usadas por las víctimas y la sandbox ACL (fallback Docker)
+for img in alpine:latest; do
+    if ! sudo docker image inspect "$img" &>/dev/null; then
+        echo -e "\e[1;34m[INFO] Extrayendo imagen $img...\e[0m"
+        sudo docker pull "$img" || true
+    fi
+done
 
 # 2. Iniciar GNS3 si está disponible en el sistema
 if command -v gns3server &> /dev/null; then
@@ -80,4 +95,8 @@ done
 
 echo -e "\e[1;32m============================================================\e[0m"
 echo -e "\e[1;32m TOPOLOGÍA ISP AMPLIADA COMPLETAMENTE AUTOMATIZADA \e[0m"
+echo -e "\e[1;32m RED 1 (PRINCIPAL): 192.168.100.0/24 + 192.168.1.0/24 -> ataques y tráfico\e[0m"
+echo -e "\e[1;32m RED 2 (SANDBOX ACL, más pequeña): soc_sandbox_acl_net 10.200.0.0/24 (VLAN 999)\e[0m"
+echo -e "\e[1;32m   -> probar ACLs aquí antes de aplicarlas en la red principal;\e[0m"
+echo -e "\e[1;32m      ACL aprobada se persiste en BD (approved_acl_rules) para futuras detecciones.\e[0m"
 echo -e "\e[1;32m============================================================\e[0m"

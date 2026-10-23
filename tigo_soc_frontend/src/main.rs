@@ -1,5 +1,6 @@
 // * * * PUNTO DE ENTRADA PRINCIPAL EN RUST WEBASSEMBLY (WASM) * * *
 
+mod api;
 mod app;
 mod components;
 mod models;

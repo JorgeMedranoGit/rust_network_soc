@@ -1,0 +1,10 @@
+/workspace/tigo_soc_frontend/target/release/deps/quote_use_macros-28b769d79ecaba0a.d: /root/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/quote-use-macros-0.8.4/src/lib.rs /root/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/quote-use-macros-0.8.4/src/prelude.rs /root/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/quote-use-macros-0.8.4/src/use_parser.rs /root/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/quote-use-macros-0.8.4/src/prelude/core.rs /root/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/quote-use-macros-0.8.4/src/prelude/std.rs /root/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/quote-use-macros-0.8.4/src/prelude/2021.rs
+
+/workspace/tigo_soc_frontend/target/release/deps/libquote_use_macros-28b769d79ecaba0a.so: /root/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/quote-use-macros-0.8.4/src/lib.rs /root/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/quote-use-macros-0.8.4/src/prelude.rs /root/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/quote-use-macros-0.8.4/src/use_parser.rs /root/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/quote-use-macros-0.8.4/src/prelude/core.rs /root/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/quote-use-macros-0.8.4/src/prelude/std.rs /root/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/quote-use-macros-0.8.4/src/prelude/2021.rs
+
+/root/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/quote-use-macros-0.8.4/src/lib.rs:
+/root/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/quote-use-macros-0.8.4/src/prelude.rs:
+/root/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/quote-use-macros-0.8.4/src/use_parser.rs:
+/root/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/quote-use-macros-0.8.4/src/prelude/core.rs:
+/root/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/quote-use-macros-0.8.4/src/prelude/std.rs:
+/root/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/quote-use-macros-0.8.4/src/prelude/2021.rs:
